@@ -21,6 +21,7 @@ class LLM():
             max_completion_tokens=self.max_completion_tokens,
             response_format={"type": "json_object"}
         )
+        print('[LLM class] ', response.choices[0].message.content)
         return response.choices[0].message.content
         
         

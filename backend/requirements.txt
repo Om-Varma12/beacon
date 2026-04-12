@@ -1,0 +1,9 @@
+dotenv
+requests
+groq
+ollama
+playwright
+ipykernel
+supabase
+psycopg2-binary
+httpx

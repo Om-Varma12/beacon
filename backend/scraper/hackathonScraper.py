@@ -7,19 +7,20 @@ async def scrape_hackathon_detail(client, hackathon):
         url = DETAIL_URL + str(hackathon["external_id"])
         res = await client.get(url)
         data = res.json().get("data", {})
+        competition = data.get("competition", {})
 
         # enrich description
-        hackathon["description"] = data.get("description") or hackathon["description"]
+        hackathon["description"] = competition.get("details") or hackathon["description"]
 
         # enrich dates (listing API often returns None)
-        if data.get("start_date") and not hackathon.get("start_date"):
-            hackathon["start_date"] = data["start_date"]
-        if data.get("end_date") and not hackathon.get("submission_deadline"):
-            hackathon["submission_deadline"] = data["end_date"]
+        if competition.get("start_date") and not hackathon.get("start_date"):
+            hackathon["start_date"] = competition["start_date"]
+        if competition.get("end_date") and not hackathon.get("submission_deadline"):
+            hackathon["submission_deadline"] = competition["end_date"]
 
         # enrich prizes
-        if data.get("prizes"):
-            hackathon["prizes"] = data["prizes"]
+        if competition.get("prizes"):
+            hackathon["prizes"] = competition["prizes"]
 
         return hackathon
 

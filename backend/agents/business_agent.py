@@ -1,4 +1,4 @@
-from agent import Agent
+from agents.base import Agent
 from prompts.business import SYSTEM_PROMPT
 
 class BusinessAgent(Agent):
@@ -24,3 +24,9 @@ class BusinessAgent(Agent):
             "confidence": 0-1
         }}
         """
+        
+    def parse_response(self, response):
+        return {
+            "agent": "business",
+            **response
+        }

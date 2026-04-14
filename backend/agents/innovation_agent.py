@@ -1,4 +1,4 @@
-from agent import Agent
+from agents.base import Agent
 from prompts.innovation import SYSTEM_PROMPT
 
 class InnovationAgent(Agent):

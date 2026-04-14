@@ -52,7 +52,7 @@ class HackathonRepository:
             data.get("url"),
             parse_date(data.get("start_date")),
             parse_date(data.get("submission_deadline")),  # maps → deadline
-            prizes,  # JSONB field
+            prizes if prizes else None,  # JSON field
         )
 
         try:

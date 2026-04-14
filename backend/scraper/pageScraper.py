@@ -31,7 +31,7 @@ async def scrape_pages(max_pages=50):
             for item in items:
                 yield {
                     "external_id": item.get("id"),
-                    "url": "https://unstop.com/" + item.get("seo_url", ""),
+                    "url": item.get("seo_url", ""),
                     "title": item.get("title"),
                     "description": clean_html(item.get("details")),
                     "college_name": item.get("organisation", {}).get("name"),

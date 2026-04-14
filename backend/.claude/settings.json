@@ -1,0 +1,6 @@
+{
+  "statusLine": {
+    "type": "command",
+    "command": "bash D:/STUDY/PROJECTS/beacon/backend/.claude/statusline-command.sh"
+  }
+}

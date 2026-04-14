@@ -1,4 +1,4 @@
-from agent import Agent
+from agents.base import Agent
 from prompts.tech import SYSTEM_PROMPT
 
 class TechAgents(Agent):

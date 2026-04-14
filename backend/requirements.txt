@@ -7,3 +7,4 @@ ipykernel
 supabase
 psycopg2-binary
 httpx
+pdfplumber

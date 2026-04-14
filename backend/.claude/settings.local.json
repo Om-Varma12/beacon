@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Bash(timeout 30 cd \"D:\\\\STUDY\\\\PROJECTS\\\\beacon\\\\backend\")"
     ]
   }
 }

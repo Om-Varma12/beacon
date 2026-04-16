@@ -1,3 +1,5 @@
+import json
+
 class Agent:
     def __init__(self, llm, name="agent"):
         self.llm = llm
@@ -18,4 +20,8 @@ class Agent:
         raise NotImplementedError
 
     def parse_response(self, response: dict) -> dict:
-        return response
+        if isinstance(response, dict):
+            return response
+        if isinstance(response, (str, bytes, bytearray)):
+            return json.loads(response)
+        raise TypeError(f"Unexpected response type: {type(response)}")

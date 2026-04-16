@@ -16,7 +16,8 @@ class BusinessAgent(Agent):
         """
         
     def parse_response(self, response):
+        parsed = super().parse_response(response)
         return {
             "agent": "business",
-            **json.loads(response)
+            **parsed
         }

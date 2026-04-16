@@ -1,5 +1,5 @@
 import asyncio
-from ..config import MODEL
+from config import MODEL
 from groq import Groq
 from dotenv import load_dotenv
 load_dotenv()
@@ -8,7 +8,6 @@ class LLM():
     def __init__(self):
         self.model = MODEL
         self.client = Groq()
-        self.max_completion_tokens = 2000
         
     ## retry logic to add yet!!
     def _sync_generate(self, systemPrompt, userPrompt):
@@ -18,10 +17,8 @@ class LLM():
                 {"role": "user", "content": userPrompt}
             ],
             model=self.model,
-            max_completion_tokens=self.max_completion_tokens,
             response_format={"type": "json_object"}
         )
-        print('[LLM class] ', response.choices[0].message.content)
         return response.choices[0].message.content
         
         

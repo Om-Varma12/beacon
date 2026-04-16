@@ -3,10 +3,10 @@ class Agent:
         self.llm = llm
         self.name = name
 
-    async def run(self, task: str, context: str = "") -> dict:
+    async def run(self, task: str) -> dict:
         response = await self.llm.generate(
             self.get_system_prompt(),
-            self.build_user_prompt(task, context)
+            self.build_user_prompt(task)
         )
 
         return self.parse_response(response)
@@ -14,7 +14,7 @@ class Agent:
     def get_system_prompt(self) -> str:
         raise NotImplementedError
 
-    def build_user_prompt(self, task: str, context: str) -> str:
+    def build_user_prompt(self, task: str) -> str:
         raise NotImplementedError
 
     def parse_response(self, response: dict) -> dict:

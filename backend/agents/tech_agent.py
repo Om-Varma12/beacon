@@ -5,22 +5,10 @@ class TechAgents(Agent):
     def get_system_prompt(self):
         return SYSTEM_PROMPT
 
-    def build_user_prompt(self, task, context):
+    def build_user_prompt(self, task):
         return f"""
-        Evaluate the following theme from a BUSINESS perspective.
+        Evaluate the following project idea from a TECHNOLOGY perspective.
 
-        THEME:
+        TASK:
         {task}
-
-        CONTEXT:
-        {context}
-
-        Return JSON:
-        {{
-            "score": 0-10,
-            "pros": [],
-            "cons": [],
-            "reasoning": "...",
-            "confidence": 0-1
-        }}
         """

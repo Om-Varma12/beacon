@@ -1,12 +1,14 @@
+import json
+
 class Agent:
     def __init__(self, llm, name="agent"):
         self.llm = llm
         self.name = name
 
-    async def run(self, task: str, context: str = "") -> dict:
+    async def run(self, task: str) -> dict:
         response = await self.llm.generate(
             self.get_system_prompt(),
-            self.build_user_prompt(task, context)
+            self.build_user_prompt(task)
         )
 
         return self.parse_response(response)
@@ -14,8 +16,12 @@ class Agent:
     def get_system_prompt(self) -> str:
         raise NotImplementedError
 
-    def build_user_prompt(self, task: str, context: str) -> str:
+    def build_user_prompt(self, task: str) -> str:
         raise NotImplementedError
 
     def parse_response(self, response: dict) -> dict:
-        return response
+        if isinstance(response, dict):
+            return response
+        if isinstance(response, (str, bytes, bytearray)):
+            return json.loads(response)
+        raise TypeError(f"Unexpected response type: {type(response)}")

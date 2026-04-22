@@ -39,7 +39,10 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[var(--bg-primary)]">
-      <ParticleField density={70} className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-60" />
+      <ParticleField
+        density={70}
+        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-60"
+      />
       <div className="noise" />
       <CursorTrail />
       <Navbar />

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import lighthouse from "@/assets/lighthouse.jpg";
+import videoSrc from "@/assets/video.mp4";
 
 
 const stats = [
@@ -14,10 +14,14 @@ export function Hero() {
       id="top"
       className="relative flex min-h-screen items-center overflow-hidden pt-24"
     >
-      {/* Lighthouse atmospheric backdrop */}
-      <div
-        className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-50"
-        style={{ backgroundImage: `url(${lighthouse})` }}
+      {/* Video atmospheric backdrop */}
+      <video
+        className="pointer-events-none absolute inset-0 object-cover object-center opacity-50"
+        autoPlay
+        muted
+        loop
+        playsInline
+        src={videoSrc}
         aria-hidden
       />
       <div

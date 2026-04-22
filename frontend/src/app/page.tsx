@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import LenisProvider from "@/components/LenisProvider";
-import BeaconCanvas from "@/components/three/BeaconCanvas";
+import Image from "next/image";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const BeaconCanvasComponent = dynamic(() => import("@/components/three/BeaconCanvas"), {
+const BeaconCanvas = dynamic(() => import("@/components/three/BeaconCanvas"), {
   ssr: false,
   loading: () => <div className="w-full h-full bg-transparent" />,
 });
@@ -25,8 +25,8 @@ const features = [
         <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
       </svg>
     ),
-    color: "#7c3aed",
-    glow: "rgba(124, 58, 237, 0.2)",
+    color: "#f59e0b",
+    glow: "rgba(245, 158, 11, 0.2)",
   },
   {
     step: "02",
@@ -37,8 +37,8 @@ const features = [
         <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
       </svg>
     ),
-    color: "#3b82f6",
-    glow: "rgba(59, 130, 246, 0.2)",
+    color: "#7c3aed",
+    glow: "rgba(124, 58, 237, 0.2)",
   },
   {
     step: "03",
@@ -129,6 +129,14 @@ export default function Home() {
   const featureRefs = useRef<(HTMLDivElement | null)[]>([]);
   const sectionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const faqRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [scrollY, setScrollY] = useState(0);
+
+  // Track scroll position for parallax
+  useEffect(() => {
+    const handleScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     // ── Hero entrance animations ──────────────────────────
@@ -136,11 +144,48 @@ export default function Home() {
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
 
       tl.from(".hero-badge", { y: 30, opacity: 0, duration: 0.8 }, 0.2)
-        .from(".hero-title-line", { y: 60, opacity: 0, stagger: 0.12, duration: 1 }, 0.5)
+        .from(".hero-title-line", { y: 60, opacity: 0, stagger: 0.15, duration: 1 }, 0.5)
         .from(".hero-sub", { y: 30, opacity: 0, duration: 0.8 }, 1)
         .from(".hero-cta", { y: 30, opacity: 0, scale: 0.95, duration: 0.7 }, 1.3)
         .from(".hero-stats", { y: 20, opacity: 0, duration: 0.8 }, 1.5)
         .from(".scroll-hint", { opacity: 0, duration: 0.6 }, 2);
+
+      // ── Lighthouse beam parallax ──────────────────────────
+      gsap.to(".light-beam", {
+        y: scrollY * 0.3,
+        ease: "none",
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: 1,
+        },
+      });
+
+      // ── Hero content parallax on scroll ─────────────────
+      gsap.to(".hero-content-wrapper", {
+        y: scrollY * 0.5,
+        opacity: 1 - scrollY / 600,
+        ease: "none",
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: 1,
+        },
+      });
+
+      // ── Lighthouse image parallax ────────────────────────
+      gsap.to(".lighthouse-image", {
+        y: scrollY * 0.2,
+        ease: "none",
+        scrollTrigger: {
+          trigger: heroRef.current,
+          start: "top top",
+          end: "bottom top",
+          scrub: 1,
+        },
+      });
 
       // ── Feature cards ────────────────────────────────────
       featureRefs.current.forEach((el, i) => {
@@ -148,15 +193,26 @@ export default function Home() {
         gsap.from(el, {
           scrollTrigger: {
             trigger: el,
-            start: "top 82%",
+            start: "top 85%",
             toggleActions: "play none none reverse",
           },
           y: 60,
           opacity: 0,
-          scale: 0.96,
-          duration: 0.7,
-          delay: i * 0.1,
+          scale: 0.95,
+          duration: 0.8,
+          delay: i * 0.12,
           ease: "power3.out",
+        });
+
+        // Hover scale animation
+        gsap.to(el, {
+          scrollTrigger: {
+            trigger: el,
+            start: "top 85%",
+          },
+          scale: 1.02,
+          duration: 0.3,
+          ease: "power2.out",
         });
       });
 
@@ -167,7 +223,7 @@ export default function Home() {
         gsap.from(children, {
           scrollTrigger: {
             trigger: el,
-            start: "top 78%",
+            start: "top 80%",
             toggleActions: "play none none reverse",
           },
           y: 50,
@@ -230,10 +286,59 @@ export default function Home() {
         },
         y: 40,
         opacity: 0,
-        stagger: 0.15,
+        stagger: {
+          amount: 0.6,
+          from: "start",
+        },
         duration: 0.7,
         ease: "back.out(1.4)",
       });
+
+      // ── Section background parallax ──────────────────────
+      gsap.utils.toArray(".parallax-bg").forEach((bg: any) => {
+        gsap.to(bg, {
+          y: -50,
+          ease: "none",
+          scrollTrigger: {
+            trigger: bg.parentElement,
+            start: "top bottom",
+            end: "bottom top",
+            scrub: 1,
+          },
+        });
+      });
+
+      // ── How it works timeline animation ──────────────────
+      gsap.from(".timeline-dot", {
+        scale: 0,
+        opacity: 0,
+        stagger: 0.2,
+        duration: 0.5,
+        ease: "back.out(2)",
+        scrollTrigger: {
+          trigger: ".timeline-section",
+          start: "top 70%",
+        },
+      });
+
+      // ── Glass card shine effect on hover ─────────────────
+      document.querySelectorAll('.glass-card').forEach((card) => {
+        card.addEventListener('mouseenter', () => {
+          gsap.to(card, {
+            scale: 1.02,
+            duration: 0.3,
+            ease: "power2.out",
+          });
+        });
+        card.addEventListener('mouseleave', () => {
+          gsap.to(card, {
+            scale: 1,
+            duration: 0.3,
+            ease: "power2.out",
+          });
+        });
+      });
+
     });
 
     return () => ctx.revert();
@@ -244,53 +349,95 @@ export default function Home() {
       <div className="relative w-full overflow-hidden">
 
         {/* ─── HERO ─────────────────────────────────────────── */}
-        <section ref={heroRef} className="relative h-screen min-h-[700px] flex items-center justify-center overflow-hidden">
-          {/* Three.js Canvas */}
-          <div className="absolute inset-0 z-0">
-            <BeaconCanvasComponent />
+        <section ref={heroRef} className="relative h-screen min-h-[800px] flex items-center justify-center overflow-hidden">
+          {/* Lighthouse Image - Bottom layer */}
+          <div className="absolute inset-0 z-0 lighthouse-image">
+            <Image
+              src="/lighthouse.jpg"
+              alt="Lighthouse beacon of light in stormy seas"
+              fill
+              priority
+              className="object-cover object-center"
+              sizes="100vw"
+            />
+            {/* Dark overlay for contrast */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#030712]/60 via-transparent to-[#030712]" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#030712]/80 via-transparent to-[#030712]/60" />
           </div>
 
-          {/* Radial gradient overlay */}
-          <div className="absolute inset-0 z-10 pointer-events-none"
+          {/* Lighthouse beam effect */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-5 pointer-events-none light-rays"
             style={{
-              background: "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 30%, #030712 75%)",
+              width: '400px',
+              height: '600px',
+              background: 'linear-gradient(180deg, rgba(251, 191, 36, 0.4) 0%, rgba(251, 191, 36, 0.1) 40%, transparent 70%)',
+              clipPath: 'polygon(40% 0%, 60% 0%, 80% 100%, 20% 100%)',
+              transformOrigin: 'top center',
+              filter: 'blur(20px)',
+            }}
+          />
+
+          {/* Lighthouse glow orb */}
+          <div className="absolute z-2 lighthouse-glow"
+            style={{
+              top: '38%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '20px',
+              height: '20px',
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, #fbbf24 0%, #f59e0b 50%, transparent 70%)',
+            }}
+          />
+
+          {/* Three.js Beacon Canvas - Above lighthouse, below content */}
+          <div className="absolute inset-0 z-10">
+            <BeaconCanvas />
+          </div>
+
+          {/* Radial gradient for depth */}
+          <div className="absolute inset-0 z-20 pointer-events-none"
+            style={{
+              background: "radial-gradient(ellipse 80% 60% at 50% 50%, transparent 30%, #030712 85%)",
             }}
           />
 
           {/* Top nav */}
-          <nav className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-8 py-6 lg:px-16">
-            <div className="flex items-center gap-2">
-              <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                <circle cx="14" cy="14" r="12" stroke="#7c3aed" strokeWidth="1.5" />
-                <circle cx="14" cy="14" r="5" fill="#7c3aed" opacity="0.6" />
-                <circle cx="14" cy="14" r="2" fill="#a78bfa" />
-                <line x1="14" y1="2" x2="14" y2="6" stroke="#7c3aed" strokeWidth="1.5" />
-                <line x1="14" y1="22" x2="14" y2="26" stroke="#7c3aed" strokeWidth="1.5" />
-                <line x1="2" y1="14" x2="6" y2="14" stroke="#7c3aed" strokeWidth="1.5" />
-                <line x1="22" y1="14" x2="26" y2="14" stroke="#7c3aed" strokeWidth="1.5" />
-              </svg>
-              <span className="font-display font-bold text-xl tracking-tight text-white">Beacon</span>
-            </div>
-            <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-400">
-              <a href="#features" className="hover:text-white transition-colors">Features</a>
-              <a href="#how-it-works" className="hover:text-white transition-colors">How it Works</a>
-              <a href="#agents" className="hover:text-white transition-colors">AI Agents</a>
-              <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
-            </div>
-            <div className="flex items-center gap-3">
-              <button className="text-sm font-medium text-zinc-400 hover:text-white transition-colors">Sign in</button>
-              <button className="px-4 py-2 rounded-full text-sm font-semibold text-white transition-all hover:scale-105 active:scale-95"
-                style={{
-                  background: "linear-gradient(135deg, #7c3aed, #a78bfa)",
-                  boxShadow: "0 0 20px rgba(124, 58, 237, 0.4)",
-                }}>
-                Get Early Access
-              </button>
+          <nav className="absolute top-0 left-0 right-0 z-50 max-w-7xl mx-auto px-6 lg:px-8">
+            <div className="flex items-center justify-between py-6">
+              <div className="flex items-center gap-2">
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+                  <circle cx="14" cy="14" r="12" stroke="#7c3aed" strokeWidth="1.5" />
+                  <circle cx="14" cy="14" r="5" fill="#7c3aed" opacity="0.6" />
+                  <circle cx="14" cy="14" r="2" fill="#a78bfa" />
+                  <line x1="14" y1="2" x2="14" y2="6" stroke="#7c3aed" strokeWidth="1.5" />
+                  <line x1="14" y1="22" x2="14" y2="26" stroke="#7c3aed" strokeWidth="1.5" />
+                  <line x1="2" y1="14" x2="6" y2="14" stroke="#7c3aed" strokeWidth="1.5" />
+                  <line x1="22" y1="14" x2="26" y2="14" stroke="#7c3aed" strokeWidth="1.5" />
+                </svg>
+                <span className="font-display font-bold text-xl tracking-tight text-white">Beacon</span>
+              </div>
+              <div className="hidden md:flex items-center gap-8 text-sm font-medium text-zinc-300">
+                <a href="#features" className="hover:text-white transition-colors duration-200">Features</a>
+                <a href="#how-it-works" className="hover:text-white transition-colors duration-200">How it Works</a>
+                <a href="#agents" className="hover:text-white transition-colors duration-200">AI Agents</a>
+                <a href="#faq" className="hover:text-white transition-colors duration-200">FAQ</a>
+              </div>
+              <div className="flex items-center gap-3">
+                <button className="text-sm font-medium text-zinc-300 hover:text-white transition-colors duration-200 cursor-pointer">Sign in</button>
+                <button className="px-4 py-2 rounded-full text-sm font-semibold text-white transition-all duration-200 hover:scale-105 active:scale-95 cursor-pointer"
+                  style={{
+                    background: "linear-gradient(135deg, #7c3aed, #a78bfa)",
+                    boxShadow: "0 0 20px rgba(124, 58, 237, 0.4)",
+                  }}>
+                  Get Early Access
+                </button>
+              </div>
             </div>
           </nav>
 
           {/* Hero Content */}
-          <div className="relative z-20 text-center max-w-4xl px-6 pt-20">
+          <div className="relative z-30 hero-content-wrapper text-center max-w-5xl px-6 pt-20">
             {/* Badge */}
             <div className="hero-badge inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-8 text-sm font-medium"
               style={{
@@ -302,25 +449,28 @@ export default function Home() {
               Live · 2,400+ Hackathons Indexed
             </div>
 
-            {/* Title */}
+            {/* Title - Updated with lighthouse theme */}
             <h1 className="font-display font-bold leading-[1.05] tracking-tight mb-6">
-              {["From Hackathon", "To Winning", "Pitch — Powered", "By AI Agents"].map((line, i) => (
+              {["Don't Just Hack.", "Illuminate."].map((line, i) => (
                 <span key={i} className="hero-title-line block text-5xl md:text-6xl lg:text-7xl xl:text-8xl"
                   style={{ color: i === 1 ? "transparent" : "#f8fafc" }}>
-                  <span className={i === 1 ? "text-gradient" : ""}>{line}</span>
+                  <span className={i === 1 ? "text-gradient-beacon" : ""}>{line}</span>
                 </span>
               ))}
+              <span className="block text-3xl md:text-4xl lg:text-5xl text-zinc-400 mt-4 font-medium">
+                Your Hackathon North Star
+              </span>
             </h1>
 
             {/* Subtitle */}
-            <p className="hero-sub text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+            <p className="hero-sub text-lg md:text-xl text-zinc-300 max-w-2xl mx-auto mb-10 leading-relaxed">
               Beacon scrapes live hackathons, spawns 4 AI agents to debate the perfect idea,
-              and generates a presentation-ready deck — so you ship smarter, not harder.
+              and generates a presentation-ready deck — so you navigate the noise and find your winning pitch.
             </p>
 
             {/* CTAs */}
             <div className="hero-cta flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-              <button className="group relative px-8 py-4 rounded-full font-semibold text-base transition-all hover:scale-105 active:scale-95 overflow-hidden"
+              <button className="group relative px-8 py-4 rounded-full font-semibold text-base transition-all duration-200 hover:scale-105 active:scale-95 overflow-hidden cursor-pointer"
                 style={{
                   background: "linear-gradient(135deg, #7c3aed, #6d28d9)",
                   boxShadow: "0 0 40px rgba(124, 58, 237, 0.5)",
@@ -333,7 +483,7 @@ export default function Home() {
                 </span>
               </button>
 
-              <button className="group px-8 py-4 rounded-full font-semibold text-base text-zinc-300 glass-card transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
+              <button className="group px-8 py-4 rounded-full font-semibold text-base text-zinc-300 glass-card transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                   <polygon points="5,3 19,12 5,21" />
                 </svg>
@@ -346,14 +496,14 @@ export default function Home() {
               {stats.map((s) => (
                 <div key={s.label} className="text-center">
                   <div className="font-display font-bold text-2xl md:text-3xl text-white">{s.value}</div>
-                  <div className="text-xs text-zinc-500 mt-1 uppercase tracking-widest">{s.label}</div>
+                  <div className="text-xs text-zinc-400 mt-1 uppercase tracking-widest">{s.label}</div>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Scroll hint */}
-          <div className="scroll-hint absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-zinc-500">
+          <div className="scroll-hint absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-zinc-400">
             <span className="text-xs tracking-widest uppercase">Scroll</span>
             <div className="w-5 h-8 rounded-full border border-zinc-700 flex justify-center pt-1.5">
               <div className="w-1 h-2 rounded-full bg-zinc-500 animate-bounce" />
@@ -362,15 +512,15 @@ export default function Home() {
         </section>
 
         {/* ─── FEATURES ─────────────────────────────────────── */}
-        <section id="features" className="relative py-32 px-6 lg:px-16">
+        <section id="features" className="relative py-32">
           {/* Background glow */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
+          <div className="parallax-bg absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
             style={{
               background: "radial-gradient(circle, rgba(124,58,237,0.06) 0%, transparent 70%)",
             }}
           />
 
-          <div className="max-w-6xl mx-auto relative z-10">
+          <div className="max-w-6xl mx-auto px-6 lg:px-8 relative z-10">
             <div className="text-center mb-20">
               <div className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase mb-4"
                 style={{
@@ -416,14 +566,14 @@ export default function Home() {
         </section>
 
         {/* ─── HOW IT WORKS ─────────────────────────────────── */}
-        <section id="how-it-works" className="relative py-32 px-6 lg:px-16 overflow-hidden">
+        <section id="how-it-works" className="relative py-32 overflow-hidden">
           <div className="absolute inset-0 pointer-events-none"
             style={{
               background: "linear-gradient(180deg, transparent, rgba(124,58,237,0.03) 50%, transparent)",
             }}
           />
 
-          <div className="max-w-5xl mx-auto relative z-10">
+          <div className="max-w-5xl mx-auto px-6 lg:px-8 relative z-10">
             <div className="text-center mb-20">
               <div className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase mb-4"
                 style={{
@@ -441,7 +591,7 @@ export default function Home() {
 
             {/* Steps with connecting lines */}
             <div className="relative">
-              <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-zinc-800 via-zinc-700/50 to-zinc-800 hidden md:block" />
+              <div className="absolute left-[calc(2rem+19px)] md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-zinc-800 via-zinc-700/50 to-zinc-800 hidden md:block -translate-x-1/2" />
 
               {[
                 {
@@ -475,7 +625,7 @@ export default function Home() {
               ].map((step, i) => (
                 <div key={step.n} ref={(el) => { sectionRefs.current[i] = el; }} className="relative flex md:items-center gap-8 mb-16 last:mb-0">
                   {/* Dot */}
-                  <div className="relative z-10 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm ml-[calc(2rem-20px)] md:ml-0"
+                  <div className="timeline-dot relative z-10 flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-display font-bold text-sm ml-[calc(2rem-20px)] md:ml-0"
                     style={{
                       background: step.color,
                       boxShadow: `0 0 20px ${step.color}66`,
@@ -509,10 +659,10 @@ export default function Home() {
         </section>
 
         {/* ─── AI AGENTS SECTION ────────────────────────────── */}
-        <section className="agents-section relative py-32 px-6 lg:px-16 overflow-hidden">
-          <div className="absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(124,58,237,0.05) 0%, transparent 70%)" }} />
+        <section className="agents-section relative py-32 overflow-hidden">
+          <div className="parallax-bg absolute inset-0 pointer-events-none" style={{ background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(124,58,237,0.05) 0%, transparent 70%)" }} />
 
-          <div className="max-w-6xl mx-auto relative z-10">
+          <div className="max-w-6xl mx-auto px-6 lg:px-8 relative z-10">
             <div className="text-center mb-20">
               <div className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase mb-4"
                 style={{
@@ -606,8 +756,8 @@ export default function Home() {
         </section>
 
         {/* ─── SOCIAL PROOF / TESTIMONIALS ──────────────────── */}
-        <section className="relative py-32 px-6 lg:px-16 overflow-hidden">
-          <div className="max-w-6xl mx-auto">
+        <section className="relative py-32 overflow-hidden">
+          <div className="max-w-6xl mx-auto px-6 lg:px-8">
             <div className="text-center mb-16">
               <div className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase mb-4"
                 style={{
@@ -640,7 +790,7 @@ export default function Home() {
         </section>
 
         {/* ─── CTA SECTION ───────────────────────────────────── */}
-        <section className="relative py-40 px-6 lg:px-16 overflow-hidden">
+        <section className="relative py-40 overflow-hidden">
           {/* Background */}
           <div className="absolute inset-0 pointer-events-none"
             style={{
@@ -688,8 +838,8 @@ export default function Home() {
         </section>
 
         {/* ─── FAQ ───────────────────────────────────────────── */}
-        <section id="faq" className="relative py-32 px-6 lg:px-16">
-          <div className="max-w-3xl mx-auto">
+        <section id="faq" className="relative py-32">
+          <div className="max-w-3xl mx-auto px-6 lg:px-8">
             <div className="text-center mb-16">
               <div className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold tracking-widest uppercase mb-4"
                 style={{
@@ -725,8 +875,8 @@ export default function Home() {
         </section>
 
         {/* ─── FOOTER ───────────────────────────────────────── */}
-        <footer className="relative border-t border-zinc-800/50 py-16 px-6 lg:px-16">
-          <div className="max-w-6xl mx-auto">
+        <footer className="relative border-t border-zinc-800/50 py-16">
+          <div className="max-w-6xl mx-auto px-6 lg:px-8">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-10">
               <div>
                 <div className="flex items-center gap-2 mb-3">

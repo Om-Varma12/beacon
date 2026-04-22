@@ -1,12 +1,12 @@
 import asyncio
-from config import MODEL
+from config import SMALL_MODEL
 from groq import Groq
 from dotenv import load_dotenv
 load_dotenv()
 
 class LLM():
     def __init__(self):
-        self.model = MODEL
+        self.model = SMALL_MODEL
         self.client = Groq()
         
     ## retry logic to add yet!!

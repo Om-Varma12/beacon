@@ -44,7 +44,7 @@ export function ParticleField({ density = 80, className }: Props) {
         p.y += p.vy;
         if (p.x < 0 || p.x > w) p.vx *= -1;
         if (p.y < 0 || p.y > h) p.vy *= -1;
-        ctx.fillStyle = "rgba(154, 169, 224, 0.6)";
+        ctx.fillStyle = "rgba(139, 175, 212, 0.6)";
         ctx.beginPath();
         ctx.arc(p.x, p.y, 1.2, 0, Math.PI * 2);
         ctx.fill();
@@ -58,7 +58,7 @@ export function ParticleField({ density = 80, className }: Props) {
           const d2 = dx * dx + dy * dy;
           if (d2 < 120 * 120) {
             const alpha = (1 - Math.sqrt(d2) / 120) * 0.3;
-            ctx.strokeStyle = `rgba(79, 195, 255, ${alpha})`;
+            ctx.strokeStyle = `rgba(74, 158, 255, ${alpha})`;
             ctx.lineWidth = 0.5;
             ctx.beginPath();
             ctx.moveTo(a.x, a.y);

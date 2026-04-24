@@ -42,7 +42,7 @@ function Counter({ s }: { s: S }) {
       <div
         className="font-display font-extrabold leading-none"
         style={{
-          color: "var(--accent-cyan)",
+          color: "var(--accent-blue)",
           fontSize: "clamp(2.5rem, 6vw, 5rem)",
           textShadow: "0 0 30px rgba(0,212,255,0.4)",
         }}

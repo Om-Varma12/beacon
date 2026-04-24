@@ -42,7 +42,7 @@ export function Footer() {
               className="inline-block h-2 w-2 rounded-full pulse-dot"
               style={{ background: "var(--accent-amber)" }}
             />
-            <span className="font-display text-xl font-bold" style={{ color: "var(--accent-cyan)" }}>
+            <span className="font-display text-xl font-bold" style={{ color: "var(--accent-blue)" }}>
               BEACON
             </span>
           </div>
@@ -55,7 +55,7 @@ export function Footer() {
                 key={i}
                 href="#"
                 aria-label="social"
-                className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border-line)] text-[var(--text-secondary)] transition hover:border-[var(--accent-cyan)] hover:text-[var(--accent-cyan)]"
+                className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--border-line)] text-[var(--text-secondary)] transition hover:border-[var(--accent-blue)] hover:text-[var(--accent-blue)]"
               >
                 <Icon />
               </a>
@@ -70,7 +70,7 @@ export function Footer() {
             <ul className="mt-4 space-y-2">
               {c.items.map((i) => (
                 <li key={i}>
-                  <a href="#" className="text-sm text-[var(--text-dim)] hover:text-[var(--accent-cyan)]">
+                  <a href="#" className="text-sm text-[var(--text-dim)] hover:text-[var(--accent-blue)]">
                     {i}
                   </a>
                 </li>

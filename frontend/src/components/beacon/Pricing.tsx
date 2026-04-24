@@ -71,7 +71,7 @@ export function Pricing() {
           <button
             onClick={() => setAnnual(false)}
             className={`rounded-full px-4 py-1.5 font-mono-b text-xs ${
-              !annual ? "bg-[var(--accent-cyan)] text-[var(--bg-primary)]" : "text-[var(--text-secondary)]"
+              !annual ? "bg-[var(--accent-blue)] text-[var(--bg-primary)]" : "text-[var(--text-secondary)]"
             }`}
           >
             Monthly
@@ -79,7 +79,7 @@ export function Pricing() {
           <button
             onClick={() => setAnnual(true)}
             className={`flex items-center gap-2 rounded-full px-4 py-1.5 font-mono-b text-xs ${
-              annual ? "bg-[var(--accent-cyan)] text-[var(--bg-primary)]" : "text-[var(--text-secondary)]"
+              annual ? "bg-[var(--accent-blue)] text-[var(--bg-primary)]" : "text-[var(--text-secondary)]"
             }`}
           >
             Annual
@@ -103,8 +103,8 @@ export function Pricing() {
                 style={
                   p.popular
                     ? {
-                        borderColor: "var(--accent-cyan)",
-                        boxShadow: "var(--glow-cyan)",
+                        borderColor: "var(--accent-blue)",
+                        boxShadow: "var(--glow-blue)",
                         transform: "translateY(-8px)",
                       }
                     : undefined
@@ -154,9 +154,9 @@ export function Pricing() {
                   style={
                     p.ctaPrimary
                       ? {
-                          background: "var(--accent-cyan)",
+                          background: "var(--accent-blue)",
                           color: "var(--bg-primary)",
-                          boxShadow: p.popular ? "var(--glow-cyan)" : undefined,
+                          boxShadow: p.popular ? "var(--glow-blue)" : undefined,
                         }
                       : {
                           background: "transparent",

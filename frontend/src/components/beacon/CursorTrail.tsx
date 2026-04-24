@@ -19,7 +19,7 @@ export function CursorTrail() {
       x += (mx - x) * 0.18;
       y += (my - y) * 0.18;
       if (dot.current) {
-        dot.current.style.transform = `translate3d(${x - 15}px, ${y - 15}px, 0)`;
+        dot.current.style.transform = `translate3d(${x - 16}px, ${y - 16}px, 0)`;
       }
       raf = requestAnimationFrame(tick);
     };
@@ -36,9 +36,11 @@ export function CursorTrail() {
     <div
       ref={dot}
       aria-hidden
-      className="pointer-events-none fixed left-0 top-0 z-[60] h-[30px] w-[30px] rounded-full mix-blend-screen"
+      className="pointer-events-none fixed left-0 top-0 z-[60] rounded-full mix-blend-screen"
       style={{
-        background: "radial-gradient(circle, rgba(0,212,255,0.55), rgba(0,212,255,0) 70%)",
+        width: "32px",
+        height: "32px",
+        background: "radial-gradient(circle, rgba(0,212,255,0.45) 0%, rgba(0,212,255,0.2) 35%, rgba(0,212,255,0.06) 65%, rgba(0,212,255,0) 100%)",
       }}
     />
   );

@@ -35,8 +35,8 @@
   --color-bg-primary: var(--bg-primary);
   --color-bg-secondary: var(--bg-secondary);
   --color-bg-card: var(--bg-card);
-  --color-cyan: var(--accent-cyan);
-  --color-cyan-dim: var(--accent-cyan-dim);
+  --color-blue: var(--accent-blue);
+  --color-blue-dim: var(--accent-blue-dim);
   --color-amber: var(--accent-amber);
   --color-emerald: var(--accent-green);
   --color-text-primary: var(--text-primary);
@@ -52,41 +52,43 @@
 :root {
   --radius: 0.625rem;
 
-  /* Beacon palette — Lighthouse Night */
-  --bg-primary: #0b0a2e;
-  --bg-secondary: #14123f;
-  --bg-card: #1c1a52;
-  --accent-cyan: #4fc3ff;
-  --accent-cyan-dim: #4fc3ff22;
-  --accent-amber: #ffb24d;
-  --accent-green: #6ee7ff;
-  --text-primary: #eaf2ff;
-  --text-secondary: #9aa9e0;
-  --text-dim: #5a5a99;
-  --border-line: #2a2670;
-  --glow-cyan: 0 0 40px #4fc3ff55, 0 0 80px #6a5acd33;
-  --glow-amber: 0 0 30px #ffb24d55, 0 0 60px #ffb24d22;
+  /* Beacon palette — Stormy Lighthouse */
+  --bg-primary: #07091A;
+  --bg-secondary: #111F40;
+  --bg-card: #1A2E54;
+  --accent-blue: #4A9EFF;
+  --accent-blue-dim: #4A9EFF22;
+  --accent-amber: #FFD04A;
+  --accent-amber-dim: #FFD04A22;
+  --accent-green: #2ECC71;
+  --text-primary: #E8F4FF;
+  --text-secondary: #8BAFD4;
+  --text-dim: #4A6A8A;
+  --border-line: #253D6E;
+  --border-active: #3A5A9C;
+  --glow-blue: 0 0 40px #4A9EFF55, 0 0 80px #4A9EFF33;
+  --glow-amber: 0 0 30px #FFD04A55, 0 0 60px #FFD04A22;
 
   /* shadcn surface mapping (dark by default) */
-  --background: #0b0a2e;
-  --foreground: #eaf2ff;
-  --card: #1c1a52;
-  --card-foreground: #eaf2ff;
-  --popover: #1c1a52;
-  --popover-foreground: #eaf2ff;
-  --primary: #4fc3ff;
-  --primary-foreground: #0b0a2e;
-  --secondary: #14123f;
-  --secondary-foreground: #eaf2ff;
-  --muted: #14123f;
-  --muted-foreground: #9aa9e0;
-  --accent: #14123f;
-  --accent-foreground: #eaf2ff;
-  --destructive: #ef4444;
-  --destructive-foreground: #eaf2ff;
-  --border: #2a2670;
-  --input: #2a2670;
-  --ring: #4fc3ff;
+  --background: #07091A;
+  --foreground: #E8F4FF;
+  --card: #1A2E54;
+  --card-foreground: #E8F4FF;
+  --popover: #1A2E54;
+  --popover-foreground: #E8F4FF;
+  --primary: #4A9EFF;
+  --primary-foreground: #07091A;
+  --secondary: #111F40;
+  --secondary-foreground: #E8F4FF;
+  --muted: #111F40;
+  --muted-foreground: #8BAFD4;
+  --accent: #111F40;
+  --accent-foreground: #E8F4FF;
+  --destructive: #FF6B4A;
+  --destructive-foreground: #E8F4FF;
+  --border: #253D6E;
+  --input: #253D6E;
+  --ring: #4A9EFF;
 }
 
 @font-face {
@@ -118,12 +120,12 @@ html {
   background: var(--bg-primary);
 }
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(var(--accent-cyan), #0099bb);
+  background: linear-gradient(var(--accent-blue), #0077cc);
   border-radius: 6px;
   border: 2px solid var(--bg-primary);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-cyan);
+  background: var(--accent-blue);
 }
 
 @layer base {
@@ -145,11 +147,11 @@ html {
 .font-display { font-family: var(--font-display); }
 .font-mono-b { font-family: var(--font-mono); }
 
-.glow-cyan { box-shadow: var(--glow-cyan); }
+.glow-cyan { box-shadow: var(--glow-blue); }
 .glow-amber { box-shadow: var(--glow-amber); }
 
 .text-gradient-cy-am {
-  background: linear-gradient(90deg, #4fc3ff 0%, #ffb24d 100%);
+  background: linear-gradient(90deg, #4A9EFF 0%, #FFD04A 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -158,8 +160,8 @@ html {
 .scanlines {
   background-image: repeating-linear-gradient(
     0deg,
-    rgba(79, 195, 255, 0.05) 0px,
-    rgba(79, 195, 255, 0.05) 1px,
+    rgba(74, 158, 255, 0.05) 0px,
+    rgba(74, 158, 255, 0.05) 1px,
     transparent 1px,
     transparent 3px
   );
@@ -167,8 +169,8 @@ html {
 
 .grid-bg {
   background-image:
-    linear-gradient(to right, rgba(79, 195, 255, 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(79, 195, 255, 0.07) 1px, transparent 1px);
+    linear-gradient(to right, rgba(74, 158, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(74, 158, 255, 0.07) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -235,7 +237,7 @@ html {
   position: absolute;
   left: 0; bottom: -4px;
   width: 100%; height: 1px;
-  background: var(--accent-cyan);
+  background: var(--accent-blue);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform .3s ease;

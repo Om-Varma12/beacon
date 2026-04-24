@@ -53,7 +53,7 @@ export function FAQ() {
                   <motion.span
                     animate={{ rotate: isOpen ? 90 : 0 }}
                     className="font-mono-b text-lg"
-                    style={{ color: "var(--accent-cyan)" }}
+                    style={{ color: "var(--accent-blue)" }}
                   >
                     ›
                   </motion.span>

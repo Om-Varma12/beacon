@@ -29,7 +29,7 @@ export function Comparison() {
           <div className="grid grid-cols-3 border-b border-[var(--border-line)] font-mono-b text-[10px] uppercase tracking-widest">
             <div className="p-4 text-[var(--text-dim)]">Feature</div>
             <div className="p-4 text-[var(--text-secondary)]">Others</div>
-            <div className="p-4 text-[var(--accent-cyan)]" style={{ background: "rgba(0,212,255,0.06)", textShadow: "0 0 12px var(--accent-cyan)" }}>
+            <div className="p-4 text-[var(--accent-blue)]" style={{ background: "rgba(0,212,255,0.06)", textShadow: "0 0 12px var(--accent-blue)" }}>
               Beacon
             </div>
           </div>
@@ -43,7 +43,7 @@ export function Comparison() {
               <div className="p-4 text-[var(--text-secondary)]">
                 {r[1] === "—" ? <span className="text-red-400">✗</span> : r[1]}
               </div>
-              <div className="p-4 text-[var(--accent-cyan)]" style={{ background: "rgba(0,212,255,0.04)" }}>
+              <div className="p-4 text-[var(--accent-blue)]" style={{ background: "rgba(0,212,255,0.04)" }}>
                 <span className="text-emerald-400">✓</span> {r[2]}
               </div>
             </div>

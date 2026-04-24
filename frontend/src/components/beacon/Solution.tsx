@@ -2,11 +2,11 @@ import { motion } from "framer-motion";
 import { SectionHeading, SectionLabel, SectionSub } from "./SectionPrimitives";
 
 const nodes = [
-  { title: "Discover", sub: "Auto-index 200+ hackathon sources", color: "var(--accent-cyan)", icon: "🔭", sample: "47 new hackathons indexed today" },
+  { title: "Discover", sub: "Auto-index 200+ hackathon sources", color: "var(--accent-blue)", icon: "🔭", sample: "47 new hackathons indexed today" },
   { title: "Analyze", sub: "Extract themes, rules, judging criteria", color: "var(--accent-amber)", icon: "🧠", sample: "12 themes parsed · 4 weight vectors" },
   { title: "Debate", sub: "4 AI agents argue best approach", color: "#a855f7", icon: "💬", sample: "Round 3/5 · consensus 71%" },
   { title: "Decide", sub: "Judge agent picks winner with score", color: "var(--accent-green)", icon: "🏆", sample: "Verdict: 88.3 / 100" },
-  { title: "Generate", sub: "Pitch deck, docs, architecture — ready", color: "var(--accent-cyan)", icon: "🚀", sample: "Deck.pdf · arch.md · roadmap.md" },
+  { title: "Generate", sub: "Pitch deck, docs, architecture — ready", color: "var(--accent-blue)", icon: "🚀", sample: "Deck.pdf · arch.md · roadmap.md" },
 ];
 
 function Hex({ color, icon, glow }: { color: string; icon: string; glow?: boolean }) {
@@ -50,7 +50,7 @@ export function Solution() {
                   <svg width="2" height="60" className="mt-2">
                     <line
                       x1="1" y1="0" x2="1" y2="60"
-                      stroke="var(--accent-cyan)"
+                      stroke="var(--accent-blue)"
                       strokeWidth="1.5"
                       strokeDasharray="6 6"
                       className="dash-flow"

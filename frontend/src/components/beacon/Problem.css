@@ -1,0 +1,35 @@
+.glass {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.card-active {
+  border-color: rgba(249, 115, 22, 0.4);
+  background: rgba(249, 115, 22, 0.03);
+}
+
+.glow-dot {
+  box-shadow: 0 0 15px currentColor;
+}
+
+.problem-card {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.problem-card .glass {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.problem-card:hover .glass {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.problem-card.card-active .glass {
+  border-color: rgba(249, 115, 22, 0.4);
+  background: rgba(249, 115, 22, 0.03);
+}
+
+.font-display {
+  font-family: var(--font-display, 'Space Grotesk', sans-serif);
+}

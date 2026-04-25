@@ -11,7 +11,7 @@ import { HowItWorks } from "@/components/beacon/HowItWorks";
 import { Navbar } from "@/components/beacon/Navbar";
 import { ParticleField } from "@/components/beacon/ParticleField";
 import { Pricing } from "@/components/beacon/Pricing";
-import { Problem } from "@/components/beacon/Problem";
+import Problem from "@/components/beacon/Problem";
 import { Solution } from "@/components/beacon/Solution";
 import { Stats } from "@/components/beacon/Stats";
 

@@ -229,6 +229,11 @@ html {
 }
 .balance { animation: balance 4s ease-in-out infinite; transform-origin: center top; }
 
+.card-active {
+  border-color: rgba(249, 115, 22, 0.4);
+  background: rgba(249, 115, 22, 0.03);
+}
+
 .story-link {
   position: relative;
 }

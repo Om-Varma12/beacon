@@ -17,8 +17,8 @@ function ScoreLine() {
     <svg viewBox="0 0 200 100" className="h-32 w-full">
       <defs>
         <linearGradient id="lg" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#00d4ff" stopOpacity="0.5" />
-          <stop offset="1" stopColor="#00d4ff" stopOpacity="0" />
+          <stop offset="0" stopColor="#4A9EFF" stopOpacity="0.5" />
+          <stop offset="1" stopColor="#4A9EFF" stopOpacity="0" />
         </linearGradient>
       </defs>
       {[20, 40, 60, 80].map((y) => (
@@ -26,7 +26,7 @@ function ScoreLine() {
       ))}
       <polyline
         fill="none"
-        stroke="#00d4ff"
+        stroke="#4A9EFF"
         strokeWidth="2"
         points={points.map((p, i) => `${(i / (points.length - 1)) * 200},${100 - p}`).join(" ")}
       />
@@ -35,7 +35,7 @@ function ScoreLine() {
         points={`0,100 ${points.map((p, i) => `${(i / (points.length - 1)) * 200},${100 - p}`).join(" ")} 200,100`}
       />
       {points.map((p, i) => (
-        <circle key={i} cx={(i / (points.length - 1)) * 200} cy={100 - p} r="3" fill="#00d4ff" />
+        <circle key={i} cx={(i / (points.length - 1)) * 200} cy={100 - p} r="3" fill="#4A9EFF" />
       ))}
     </svg>
   );
@@ -59,7 +59,7 @@ export function Demo() {
               key={t}
               onClick={() => setTab(i)}
               className={`relative px-4 py-3 font-mono-b text-xs uppercase tracking-widest transition ${
-                tab === i ? "text-[var(--accent-cyan)]" : "text-[var(--text-dim)] hover:text-[var(--text-secondary)]"
+                tab === i ? "text-[var(--accent-blue)]" : "text-[var(--text-dim)] hover:text-[var(--text-secondary)]"
               }`}
             >
               {t}
@@ -67,7 +67,7 @@ export function Demo() {
                 <motion.span
                   layoutId="tabline"
                   className="absolute inset-x-0 -bottom-px h-0.5"
-                  style={{ background: "var(--accent-cyan)", boxShadow: "0 0 12px var(--accent-cyan)" }}
+                  style={{ background: "var(--accent-blue)", boxShadow: "0 0 12px var(--accent-blue)" }}
                 />
               )}
             </button>
@@ -100,7 +100,7 @@ export function Demo() {
                         </div>
                       </div>
                       <div className="mt-4 flex items-baseline gap-2">
-                        <span className="font-display text-2xl font-bold" style={{ color: "var(--accent-cyan)" }}>
+                        <span className="font-display text-2xl font-bold" style={{ color: "var(--accent-blue)" }}>
                           {h.prize}
                         </span>
                         <span className="font-mono-b text-xs text-[var(--text-dim)]">prize pool</span>
@@ -158,9 +158,9 @@ export function Demo() {
                         ))}
                       </div>
                     </div>
-                    <div className="rounded-xl border border-[var(--accent-cyan)]/40 p-4 text-center" style={{ boxShadow: "var(--glow-cyan)" }}>
+                    <div className="rounded-xl border border-[var(--accent-blue)]/40 p-4 text-center" style={{ boxShadow: "var(--glow-blue)" }}>
                       <div className="font-mono-b text-[10px] uppercase text-[var(--text-dim)]">Composite</div>
-                      <div className="font-display text-4xl font-extrabold" style={{ color: "var(--accent-cyan)" }}>
+                      <div className="font-display text-4xl font-extrabold" style={{ color: "var(--accent-blue)" }}>
                         88.3
                       </div>
                       <div className="font-mono-b text-[10px] text-[var(--text-dim)]">/ 100</div>
@@ -168,7 +168,7 @@ export function Demo() {
                   </div>
 
                   <div className="mt-6 grid gap-3 md:grid-cols-4">
-                    {[{ l: "Market", v: 78, c: "var(--accent-amber)" }, { l: "Uniqueness", v: 91, c: "#a855f7" }, { l: "Feasibility", v: 85, c: "var(--accent-green)" }, { l: "Composite", v: 88, c: "var(--accent-cyan)" }].map((g) => (
+                    {[{ l: "Market", v: 78, c: "var(--accent-amber)" }, { l: "Uniqueness", v: 91, c: "#a855f7" }, { l: "Feasibility", v: 85, c: "var(--accent-green)" }, { l: "Composite", v: 88, c: "var(--accent-blue)" }].map((g) => (
                       <div key={g.l}>
                         <div className="mb-1 flex justify-between font-mono-b text-[10px] text-[var(--text-dim)]">
                           <span>{g.l}</span><span>{g.v}</span>
@@ -187,7 +187,7 @@ export function Demo() {
                       </div>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {["Python", "FastAPI", "PyDriller", "LangGraph", "React"].map((t) => (
-                          <span key={t} className="rounded border border-[var(--accent-cyan)]/40 bg-[var(--accent-cyan)]/10 px-2 py-1 font-mono-b text-[10px] text-[var(--accent-cyan)]">
+                          <span key={t} className="rounded border border-[var(--accent-blue)]/40 bg-[var(--accent-blue)]/10 px-2 py-1 font-mono-b text-[10px] text-[var(--accent-blue)]">
                             {t}
                           </span>
                         ))}
@@ -209,7 +209,7 @@ export function Demo() {
                 <div className="glass rounded-2xl p-8">
                   <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
                     {[
-                      { t: "Title", c: "Predictive Engineering Intelligence", color: "var(--accent-cyan)" },
+                      { t: "Title", c: "Predictive Engineering Intelligence", color: "var(--accent-blue)" },
                       { t: "Problem", c: "CI/CD failures cost teams 23% of dev time", color: "#ef4444" },
                       { t: "Solution", c: "GNN risk prediction → preemptive alerts", color: "var(--accent-amber)" },
                       { t: "Architecture", c: "PyDriller → Graph DB → GNN → API", color: "#a855f7" },
@@ -234,9 +234,9 @@ export function Demo() {
                     <button
                       className="rounded-lg px-7 py-3 font-bold"
                       style={{
-                        background: "var(--accent-cyan)",
+                        background: "var(--accent-blue)",
                         color: "var(--bg-primary)",
-                        boxShadow: "var(--glow-cyan)",
+                        boxShadow: "var(--glow-blue)",
                       }}
                     >
                       Download Full Deck →

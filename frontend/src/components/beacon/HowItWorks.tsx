@@ -39,23 +39,23 @@ function Radar() {
         <span
           key={i}
           className="absolute inset-0 rounded-full border radar-pulse"
-          style={{ borderColor: "var(--accent-cyan)", animationDelay: `${d}s` }}
+          style={{ borderColor: "var(--accent-blue)", animationDelay: `${d}s` }}
         />
       ))}
       <span
         className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{ background: "var(--accent-cyan)", boxShadow: "var(--glow-cyan)" }}
+        style={{ background: "var(--accent-blue)", boxShadow: "var(--glow-blue)" }}
       />
     </div>
   );
 }
 function Orbit() {
-  const colors = ["var(--accent-cyan)", "var(--accent-amber)", "#a855f7", "var(--accent-green)"];
+  const colors = ["var(--accent-blue)", "var(--accent-amber)", "#a855f7", "var(--accent-green)"];
   return (
     <div className="relative h-20 w-20 spin-slow">
       <span
         className="absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full"
-        style={{ background: "var(--accent-cyan)", boxShadow: "var(--glow-cyan)" }}
+        style={{ background: "var(--accent-blue)", boxShadow: "var(--glow-blue)" }}
       />
       {colors.map((c, i) => {
         const a = (i / 4) * Math.PI * 2;
@@ -86,11 +86,11 @@ function Bars() {
           style={{
             background:
               i === 3
-                ? "var(--accent-cyan)"
+                ? "var(--accent-blue)"
                 : i === 1
                   ? "var(--accent-amber)"
                   : "var(--text-dim)",
-            boxShadow: i === 3 ? "0 0 12px var(--accent-cyan)" : undefined,
+            boxShadow: i === 3 ? "0 0 12px var(--accent-blue)" : undefined,
           }}
         />
       ))}
@@ -107,7 +107,7 @@ function Docs() {
           style={{
             left: o + 8,
             top: o + 2,
-            borderColor: "var(--accent-cyan)",
+            borderColor: "var(--accent-blue)",
             opacity: 0.5 + i * 0.2,
           }}
         />
@@ -144,7 +144,7 @@ export function HowItWorks() {
                 className="pointer-events-none absolute right-4 top-0 font-mono-b font-bold leading-none"
                 style={{
                   fontSize: "8rem",
-                  color: "var(--accent-cyan)",
+                  color: "var(--accent-blue)",
                   opacity: 0.05,
                 }}
               >

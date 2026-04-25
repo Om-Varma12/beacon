@@ -15,7 +15,7 @@ const timeline = [
   { l: "SELECTION", h: "4h", c: "#ef4444" },
   { l: "PPT", h: "6h", c: "var(--accent-amber)" },
   { l: "DOCS", h: "3h", c: "#ef4444" },
-  { l: "ACTUAL BUILDING", h: "20h", c: "var(--accent-cyan)" },
+  { l: "ACTUAL BUILDING", h: "20h", c: "var(--accent-blue)" },
 ];
 
 export function Problem() {
@@ -82,7 +82,7 @@ export function Problem() {
                 style={{
                   flex: parseInt(t.h),
                   background: t.c,
-                  opacity: t.c === "var(--accent-cyan)" ? 1 : 0.78,
+                  opacity: t.c === "var(--accent-blue)" ? 1 : 0.78,
                 }}
               >
                 <span className="font-mono-b uppercase tracking-wider">

@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Agents } from "@/components/beacon/Agents";
 import { Comparison } from "@/components/beacon/Comparison";
-import { CursorTrail } from "@/components/beacon/CursorTrail";
 import { Demo } from "@/components/beacon/Demo";
 import { FAQ } from "@/components/beacon/FAQ";
 import { Features } from "@/components/beacon/Features";
@@ -39,9 +38,10 @@ export const Route = createFileRoute("/")({
 function Index() {
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[var(--bg-primary)]">
-      <ParticleField density={70} className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-60" />
-      <div className="noise" />
-      <CursorTrail />
+      <ParticleField
+        density={70}
+        className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-60"
+      />
       <Navbar />
       <main className="relative z-10">
         <Hero />

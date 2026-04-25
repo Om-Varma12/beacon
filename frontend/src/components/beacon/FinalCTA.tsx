@@ -18,7 +18,7 @@ export function FinalCTA() {
         className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 text-center font-display font-extrabold leading-none"
         style={{
           fontSize: "clamp(8rem, 22vw, 18rem)",
-          color: "var(--accent-cyan)",
+          color: "var(--accent-blue)",
           opacity: 0.03,
           letterSpacing: "-0.04em",
         }}
@@ -67,8 +67,8 @@ export function FinalCTA() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
-          className="mx-auto mt-8 flex max-w-xl flex-col gap-3 rounded-xl border border-[var(--accent-cyan)]/30 bg-[var(--bg-card)]/70 p-2 backdrop-blur-xl sm:flex-row"
-          style={{ boxShadow: "var(--glow-cyan)" }}
+          className="mx-auto mt-8 flex max-w-xl flex-col gap-3 rounded-xl border border-[var(--accent-blue)]/30 bg-[var(--bg-card)]/70 p-2 backdrop-blur-xl sm:flex-row"
+          style={{ boxShadow: "var(--glow-blue)" }}
         >
           <input
             type="email"
@@ -81,7 +81,7 @@ export function FinalCTA() {
             type="submit"
             className="rounded-lg px-7 py-3 font-bold transition hover:scale-[1.03]"
             style={{
-              background: "var(--accent-cyan)",
+              background: "var(--accent-blue)",
               color: "var(--bg-primary)",
             }}
           >

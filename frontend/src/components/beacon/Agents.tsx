@@ -112,11 +112,11 @@ const agents: Agent[] = [
   {
     id: "judge",
     name: "JUDGE_AGENT",
-    color: "var(--accent-cyan)",
+    color: "var(--accent-blue)",
     role: "Final Arbiter ♛",
     desc: "Receives all agent scores, runs weighted consensus algorithm, and delivers a definitive ranked verdict with confidence score.",
     caps: ["Weighted scoring (0-100)", "Confidence intervals", "Tie-breaking logic"],
-    avatar: <Scales color="#00d4ff" />,
+    avatar: <Scales color="#4A9EFF" />,
     highlight: true,
     verdict: "88.3",
   },
@@ -156,7 +156,7 @@ export function Agents() {
                 a.highlight
                   ? {
                       borderColor: a.color,
-                      boxShadow: "var(--glow-cyan)",
+                      boxShadow: "var(--glow-blue)",
                     }
                   : undefined
               }
@@ -183,19 +183,19 @@ export function Agents() {
               <ul className="mt-4 space-y-1.5">
                 {a.caps.map((c) => (
                   <li key={c} className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
-                    <span style={{ color: "var(--accent-cyan)" }}>✓</span> {c}
+                    <span style={{ color: "var(--accent-blue)" }}>✓</span> {c}
                   </li>
                 ))}
               </ul>
               <div className="mt-auto pt-5">
                 {a.verdict ? (
-                  <div className="rounded-lg border border-[var(--accent-cyan)]/40 bg-[var(--accent-cyan)]/5 p-3 text-center">
+                  <div className="rounded-lg border border-[var(--accent-blue)]/40 bg-[var(--accent-blue)]/5 p-3 text-center">
                     <div className="font-mono-b text-[10px] uppercase tracking-widest text-[var(--text-dim)]">
                       Verdict
                     </div>
                     <div
                       className="font-display text-3xl font-extrabold"
-                      style={{ color: "var(--accent-cyan)" }}
+                      style={{ color: "var(--accent-blue)" }}
                     >
                       {a.verdict}
                       <span className="text-base text-[var(--text-dim)]"> / 100</span>
@@ -219,7 +219,7 @@ export function Agents() {
           <div className="ticker flex gap-12 whitespace-nowrap font-mono-b text-xs text-[var(--text-secondary)]">
             {[...ticker, ...ticker].map((t, i) => (
               <span key={i} className="flex items-center gap-2">
-                <span style={{ color: "var(--accent-cyan)" }}>●</span> {t}
+                <span style={{ color: "var(--accent-blue)" }}>●</span> {t}
               </span>
             ))}
           </div>

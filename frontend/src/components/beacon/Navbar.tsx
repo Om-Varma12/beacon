@@ -27,11 +27,7 @@ export function Navbar() {
     >
       <nav className="mx-auto flex h-full max-w-7xl items-center justify-between px-6">
         <a href="#top" className="flex items-center gap-2">
-          <span
-            className="inline-block h-2 w-2 rounded-full pulse-dot"
-            style={{ background: "var(--accent-amber)", boxShadow: "0 0 12px var(--accent-amber)" }}
-          />
-          <span className="font-display text-lg font-bold tracking-tight" style={{ color: "var(--accent-cyan)" }}>
+          <span className="font-display text-lg font-bold tracking-tight" style={{ color: "var(--accent-blue)" }}>
             BEACON
           </span>
         </a>
@@ -56,9 +52,9 @@ export function Navbar() {
           <button
             className="rounded-md px-4 py-2 text-sm font-bold transition-transform hover:scale-105"
             style={{
-              background: "var(--accent-cyan)",
+              background: "var(--accent-blue)",
               color: "var(--bg-primary)",
-              boxShadow: "var(--glow-cyan)",
+              boxShadow: "var(--glow-blue)",
             }}
           >
             Start Free

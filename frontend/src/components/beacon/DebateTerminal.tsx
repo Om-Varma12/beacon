@@ -52,7 +52,7 @@ const SCRIPT: AgentMsg[] = [
     id: "judge",
     short: "1.4s ago",
     name: "JUDGE_AGENT — VERDICT",
-    color: "var(--accent-cyan)",
+    color: "var(--accent-blue)",
     icon: "⚖",
     message: "WINNER: Predictive Engineering Intelligence.",
     scoreLabel: "Composite",
@@ -91,7 +91,7 @@ export function DebateTerminal({ compact = false }: { compact?: boolean }) {
 
   return (
     <div ref={ref} className={compact ? "" : "w-full max-w-[440px]"}>
-      <div className="glass overflow-hidden rounded-2xl glow-cyan">
+      <div className="glass overflow-hidden rounded-2xl glow-blue">
         <div className="flex items-center justify-between border-b border-[var(--border-line)] bg-[var(--bg-secondary)]/60 px-4 py-3">
           <div className="flex gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-red-500/80" />
@@ -124,10 +124,10 @@ export function DebateTerminal({ compact = false }: { compact?: boolean }) {
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.35 }}
-                    className={`rounded-xl border p-3 ${m.highlight ? "border-[var(--accent-cyan)]/60" : "border-[var(--border-line)]"}`}
+                    className={`rounded-xl border p-3 ${m.highlight ? "border-[var(--accent-blue)]/60" : "border-[var(--border-line)]"}`}
                     style={
                       m.highlight
-                        ? { background: "rgba(0,212,255,0.05)", boxShadow: "var(--glow-cyan)" }
+                        ? { background: "rgba(0,212,255,0.05)", boxShadow: "var(--glow-blue)" }
                         : { background: "rgba(10,22,40,0.6)" }
                     }
                   >
@@ -138,7 +138,7 @@ export function DebateTerminal({ compact = false }: { compact?: boolean }) {
                       >
                         {m.icon}
                       </span>
-                      <span className="font-mono-b text-[11px]" style={{ color: "var(--accent-cyan)" }}>
+                      <span className="font-mono-b text-[11px]" style={{ color: "var(--accent-blue)" }}>
                         {m.name}
                       </span>
                       <span className="ml-auto font-mono-b text-[10px] text-[var(--text-dim)]">
@@ -155,7 +155,7 @@ export function DebateTerminal({ compact = false }: { compact?: boolean }) {
                         </span>
                         <span
                           className="font-display text-3xl font-extrabold"
-                          style={{ color: "var(--accent-cyan)" }}
+                          style={{ color: "var(--accent-blue)" }}
                         >
                           {m.verdict}
                         </span>

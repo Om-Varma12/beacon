@@ -2,11 +2,11 @@ import { motion } from "framer-motion";
 import { SectionHeading, SectionLabel } from "./SectionPrimitives";
 
 const features = [
-  { t: "Multi-Agent Debate", d: "4 specialized agents argue and converge on your best idea", c: "var(--accent-cyan)", icon: "⚡" },
+  { t: "Multi-Agent Debate", d: "4 specialized agents argue and converge on your best idea", c: "var(--accent-blue)", icon: "⚡" },
   { t: "Hackathon Discovery", d: "Auto-index 200+ sources updated in real time", c: "var(--accent-amber)", icon: "📡" },
   { t: "Theme Intelligence", d: "Deep NLP analysis of problem statements and judging rubrics", c: "#a855f7", icon: "🧠" },
   { t: "Submission Generator", d: "Pitch decks, architecture docs, feature roadmaps auto-generated", c: "var(--accent-green)", icon: "📑" },
-  { t: "Template Detection", d: "Finds and fills official submission templates automatically", c: "var(--accent-cyan)", icon: "📐" },
+  { t: "Template Detection", d: "Finds and fills official submission templates automatically", c: "var(--accent-blue)", icon: "📐" },
   { t: "Judge Scoring Engine", d: "Weighted consensus algorithm with confidence scores", c: "var(--accent-amber)", icon: "⚖" },
   { t: "Idea Ranking", d: "Composite ranked list of approaches with reasoning", c: "var(--accent-green)", icon: "🏆" },
   { t: "Async Processing", d: "All 4 agents run in parallel. Results in under 90 seconds.", c: "#a855f7", icon: "⚡" },
@@ -28,7 +28,7 @@ export function Features() {
               viewport={{ once: true, margin: "-80px" }}
               transition={{ delay: i * 0.05 }}
               whileHover={{ y: -3 }}
-              className="glass group rounded-xl p-5 transition-colors hover:border-[var(--accent-cyan)]/50"
+              className="glass group rounded-xl p-5 transition-colors hover:border-[var(--accent-blue)]/50"
               style={{ ["--accent" as string]: f.c }}
             >
               <div

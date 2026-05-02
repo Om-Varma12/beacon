@@ -22,12 +22,38 @@ body {
   cursor: none;
 }
 
+/* Hide Scrollbars */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 .space-grotesk {
   font-family: 'Space Grotesk', sans-serif;
 }
 
 .jetbrains {
   font-family: 'JetBrains Mono', monospace;
+}
+
+.font-display {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Glass Effect */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Glow Dot */
+.glow-dot {
+  box-shadow: 0 0 10px currentColor;
 }
 
 /* Mosaic Background Pattern */

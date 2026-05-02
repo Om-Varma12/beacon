@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "dotenv>=0.9.9",
+    "fastapi>=0.136.1",
     "groq>=1.1.2",
     "httpx>=0.28.1",
     "ipykernel>=7.2.0",

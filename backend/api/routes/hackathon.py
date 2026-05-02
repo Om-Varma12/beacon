@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from db.database import Database
-from db import HackathonRepository
+from db.HackathonRepository import HackathonRepository
 
 router = APIRouter()
 

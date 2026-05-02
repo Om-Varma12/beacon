@@ -86,6 +86,7 @@ class HackathonRepository:
                 SELECT *
                 FROM hackathons
                 ORDER BY id DESC
+                LIMIT 1
             """
             with conn.cursor() as cur:
                 cur.execute(query)

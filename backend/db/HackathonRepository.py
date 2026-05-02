@@ -3,19 +3,21 @@ import json
 from datetime import datetime
 
 def parse_date(value):
-    """Convert ISO 8601 date string to Python date object for PostgreSQL."""
+    """Convert ISO 8601 string to Python date."""
     if not value:
         return None
+
     try:
-        # Handle formats like "2026-03-31T00:00:00+05:30" or "2026-04-22"
         dt = datetime.fromisoformat(value)
         return dt.date()
+
     except (ValueError, TypeError):
         return None
 
+
 class HackathonRepository:
     def __init__(self, db: Database):
-        self.conn = db.conn
+        self.db = db
 
     def create(self, data: dict):
         query = """
@@ -38,6 +40,7 @@ class HackathonRepository:
         """
 
         prizes = data.get("prizes")
+
         if prizes and not isinstance(prizes, str):
             prizes = json.dumps(prizes)
 
@@ -46,26 +49,54 @@ class HackathonRepository:
             data.get("title"),
             data.get("description"),
             data.get("college_name"),
-            json.dumps(data.get("team_size")),  # JSON field
+            json.dumps(data.get("team_size")),
             data.get("mode"),
             data.get("is_paid"),
             data.get("url"),
             parse_date(data.get("start_date")),
-            parse_date(data.get("submission_deadline")),  # maps → deadline
-            prizes if prizes else None,  # JSON field
+            parse_date(data.get("submission_deadline")),
+            prizes if prizes else None,
         )
+        conn = self.db.get_conn()
 
         try:
-            with self.conn.cursor() as cur:
+            with conn.cursor() as cur:
                 cur.execute(query, values)
                 result = cur.fetchone()
-                self.conn.commit()
-
-                if result:
-                    return result[0]
-                return None  # duplicate
+                
+            conn.commit()
+            
+            if result:
+                return result[0]
+            return None
 
         except Exception as e:
-            self.conn.rollback()
+            conn.rollback()
             print(f"DB error: {e}")
             return None
+
+        finally:
+            self.db.release_conn(conn)
+            
+            
+    def get_all(self):
+        conn = self.db.get_conn()
+        try:
+            query = """
+                SELECT *
+                FROM hackathons
+                ORDER BY id DESC
+            """
+            with conn.cursor() as cur:
+                cur.execute(query)
+                rows = cur.fetchall()
+                columns = [desc[0] for desc in cur.description]
+                
+                result = [
+                    dict(zip(columns, row))
+                    for row in rows
+                ]
+                return result
+
+        finally:
+            self.db.release_conn(conn)

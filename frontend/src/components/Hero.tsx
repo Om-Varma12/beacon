@@ -5,11 +5,6 @@ export function Hero() {
         <div className="grid grid-cols-2 gap-16 items-center">
           {/* Left: Typography */}
           <div>
-            {/* Status Badge */}
-            <div className="inline-flex items-center gap-2 border border-forest/20 px-3 py-1 mb-8">
-              <div className="w-2 h-2 bg-forest" />
-              <span className="jetbrains text-[10px] uppercase tracking-widest">System Active</span>
-            </div>
 
             <h1 className="space-grotesk text-8xl font-bold tracking-tight leading-[0.9] text-forest mb-8">
               Autonomous<br />

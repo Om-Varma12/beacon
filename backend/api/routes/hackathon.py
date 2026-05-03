@@ -1,6 +1,9 @@
+import asyncio
 from fastapi import APIRouter, Depends
+
 from db.database import Database
 from db.HackathonRepository import HackathonRepository
+from scraper.mainScaper import scraperHackathons
 
 router = APIRouter()
 
@@ -25,3 +28,18 @@ def get_hackathons(
         "success": True,
         "data": data
     }
+
+@router.post('/scrape-hackathons')
+async def scrape_hackathon():
+    try:
+        await scraperHackathons()
+
+        return {
+            "success": True
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }

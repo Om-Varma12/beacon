@@ -1,27 +1,13 @@
-import './App.css'
-import { Navbar } from './components/Navbar'
-import { Hero } from './components/Hero'
-import { StickyContentSwitch } from './components/ProblemSection'
-import { BentoGrid } from './components/BentoGrid'
-import { FormCTA } from './components/FormCTA'
-import { Testimonials } from './components/Testimonials'
-import { Footer } from './components/Footer'
+import Navigation from './components/Navigation';
+import HackathonTable from './components/HackathonTable';
 
 function App() {
   return (
-    <>
-      <div className="mosaic-bg" />
-      <div className="relative z-10 h-screen overflow-y-auto overflow-x-hidden snap-y snap-mandatory">
-        <Navbar />
-        <Hero />
-        <StickyContentSwitch />
-        <BentoGrid />
-        <FormCTA />
-        <Testimonials />
-        <Footer />
-      </div>
-    </>
-  )
+    <div className="min-h-screen bg-mosaic">
+      <Navigation />
+      <HackathonTable />
+    </div>
+  );
 }
 
-export default App
+export default App;

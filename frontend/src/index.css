@@ -1,6 +1,7 @@
-@import "tailwindcss";
 @import url('https://api.fontshare.com/v2/css?f[]=space-grotesk@700&f[]=general-sans@400,500,600&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
 
 :root {
   --paper: #F7F7F5;
@@ -9,21 +10,6 @@
   --coral: #FF8C69;
   --mint: #9EFFBF;
   --gold: #F4D35E;
-
-  --font-base: 18px;
-  --font-h1: clamp(3.5rem, 7vw, 7.5rem);
-  --font-h2: 24px;
-  --font-h3: 20px;
-  --font-code: 15px;
-}
-
-* {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-*::-webkit-scrollbar {
-  display: none;
 }
 
 body {
@@ -38,6 +24,15 @@ body {
   -ms-user-select: none;
 }
 
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
 .font-mono {
   font-family: 'JetBrains Mono', monospace;
 }
@@ -46,13 +41,10 @@ body {
   font-family: 'Space Grotesk', sans-serif;
 }
 
-@keyframes entrance {
-  0% { opacity: 0; transform: translateY(40px); }
-  100% { opacity: 1; transform: translateY(0); }
-}
-
-.animate-entrance {
-  animation: entrance 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+.mosaic-bg {
+  background-color: var(--paper);
+  background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='200' height='200' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect x='200' width='200' height='100' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect x='200' y='100' width='100' height='100' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect x='300' y='100' width='100' height='300' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect y='200' width='300' height='200' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3C/svg%3E");
+  background-attachment: fixed;
 }
 
 .hackathon-row {

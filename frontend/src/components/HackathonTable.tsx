@@ -136,8 +136,8 @@ export default function HackathonTable() {
     <main className="pt-24 px-6 lg:px-16 pb-16">
       <div className="mb-12">
         <div className="flex items-center space-x-4 mb-4">
-          <div className="w-[1px] h-8 bg-forest"></div>
-          <p className="font-mono text-sm tracking-[0.1em] uppercase">INTELLIGENT DISCOVERY ENGINE</p>
+          <div className="w-px h-8 bg-forest"></div>
+          <p className="font-mono text-sm tracking-0.1em uppercase">INTELLIGENT DISCOVERY ENGINE</p>
         </div>
         <h1 className="font-display text-6xl text-forest tracking-tight mb-4">Active Hackathons</h1>
         <p className="text-grid/60 text-lg">Discover and participate in top-tier competitive programming events worldwide</p>

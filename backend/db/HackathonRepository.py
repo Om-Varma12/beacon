@@ -79,25 +79,29 @@ class HackathonRepository:
             self.db.release_conn(conn)
             
             
-    def get_all(self):
+    def get_all(self, limit=20, offset=0, sort_by="start_date", order="asc"):
         conn = self.db.get_conn()
         try:
-            query = """
+            # ⚠️ whitelist to prevent SQL injection
+            allowed_fields = ["start_date", "deadline", "id"]
+            if sort_by not in allowed_fields:
+                sort_by = "start_date"
+
+            order = "ASC" if order.lower() == "asc" else "DESC"
+
+            query = f"""
                 SELECT *
                 FROM hackathons
-                ORDER BY id DESC
-                LIMIT 1
+                ORDER BY {sort_by} {order}
+                LIMIT %s OFFSET %s
             """
+
             with conn.cursor() as cur:
-                cur.execute(query)
+                cur.execute(query, (limit, offset))
                 rows = cur.fetchall()
                 columns = [desc[0] for desc in cur.description]
-                
-                result = [
-                    dict(zip(columns, row))
-                    for row in rows
-                ]
-                return result
+
+                return [dict(zip(columns, row)) for row in rows]
 
         finally:
             self.db.release_conn(conn)

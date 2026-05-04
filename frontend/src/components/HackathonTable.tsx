@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import { useNavbar } from '../context/NavbarContext';
 import HackathonRow from './HackathonRow';
@@ -36,7 +37,7 @@ interface HackathonsResponse {
   error?: string;
 }
 
-const itemsPerPage = 8;
+const itemsPerPage = 10;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
 const sortParamMap: Record<string, { sort_by: string; order: 'asc' | 'desc' }> = {
@@ -178,14 +179,17 @@ function mapToFrontendHackathon(item: BackendHackathon): Hackathon {
 
 export default function HackathonTable() {
   const { isNavbarVisible } = useNavbar();
-  const [currentPage, setCurrentPage] = useState(1);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('deadline');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [hackathons, setHackathons] = useState<Hackathon[]>([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const currentPage = Math.max(1, Number(searchParams.get('page') || 1));
 
   const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
 
@@ -225,7 +229,11 @@ export default function HackathonTable() {
 
         const mapped = (result.data ?? []).map(mapToFrontendHackathon);
         setHackathons(mapped);
-        setTotalCount(result.count ?? mapped.length);
+        const returned = result.count ?? mapped.length;
+        // If backend returns page-sized results, assume there may be more pages
+        setHasMore(returned === itemsPerPage);
+        // Construct a conservative total count (known items so far)
+        setTotalCount((currentPage - 1) * itemsPerPage + returned);
       } catch (fetchError) {
         if (abortController.signal.aborted) {
           return;
@@ -259,7 +267,15 @@ export default function HackathonTable() {
   }, [hackathons, searchQuery]);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    const nextParams = new URLSearchParams(searchParams.toString());
+
+    if (page <= 1) {
+      nextParams.delete('page');
+    } else {
+      nextParams.set('page', String(page));
+    }
+
+    setSearchParams(nextParams, { replace: false });
   };
 
   const isEmpty = !loading && !error && displayedHackathons.length === 0;
@@ -267,10 +283,6 @@ export default function HackathonTable() {
   return (
     <main className="pt-24 px-6 lg:px-16 pb-16">
       <div className="mb-12">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="w-px h-8 bg-forest"></div>
-          <p className="font-mono text-sm tracking-0.1em uppercase">INTELLIGENT DISCOVERY ENGINE</p>
-        </div>
         <h1 className="font-display text-6xl text-forest tracking-tight mb-4">Active Hackathons</h1>
         <p className="text-grid/60 text-lg">Discover and participate in top-tier competitive programming events worldwide</p>
       </div>
@@ -284,24 +296,24 @@ export default function HackathonTable() {
               placeholder="Search hackathons by name, college, theme..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white border border-grid/20 pl-12 pr-4 py-3 text-sm font-mono focus:outline-none focus:border-forest transition-colors rounded-none"
-            />
+              className="w-full h-12 bg-white border border-grid/20 pl-12 pr-4 text-sm font-mono focus:outline-none focus:border-forest transition-colors rounded-none"
+/>
           </div>
           <div className="relative">
             <select
               value={sortBy}
               onChange={(e) => {
                 setSortBy(e.target.value);
-                setCurrentPage(1);
               }}
-              className="bg-white border border-grid/20 px-6 py-3 text-[10px] font-mono tracking-widest uppercase focus:outline-none focus:border-forest transition-colors rounded-none appearance-none pr-10"
-            >
+              className="h-12 bg-white border border-grid/20 px-6 text-[12px] font-mono tracking-widest uppercase focus:outline-none focus:border-forest transition-colors rounded-none appearance-none pr-10"
+>
               <option value="deadline">SORT BY: DEADLINE</option>
               <option value="prizes">SORT BY: PRIZES (HIGH TO LOW)</option>
               <option value="newest">SORT BY: NEWEST</option>
               <option value="teamSize">SORT BY: TEAM SIZE</option>
             </select>
             <Icon icon="lucide:chevron-down" className="absolute right-3 top-1/2 -translate-y-1/2 text-grid/60 text-sm pointer-events-none" />
+            
           </div>
         </div>
       </div>
@@ -375,7 +387,7 @@ export default function HackathonTable() {
                     <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">DEADLINE</span>
                   </div>
                   <div className="col-span-1">
-                    <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">PRIZES</span>
+                    <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">FEES</span>
                   </div>
                   <div className="col-span-1">
                     <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">ACTION</span>
@@ -399,7 +411,7 @@ export default function HackathonTable() {
         </>
       )}
 
-      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} hasMore={hasMore} />
     </main>
   );
 }

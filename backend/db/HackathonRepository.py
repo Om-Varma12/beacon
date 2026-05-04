@@ -79,7 +79,7 @@ class HackathonRepository:
             self.db.release_conn(conn)
             
             
-    def get_all(self, limit=20, offset=0, sort_by="start_date", order="asc"):
+    def get_all(self, limit=10, offset=0, sort_by="start_date", order="asc"):
         conn = self.db.get_conn()
         try:
             # ⚠️ whitelist to prevent SQL injection
@@ -92,6 +92,7 @@ class HackathonRepository:
             query = f"""
                 SELECT *
                 FROM hackathons
+                WHERE deadline IS NULL OR deadline >= CURRENT_DATE
                 ORDER BY {sort_by} {order}
                 LIMIT %s OFFSET %s
             """

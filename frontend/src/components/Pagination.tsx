@@ -4,9 +4,11 @@ interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  // Optional: if the backend doesn't provide a full total count, caller can provide hasMore
+  hasMore?: boolean;
 }
 
-export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
+export default function Pagination({ currentPage, totalPages, onPageChange, hasMore = false }: PaginationProps) {
   const pages = [];
   const showEllipsis = totalPages > 5;
 
@@ -27,7 +29,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
   return (
     <div className="mt-8 flex items-center justify-between">
       <button
-        onClick={() => onPageChange(currentPage - 1)}
+        onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
         className="px-6 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase rounded-sm hover:bg-forest hover:text-white transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
@@ -57,7 +59,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
 
       <button
         onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
+        disabled={!(hasMore || currentPage < totalPages)}
         className="px-6 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase rounded-sm hover:bg-forest hover:text-white transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span>NEXT</span>

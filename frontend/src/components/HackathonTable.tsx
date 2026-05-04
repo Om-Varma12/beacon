@@ -37,7 +37,7 @@ interface HackathonsResponse {
   error?: string;
 }
 
-const itemsPerPage = 10;
+const itemsPerPage = 12;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
 const sortParamMap: Record<string, { sort_by: string; order: 'asc' | 'desc' }> = {
@@ -312,8 +312,7 @@ export default function HackathonTable() {
               <option value="newest">SORT BY: NEWEST</option>
               <option value="teamSize">SORT BY: TEAM SIZE</option>
             </select>
-            <Icon icon="lucide:chevron-down" className="absolute right-3 top-1/2 -translate-y-1/2 text-grid/60 text-sm pointer-events-none" />
-            
+            <Icon icon="lucide:chevron-down" className="absolute right-3 top-1/2 -translate-y-1/2 text-grid/60 text-sm pointer-events-none" /> 
           </div>
         </div>
       </div>
@@ -371,7 +370,7 @@ export default function HackathonTable() {
             <>
               <div className={`bg-(--paper) border-b border-(--grid) py-4 px-8 sticky z-40 transition-all duration-300 ${isNavbarVisible ? 'top-16' : 'top-0'}`}>
                 <div className="grid grid-cols-12 gap-4 items-center">
-                  <div className="col-span-4">
+                  <div className="col-span-5">
                     <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">HACKATHON</span>
                   </div>
                   <div className="col-span-2">
@@ -383,7 +382,7 @@ export default function HackathonTable() {
                   <div className="col-span-1">
                     <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">MODE</span>
                   </div>
-                  <div className="col-span-2">
+                  <div className="col-span-1">
                     <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">DEADLINE</span>
                   </div>
                   <div className="col-span-1">

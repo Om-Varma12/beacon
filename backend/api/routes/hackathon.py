@@ -20,7 +20,7 @@ def get_repo():
 @router.get("")
 def get_hackathons(
     repo: HackathonRepository = Depends(get_repo),
-    limit: int = Query(10, le=100),
+    limit: int = Query(12, le=100),
     offset: int = 0,
     sort_by: str = "start_date",
     order: str = "asc"

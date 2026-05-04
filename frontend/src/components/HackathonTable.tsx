@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useNavbar } from '../context/NavbarContext';
 import HackathonRow from './HackathonRow';
 import Pagination from './Pagination';
 
@@ -110,6 +111,7 @@ const mockHackathons: Hackathon[] = [
 ];
 
 export default function HackathonTable() {
+  const { isNavbarVisible } = useNavbar();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('deadline');
@@ -131,7 +133,7 @@ export default function HackathonTable() {
   };
 
   return (
-    <main className="pt-32 px-6 lg:px-16 pb-16">
+    <main className="pt-24 px-6 lg:px-16 pb-16">
       <div className="mb-12">
         <div className="flex items-center space-x-4 mb-4">
           <div className="w-[1px] h-8 bg-forest"></div>
@@ -194,13 +196,9 @@ export default function HackathonTable() {
         <p className="font-mono text-[10px] tracking-widest uppercase text-grid/60">
           SHOWING 1-{Math.min(itemsPerPage, mockHackathons.length)} OF {mockHackathons.length} HACKATHONS
         </p>
-        <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 bg-mint"></div>
-          <span className="font-mono text-[10px] tracking-widest uppercase">LIVE SYNC: ACTIVE</span>
-        </div>
       </div>
 
-      <div className="bg-paper border-b border-grid/20 py-4 px-8 sticky top-24 z-40">
+      <div className={`bg-(--paper) border-b border-(--grid) py-4 px-8 sticky z-40 transition-all duration-300 ${isNavbarVisible ? 'top-16' : 'top-0'}`}>
         <div className="grid grid-cols-12 gap-4 items-center">
           <div className="col-span-4">
             <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">HACKATHON</span>

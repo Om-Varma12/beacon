@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Icon } from '@iconify/react';
+import Navigation from './components/Navigation';
+import HackathonTable from './components/HackathonTable';
+import { NavbarProvider } from './context/NavbarContext';
 
 function App() {
   const [searchQuery, setSearchQuery] = useState('');

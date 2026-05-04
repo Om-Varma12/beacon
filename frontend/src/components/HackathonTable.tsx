@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useNavbar } from '../context/NavbarContext';
 import HackathonRow from './HackathonRow';
+import HackathonCard from './HackathonCard';
 import Pagination from './Pagination';
 
 interface Hackathon {
@@ -115,21 +116,13 @@ export default function HackathonTable() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('deadline');
-  const [activeFilters, setActiveFilters] = useState<string[]>(['MODE: REMOTE', 'PRIZES: $50K+']);
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   const itemsPerPage = 8;
   const totalPages = Math.ceil(mockHackathons.length / itemsPerPage);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-  };
-
-  const removeFilter = (filter: string) => {
-    setActiveFilters(activeFilters.filter(f => f !== filter));
-  };
-
-  const addFilter = () => {
-    setActiveFilters([...activeFilters, 'NEW FILTER']);
   };
 
   return (
@@ -169,66 +162,77 @@ export default function HackathonTable() {
             <Icon icon="lucide:chevron-down" className="absolute right-3 top-1/2 -translate-y-1/2 text-grid/60 text-sm pointer-events-none" />
           </div>
         </div>
-
-        <div className="flex items-center space-x-3">
-          <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">ACTIVE FILTERS:</span>
-          {activeFilters.map((filter) => (
-            <div
-              key={filter}
-              onClick={() => removeFilter(filter)}
-              className="filter-tag px-3 py-1 border border-grid/20 flex items-center space-x-2 rounded-sm cursor-pointer"
-            >
-              <span className="font-mono text-[9px] tracking-wider uppercase">{filter}</span>
-              <Icon icon="lucide:x" className="text-xs" />
-            </div>
-          ))}
-          <button
-            onClick={addFilter}
-            className="px-3 py-1 border border-forest/30 flex items-center space-x-2 rounded-sm hover:bg-forest hover:text-white transition-all"
-          >
-            <Icon icon="lucide:plus" className="text-xs" />
-            <span className="font-mono text-[9px] tracking-wider uppercase">ADD FILTER</span>
-          </button>
-        </div>
       </div>
 
       <div className="mb-6 flex items-center justify-between">
         <p className="font-mono text-[10px] tracking-widest uppercase text-grid/60">
           SHOWING 1-{Math.min(itemsPerPage, mockHackathons.length)} OF {mockHackathons.length} HACKATHONS
         </p>
-      </div>
-
-      <div className={`bg-(--paper) border-b border-(--grid) py-4 px-8 sticky z-40 transition-all duration-300 ${isNavbarVisible ? 'top-16' : 'top-0'}`}>
-        <div className="grid grid-cols-12 gap-4 items-center">
-          <div className="col-span-4">
-            <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">HACKATHON</span>
-          </div>
-          <div className="col-span-2">
-            <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">COLLEGE</span>
-          </div>
-          <div className="col-span-1">
-            <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">TEAM</span>
-          </div>
-          <div className="col-span-1">
-            <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">MODE</span>
-          </div>
-          <div className="col-span-2">
-            <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">DEADLINE</span>
-          </div>
-          <div className="col-span-1">
-            <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">PRIZES</span>
-          </div>
-          <div className="col-span-1">
-            <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">ACTION</span>
-          </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setViewMode('list')}
+            className={`w-8 h-8 border flex items-center justify-center rounded-sm transition-colors ${
+              viewMode === 'list'
+                ? 'border-forest bg-forest text-gold'
+                : 'border-grid/30 hover:bg-forest hover:text-gold hover:border-forest'
+            }`}
+          >
+            <Icon icon="lucide:layout-list" className="text-sm" />
+          </button>
+          <button
+            onClick={() => setViewMode('grid')}
+            className={`w-8 h-8 border flex items-center justify-center rounded-sm transition-colors ${
+              viewMode === 'grid'
+                ? 'border-forest bg-forest text-gold'
+                : 'border-grid/30 hover:bg-forest hover:text-gold hover:border-forest'
+            }`}
+          >
+            <Icon icon="lucide:layout-grid" className="text-sm" />
+          </button>
         </div>
       </div>
 
-      <div className="bg-white border border-grid/10">
-        {mockHackathons.map((hackathon) => (
-          <HackathonRow key={hackathon.id} {...hackathon} />
-        ))}
-      </div>
+      {viewMode === 'list' ? (
+        <>
+          <div className={`bg-(--paper) border-b border-(--grid) py-4 px-8 sticky z-40 transition-all duration-300 ${isNavbarVisible ? 'top-16' : 'top-0'}`}>
+            <div className="grid grid-cols-12 gap-4 items-center">
+              <div className="col-span-4">
+                <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">HACKATHON</span>
+              </div>
+              <div className="col-span-2">
+                <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">COLLEGE</span>
+              </div>
+              <div className="col-span-1">
+                <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">TEAM</span>
+              </div>
+              <div className="col-span-1">
+                <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">MODE</span>
+              </div>
+              <div className="col-span-2">
+                <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">DEADLINE</span>
+              </div>
+              <div className="col-span-1">
+                <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">PRIZES</span>
+              </div>
+              <div className="col-span-1">
+                <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">ACTION</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white border border-grid/10">
+            {mockHackathons.map((hackathon) => (
+              <HackathonRow key={hackathon.id} {...hackathon} />
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {mockHackathons.map((hackathon) => (
+            <HackathonCard key={hackathon.id} {...hackathon} />
+          ))}
+        </div>
+      )}
 
       <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
     </main>

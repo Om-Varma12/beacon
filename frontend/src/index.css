@@ -77,6 +77,23 @@ body {
   color: white;
 }
 
+.card-hover {
+  transition: all 0.3s ease-out;
+}
+
+.card-hover:hover {
+  border-color: var(--forest);
+  background-color: rgba(26, 60, 43, 0.02);
+  cursor: pointer;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .mode-badge-remote {
   background-color: rgba(158, 255, 191, 0.15);
   color: #1A3C2B;

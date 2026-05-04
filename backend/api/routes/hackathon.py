@@ -17,24 +17,7 @@ def get_repo():
     return HackathonRepository(db)
 
 
-@router.post("/scrape-hackathons")
-async def scrape_hackathon(background_tasks: BackgroundTasks):
-    try:
-        background_tasks.add_task(scraperHackathons)
-
-        return {
-            "success": True,
-            "message": "Scraping started in background"
-        }
-
-    except Exception as e:
-        return {
-            "success": False,
-            "error": str(e)
-        }
-        
-        
-@router.get("/")
+@router.get("")
 def get_hackathons(
     repo: HackathonRepository = Depends(get_repo),
     limit: int = Query(20, le=100),
@@ -49,6 +32,22 @@ def get_hackathons(
             "success": True,
             "count": len(data),
             "data": data
+        }
+
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
+
+@router.post("/scrape-hackathons")
+async def scrape_hackathon(background_tasks: BackgroundTasks):
+    try:
+        background_tasks.add_task(scraperHackathons)
+
+        return {
+            "success": True,
+            "message": "Scraping started in background"
         }
 
     except Exception as e:

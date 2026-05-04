@@ -74,7 +74,7 @@ export default function HackathonCard({
       <h3 className="font-display text-base font-bold text-forest mb-2 leading-tight">{name}</h3>
       <p className="text-xs text-grid/80 mb-4 line-clamp-2">{description}</p>
 
-      <div className="w-full h-[1px] bg-grid/15 mb-4"></div>
+      <div className="w-full h-1px bg-grid/15 mb-4"></div>
 
       <div className="flex items-center divide-x divide-grid/20">
         <div className="pr-3 flex items-center gap-1.5">

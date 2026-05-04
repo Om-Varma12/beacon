@@ -34,7 +34,7 @@ export default function HackathonRow({
       <div className="grid grid-cols-12 gap-4 items-center">
         <div className="col-span-4">
           <h3 className="font-display font-bold text-lg text-forest mb-1">{name}</h3>
-          <p className="font-mono text-[10px] text-grid/60 leading-relaxed">{description}</p>
+          <p className="font-mono text-[10px] text-grid/60 leading-relaxed line-clamp-2">{description}</p>
         </div>
         <div className="col-span-2">
           <p className="font-mono text-xs text-grid/60">{college}</p>

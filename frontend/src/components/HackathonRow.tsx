@@ -32,7 +32,7 @@ export default function HackathonRow({
   return (
     <div className="hackathon-row border-b border-grid/20 py-5 px-8">
       <div className="grid grid-cols-12 gap-4 items-center">
-        <div className="col-span-4">
+        <div className="col-span-5">
           <h3 className="font-display font-bold text-lg text-forest mb-1">{name}</h3>
           <p className="font-mono text-[10px] text-grid/60 leading-relaxed line-clamp-2">{description}</p>
         </div>
@@ -50,7 +50,7 @@ export default function HackathonRow({
             {mode.charAt(0).toUpperCase() + mode.slice(1)}
           </span>
         </div>
-        <div className="col-span-2">
+        <div className="col-span-1">
           <p className={`font-mono text-xs ${isUrgent ? 'deadline-urgent' : 'deadline-normal'}`}>{deadline}</p>
           <p className={`font-mono text-[9px] mt-0.5 ${isUrgent ? 'text-coral' : 'text-grid/40'} uppercase`}>
             {daysLeft} LEFT {isUrgent && '⚠'}

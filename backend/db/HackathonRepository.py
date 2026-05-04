@@ -79,7 +79,7 @@ class HackathonRepository:
             self.db.release_conn(conn)
             
             
-    def get_all(self, limit=10, offset=0, sort_by="start_date", order="asc"):
+    def get_all(self, limit=12, offset=0, sort_by="start_date", order="asc"):
         conn = self.db.get_conn()
         try:
             # ⚠️ whitelist to prevent SQL injection

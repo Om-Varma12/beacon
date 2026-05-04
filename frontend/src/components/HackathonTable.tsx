@@ -37,7 +37,7 @@ interface HackathonsResponse {
   error?: string;
 }
 
-const itemsPerPage = 10;
+const itemsPerPage = 12;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
 const sortParamMap: Record<string, { sort_by: string; order: 'asc' | 'desc' }> = {

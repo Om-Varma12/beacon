@@ -42,9 +42,15 @@ body {
 }
 
 .mosaic-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   background-color: var(--paper);
   background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='200' height='200' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect x='200' width='200' height='100' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect x='200' y='100' width='100' height='100' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect x='300' y='100' width='100' height='300' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect y='200' width='300' height='200' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3C/svg%3E");
   background-attachment: fixed;
+  background-repeat: repeat;
+  background-size: auto;
 }
 
 .hackathon-row {
@@ -85,6 +91,13 @@ body {
   border-color: var(--forest);
   background-color: rgba(26, 60, 43, 0.02);
   cursor: pointer;
+}
+
+.hackathon-card-bg {
+  background-color: #fffdf5;
+  background-image: linear-gradient(rgba(255, 254, 249, 0.98), rgba(255, 254, 249, 0.98)), url("data:image/svg+xml,%3Csvg width='320' height='320' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='160' height='160' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.08'/%3E%3Crect x='160' width='160' height='80' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.08'/%3E%3Crect x='160' y='80' width='80' height='80' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.08'/%3E%3Crect x='240' y='80' width='80' height='240' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.08'/%3E%3Crect y='160' width='240' height='160' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.08'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 320px 320px;
 }
 
 .line-clamp-2 {

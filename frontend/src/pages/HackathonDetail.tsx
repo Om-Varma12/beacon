@@ -376,7 +376,7 @@ export default function HackathonDetail() {
         </button>
 
         <div className="bg-white border border-grid/20 p-8 mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
             <div className="flex-1">
               <h1 className="font-display text-4xl lg:text-5xl text-forest tracking-tight mb-2">
                 {hackathonData.title}
@@ -412,7 +412,7 @@ export default function HackathonDetail() {
               </div>
             </div>
 
-            <div className="lg:w-80">
+            <div className="lg:w-100">
               <div className="bg-paper border border-grid/20 p-5">
                 <div className="flex items-center space-x-2 mb-3">
                   <Icon icon="lucide:brain-circuit" className="text-forest" />

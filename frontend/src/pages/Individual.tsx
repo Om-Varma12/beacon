@@ -367,7 +367,7 @@ export default function Individual() {
       <div className="mosaic-bg" />
       <div className="relative z-10 pt-24 px-6 lg:px-16 pb-16">
         <div className="bg-white border border-grid/20 p-8 mb-6">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6 mb-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-6">
             <div className="flex-1">
               <h1 className="font-display text-4xl lg:text-5xl text-forest tracking-tight mb-2">
                 {hackathonData.title}
@@ -387,7 +387,7 @@ export default function Individual() {
                 </span>
                 <span className={`px-3 py-1 font-mono text-[10px] tracking-widest uppercase border ${
                   hackathonData.fee === 'free' ? 'mode-badge-remote' : 'mode-badge-offline'
-                }`}>
+                }`}>  
                   {hackathonData.fee.toUpperCase()}
                 </span>
               </div>
@@ -403,7 +403,7 @@ export default function Individual() {
               </div>
             </div>
 
-            <div className="lg:w-80">
+            <div className="lg:w-100">
               <div className="bg-paper border border-grid/20 p-5">
                 <div className="flex items-center space-x-2 mb-3">
                   <Icon icon="lucide:brain-circuit" className="text-forest" />

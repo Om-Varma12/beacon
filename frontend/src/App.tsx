@@ -1,5 +1,7 @@
+import { Routes, Route } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import HackathonTable from './components/HackathonTable';
+import Individual from './pages/Individual';
 import { NavbarProvider } from './context/NavbarContext';
 
 function App() {
@@ -8,7 +10,10 @@ function App() {
       <div className="mosaic-bg" />
       <div className="relative z-10 min-h-screen bg-mosaic text-forest">
         <Navigation />
-        <HackathonTable />
+        <Routes>
+          <Route path="/" element={<HackathonTable />} />
+          <Route path="/individual" element={<Individual />} />
+        </Routes>
       </div>
     </NavbarProvider>
   );

@@ -106,3 +106,29 @@ class HackathonRepository:
 
         finally:
             self.db.release_conn(conn)
+            
+        
+    def get_by_id(self, hackathon_id: int):
+        conn = self.db.get_conn()
+
+        try:
+            with conn.cursor() as cur:
+
+                cur.execute("""
+                    SELECT *
+                    FROM hackathons
+                    WHERE id = %s
+                    LIMIT 1
+                """, (hackathon_id,))
+
+                row = cur.fetchone()
+
+                if not row:
+                    return None
+
+                columns = [desc[0] for desc in cur.description]
+
+                return dict(zip(columns, row))
+
+        finally:
+            self.db.release_conn(conn)

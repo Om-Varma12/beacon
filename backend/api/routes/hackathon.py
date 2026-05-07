@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, Query, BackgroundTasks
 
 from db.database import Database
 from db.HackathonRepository import HackathonRepository
+from db.ProblemRepository import ProblemRepository
+from db.HackathonService import HackathonService
 from backend.scraper.main_scraper import scraperHackathons
 
 router = APIRouter()
@@ -16,6 +18,16 @@ db = Database()
 def get_repo():
     return HackathonRepository(db)
 
+def get_service():
+
+    hackathon_repo = HackathonRepository(db)
+
+    problem_repo = ProblemRepository(db)
+
+    return HackathonService(
+        hackathon_repo,
+        problem_repo,
+    )
 
 @router.get("")
 def get_hackathons(
@@ -39,6 +51,7 @@ def get_hackathons(
             "success": False,
             "error": str(e)
         }
+        
 
 @router.post("/scrape-hackathons")
 async def scrape_hackathon(background_tasks: BackgroundTasks):
@@ -55,3 +68,16 @@ async def scrape_hackathon(background_tasks: BackgroundTasks):
             "success": False,
             "error": str(e)
         }
+
+
+@router.get("/{hackathon_id}")
+def get_hackathon(
+    hackathon_id: int,
+    service: HackathonService = Depends(get_service)
+):
+    data = service.get_hackathon_detail(hackathon_id)
+
+    return {
+        "success": True,
+        "data": data
+    }

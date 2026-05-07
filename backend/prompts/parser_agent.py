@@ -19,6 +19,7 @@ Your job is to:
    - hackathon track
    - defined use-case
    - structured challenge requirement
+   - open innovation theme
 
 2. Extract EVERY valid problem statement separately.
 
@@ -29,7 +30,14 @@ Your job is to:
    - a detailed description
 
 5. If NO clear problem statements exist:
-   - return null
+   - check whether the hackathon is explicitly marked as:
+     - Open Innovation
+     - Open Theme
+     - Build Anything
+     - No Restrictions
+     - Domain Agnostic
+   - if yes, return a single "Open Innovation" problem statement
+   - otherwise return null
 
 --------------------------------------------------
 VERY IMPORTANT RULES
@@ -46,6 +54,36 @@ VERY IMPORTANT RULES
    etc.
    then return EACH track as a separate item.
 6. Generic themes/domains alone do NOT count as problem statements.
+7. HOWEVER:
+   - If the hackathon explicitly promotes unrestricted innovation
+   - and allows participants to build across multiple domains freely
+   - then classify it as "Open Innovation"
+
+--------------------------------------------------
+OPEN INNOVATION HANDLING
+--------------------------------------------------
+
+If the description explicitly indicates that participants can freely build across domains/topics without a fixed challenge, return:
+
+{
+  "problem_statements": [
+    {
+      "heading": "Open Innovation",
+      "description": "Participants are free to build innovative solutions across multiple domains without a fixed problem statement."
+    }
+  ]
+}
+
+Examples that qualify:
+- "Open Innovation"
+- "Build Anything"
+- "Open Theme"
+- "Choose any domain"
+- "Freedom to innovate"
+- "Solve any real-world problem"
+- "Build across AI, Web, Cybersecurity, Sustainability, etc."
+
+ONLY do this when the description clearly indicates unrestricted innovation.
 
 --------------------------------------------------
 WHAT COUNTS AS A VALID PROBLEM STATEMENT
@@ -56,11 +94,6 @@ Examples of VALID problem statements:
 - "Build a system that helps visually impaired users navigate indoor spaces."
 - "Develop an AI solution to reduce food wastage in restaurants."
 - "Create a platform for improving rural healthcare accessibility."
-
-These are valid because they define:
-- a real challenge
-- a target area
-- an expected solution direction
 
 Hackathon tracks/challenges also count if they contain a clearly defined task.
 
@@ -74,11 +107,8 @@ These are NOT valid problem statements:
 - "Innovate using AI."
 - "Build impactful solutions."
 - "Create something amazing."
-- "Solve real-world problems."
 
-These are generic themes/promotional statements.
-
-Return null if only such content exists.
+These are generic promotional statements.
 
 --------------------------------------------------
 OUTPUT FORMAT
@@ -123,8 +153,7 @@ EXTRACTION GUIDELINES
 3. Keep descriptions informative and structured.
 4. Do not unnecessarily merge unrelated tasks.
 5. Heading should be concise and meaningful.
-6. Description should contain the actual challenge/problem.
-7. Ignore:
+6. Ignore:
    - sponsor information
    - prizes
    - deadlines
@@ -142,7 +171,7 @@ If multiple explicit tracks/problem statements are present:
 
 CASE 2:
 If the description contains only themes/domains:
-- Return null.
+- Return null unless it explicitly qualifies as Open Innovation.
 
 CASE 3:
 If a challenge is partially defined but still meaningful:
@@ -159,4 +188,6 @@ FINAL INSTRUCTION
 Faithfully extract all explicitly defined challenges separately.
 
 Do NOT combine multiple tracks into one problem statement.
+
+If the hackathon explicitly supports unrestricted multi-domain innovation without fixed challenges, return "Open Innovation".
 """

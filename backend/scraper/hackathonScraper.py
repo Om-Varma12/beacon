@@ -47,8 +47,10 @@ async def scrape_hackathon_detail(client, hackathon):
         # enrich description + parse HTML
         detailed_description = competition.get("details")
 
-        if detailed_description:
-            hackathon["description"] = parse_description(detailed_description)
+        # if detailed_description:
+        #     hackathon["description"] = parse_description(detailed_description)
+        
+        hackathon["description"] = detailed_description
 
         # enrich dates
         if competition.get("start_date") and not hackathon.get("start_date"):

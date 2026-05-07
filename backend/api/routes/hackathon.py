@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, Query, BackgroundTasks
 
 from db.database import Database
 from db.HackathonRepository import HackathonRepository
-from scraper.mainScaper import scraperHackathons
+from backend.scraper.main_scraper import scraperHackathons
 
 router = APIRouter()
 

@@ -113,11 +113,10 @@ class HackathonRepository:
 
         try:
             with conn.cursor() as cur:
-
                 cur.execute("""
                     SELECT *
                     FROM hackathons
-                    WHERE id = %s
+                    WHERE external_id = %s
                     LIMIT 1
                 """, (hackathon_id,))
 

@@ -21,7 +21,7 @@ async def scraperHackathons(concurrency: int = 10):
     problem_repo = ProblemRepository(db)
 
     llm = LLM()
-    parser_agent = ProblemStatementParserAgent(llm)
+    prbm_parser = ProblemStatementParserAgent(llm)
 
     semaphore = asyncio.Semaphore(concurrency)
 
@@ -38,7 +38,7 @@ async def scraperHackathons(concurrency: int = 10):
                     # Run parser agent on the enriched description
                     description = enriched.get("description") or ""
                     try:
-                        parsed = await parser_agent.run(description)
+                        parsed = await prbm_parser.run(description)
                     except Exception as e:
                         print(f"Parser agent error for {enriched.get('external_id')}: {e}")
                         parsed = None

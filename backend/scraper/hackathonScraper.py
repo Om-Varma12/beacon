@@ -36,6 +36,18 @@ def parse_description(raw_html: str) -> str:
     return text
 
 
+def parse_prize(raw_prize: dict) -> dict:
+    return [
+        {
+            "rank": prize.get("rank"),
+            "cash": prize.get("cash"),
+            "currencyCode": prize.get("currencyCode"),
+            "others": prize.get("others"),
+        }
+        for prize in raw_prize
+    ]
+
+
 async def scrape_hackathon_detail(client, hackathon):
     try:
         url = DETAIL_URL + str(hackathon["external_id"])

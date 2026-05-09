@@ -5,7 +5,7 @@ from db.database import Database
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
 from db.HackathonService import HackathonService
-from backend.scraper.main_scraper import scraperHackathons
+from scraper.main_scraper import scraperHackathons
 
 router = APIRouter()
 
@@ -18,8 +18,8 @@ db = Database()
 def get_repo():
     return HackathonRepository(db)
 
-def get_service():
 
+def get_service():
     hackathon_repo = HackathonRepository(db)
 
     problem_repo = ProblemRepository(db)
@@ -28,6 +28,7 @@ def get_service():
         hackathon_repo,
         problem_repo,
     )
+
 
 @router.get("")
 def get_hackathons(

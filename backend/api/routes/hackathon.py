@@ -1,5 +1,5 @@
 import asyncio
-from fastapi import APIRouter, Depends, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, Query, BackgroundTasks, HTTPException
 
 from db.database import Database
 from db.HackathonRepository import HackathonRepository
@@ -77,6 +77,9 @@ def get_hackathon(
     service: HackathonService = Depends(get_service)
 ):
     data = service.get_hackathon_detail(hackathon_id)
+
+    if data is None:
+        raise HTTPException(status_code=404, detail="Hackathon not found")
 
     return {
         "success": True,

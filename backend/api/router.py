@@ -8,3 +8,9 @@ router.include_router(
     prefix="/hackathons",
     tags=["Hackathon"]
 )
+
+router.include_router(
+    hackathon.router,
+    prefix="/hackathon",
+    tags=["Hackathon"]
+)

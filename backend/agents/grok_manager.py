@@ -33,4 +33,4 @@ class GroqKeyManager:
             (self.current_index + 1)
             % len(self.keys)
         )
-        print(f"🔄 Rotated to API key #{self.current_index + 1}")
+        print(f"Rotated to API key #{self.current_index + 1}")

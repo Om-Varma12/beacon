@@ -37,9 +37,9 @@ class LLM():
 
             except Exception as e:
                 error = str(e).lower()
-                print(f"⚠️ Groq error: {e}")
+                print(f"Groq error: {e}")
                 if("rate limit" in error or "quota" in error or "429" in error):
-                    print("🔄 Switching API key...")
+                    print("Switching API key...")
                     self.key_manager.rotate_key()
                     self.client = Groq(
                         api_key=self.key_manager.get_key()

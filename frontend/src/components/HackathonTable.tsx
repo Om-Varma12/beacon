@@ -21,6 +21,7 @@ interface Hackathon {
 
 interface BackendHackathon {
   id?: number | string;
+  external_id?: number | string | null;
   title?: string;
   description?: string;
   college_name?: string;
@@ -162,9 +163,10 @@ function normalizeMode(mode: string | undefined): 'remote' | 'hybrid' | 'offline
 
 function mapToFrontendHackathon(item: BackendHackathon): Hackathon {
   const { daysLeft, isUrgent } = getDaysLeft(item.deadline);
+  const navigationId = item.external_id ?? item.id ?? crypto.randomUUID();
 
   return {
-    id: String(item.id ?? crypto.randomUUID()),
+    id: String(navigationId),
     name: item.title ?? 'Untitled Hackathon',
     description: item.description ?? 'No description available.',
     college: item.college_name ?? 'Unknown College',

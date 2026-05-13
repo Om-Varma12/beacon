@@ -211,13 +211,6 @@ function buildViewModel(data: BackendHackathon | null): HackathonViewModel | nul
     description: data.description ?? 'No description available.',
     themes,
     problemStatements,
-    rules: [
-      'Teams must follow the published team size limit',
-      'Projects should be original work',
-      'Final submission should include source code and documentation',
-      'Use of third-party libraries is allowed if properly attributed',
-      'Follow the hackathon rules published on the source listing',
-    ],
     judgingCriteria: [
       'Innovation and Creativity',
       'Technical Complexity',
@@ -484,6 +477,8 @@ export default function HackathonDetailApi() {
   };
 
   const lastSaved = new Date();
+  const sectionHeadingClass = 'font-display text-lg lg:text-xl text-forest tracking-tight mb-3';
+  const labelHeadingClass = 'font-display text-base lg:text-lg text-forest tracking-tight mb-2';
 
   return (
     <div className="min-h-screen bg-mosaic">
@@ -625,15 +620,15 @@ export default function HackathonDetailApi() {
                   <h2 className="font-display text-2xl text-forest mb-4">Hackathon Info</h2>
 
                   <div className="mb-6">
-                    <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-2">Description</h3>
+                    <h3 className={sectionHeadingClass}>Description</h3>
                     <div
-                      className="text-sm text-grid/80 leading-relaxed space-y-4 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:leading-relaxed"
+                      className="text-sm text-grid/80 leading-relaxed space-y-4 [&_strong]:inline [&_strong]:font-semibold [&_strong]:text-grid/90 [&_strong]:mr-1 [&_p]:mb-3 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:space-y-2 [&_ol]:list-decimal [&_ol]:pl-6 [&_li]:leading-relaxed [&_li>strong]:block [&_li>strong]:mb-1"
                       dangerouslySetInnerHTML={{ __html: viewModel.description }}
                     />
                   </div>
 
                   <div className="mb-6">
-                    <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-3">Themes</h3>
+                    <h3 className={sectionHeadingClass}>Themes</h3>
                     <div className="flex flex-wrap gap-2">
                       {viewModel.themes.map((theme) => (
                         <span
@@ -647,31 +642,19 @@ export default function HackathonDetailApi() {
                   </div>
 
                   <div className="mb-6">
-                    <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-3">Problem Statements</h3>
+                    <h3 className={sectionHeadingClass}>Problem Statements</h3>
                     <div className="space-y-3">
                       {viewModel.problemStatements.map((ps) => (
                         <div key={ps.id} className="border border-grid/20 p-4 hover:border-forest transition-colors">
-                          <h4 className="font-display text-lg text-forest mb-2">{ps.title}</h4>
-                          <p className="text-sm text-grid/70">{ps.description}</p>
+                          <h4 className={labelHeadingClass}>{ps.title}</h4>
+                          <p className="text-sm text-grid/80 leading-relaxed">{ps.description}</p>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   <div className="mb-6">
-                    <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-3">Rules</h3>
-                    <ul className="space-y-2">
-                      {viewModel.rules.map((rule, index) => (
-                        <li key={index} className="flex items-start space-x-2 text-sm text-grid/80">
-                          <span className="text-forest mt-1">•</span>
-                          <span>{rule}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="mb-6">
-                    <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-3">Judging Criteria</h3>
+                    <h3 className={sectionHeadingClass}>Judging Criteria</h3>
                     <div className="flex flex-wrap gap-2">
                       {viewModel.judgingCriteria.map((criteria) => (
                         <span
@@ -685,10 +668,10 @@ export default function HackathonDetailApi() {
                   </div>
 
                   <div>
-                    <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-3">Submission Requirements</h3>
+                    <h3 className={sectionHeadingClass}>Submission Requirements</h3>
                     <ul className="space-y-2">
                       {viewModel.submissionRequirements.map((req, index) => (
-                        <li key={index} className="flex items-start space-x-2 text-sm text-grid/80">
+                        <li key={index} className="flex items-start space-x-2 text-sm text-grid/80 leading-relaxed">
                           <Icon icon="lucide:check" className="text-mint text-sm mt-0.5" />
                           <span>{req}</span>
                         </li>
@@ -849,20 +832,20 @@ export default function HackathonDetailApi() {
 
                   <div className="space-y-6">
                     <div>
-                      <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-2">Problem Statement</h3>
-                      <p className="text-sm text-grid/80">{selectedIdea.problemStatement}</p>
+                      <h3 className={sectionHeadingClass}>Problem Statement</h3>
+                      <p className="text-sm text-grid/80 leading-relaxed">{selectedIdea.problemStatement}</p>
                     </div>
 
                     <div>
-                      <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-2">Solution Description</h3>
-                      <p className="text-sm text-grid/80">{selectedIdea.solutionDescription}</p>
+                      <h3 className={sectionHeadingClass}>Solution Description</h3>
+                      <p className="text-sm text-grid/80 leading-relaxed">{selectedIdea.solutionDescription}</p>
                     </div>
 
                     <div>
-                      <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-3">Key Features</h3>
+                      <h3 className={sectionHeadingClass}>Key Features</h3>
                       <ul className="space-y-2">
                         {selectedIdea.keyFeatures.map((feature, index) => (
-                          <li key={index} className="flex items-start space-x-2 text-sm text-grid/80">
+                          <li key={index} className="flex items-start space-x-2 text-sm text-grid/80 leading-relaxed">
                             <Icon icon="lucide:check-circle" className="text-mint text-sm mt-0.5" />
                             <span>{feature}</span>
                           </li>
@@ -871,17 +854,17 @@ export default function HackathonDetailApi() {
                     </div>
 
                     <div>
-                      <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-2">Target Users</h3>
-                      <p className="text-sm text-grid/80">{selectedIdea.targetUsers}</p>
+                      <h3 className={sectionHeadingClass}>Target Users</h3>
+                      <p className="text-sm text-grid/80 leading-relaxed">{selectedIdea.targetUsers}</p>
                     </div>
 
                     <div>
-                      <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-2">Why This Idea Wins</h3>
-                      <p className="text-sm text-grid/80">{selectedIdea.whyThisWins}</p>
+                      <h3 className={sectionHeadingClass}>Why This Idea Wins</h3>
+                      <p className="text-sm text-grid/80 leading-relaxed">{selectedIdea.whyThisWins}</p>
                     </div>
 
                     <div>
-                      <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-4">Evaluation Breakdown</h3>
+                      <h3 className={sectionHeadingClass}>Evaluation Breakdown</h3>
                       <div className="space-y-3">
                         {Object.entries(selectedIdea.evaluation).map(([key, value]) => (
                           <div key={key}>
@@ -901,17 +884,17 @@ export default function HackathonDetailApi() {
                     </div>
 
                     <div>
-                      <h3 className="font-mono text-xs tracking-widest uppercase text-grid/60 mb-3">Alternative Ideas</h3>
+                      <h3 className={sectionHeadingClass}>Alternative Ideas</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {selectedIdea.alternatives.map((alt, index) => (
                           <div key={index} className="border border-grid/20 p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-display text-lg text-forest">{alt.title}</h4>
+                              <h4 className={labelHeadingClass}>{alt.title}</h4>
                               <span className="px-2 py-1 bg-paper border border-grid/20 font-mono text-[10px]">
                                 {alt.score}
                               </span>
                             </div>
-                            <p className="text-sm text-grid/70">{alt.summary}</p>
+                            <p className="text-sm text-grid/80 leading-relaxed">{alt.summary}</p>
                           </div>
                         ))}
                       </div>
@@ -930,11 +913,11 @@ export default function HackathonDetailApi() {
                           }`}>
                             {step.completed ? <Icon icon="lucide:check" /> : step.day}
                           </div>
-                          <h3 className="font-display text-lg text-forest">Day {step.day}: {step.title}</h3>
+                          <h3 className={labelHeadingClass}>Day {step.day}: {step.title}</h3>
                         </div>
                         <ul className="space-y-2 ml-11">
                           {step.tasks.map((task, index) => (
-                            <li key={index} className="flex items-start space-x-2 text-sm text-grid/80">
+                            <li key={index} className="flex items-start space-x-2 text-sm text-grid/80 leading-relaxed">
                               <Icon icon="lucide:circle" className="text-[8px] mt-1.5 text-grid/40" />
                               <span>{task}</span>
                             </li>

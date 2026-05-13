@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 
 interface HackathonCardProps {
+  id: string;
   name: string;
   description: string;
   college: string;
@@ -23,6 +25,7 @@ export default function HackathonCard({
   isUrgent = false,
   prize,
 }: HackathonCardProps) {
+  const navigate = useNavigate();
   const getModeBadgeClass = (mode: string) => {
     const classes = {
       remote: 'mode-badge-remote',
@@ -80,6 +83,14 @@ export default function HackathonCard({
           <span className="font-mono text-[9px] text-grid/80">{formatDate(deadline)}</span>
         </div>
       </div>
+
+      <button
+        type="button"
+        onClick={() => navigate(`/hackathon/${id}`)}
+        className="mt-4 w-full border border-grid/30 py-2 font-mono text-[10px] tracking-widest uppercase rounded-sm hover:bg-forest hover:text-white transition-all"
+      >
+        View
+      </button>
     </div>
   );
 }

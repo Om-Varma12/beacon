@@ -1,6 +1,8 @@
+import { useNavigate } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 
 interface HackathonRowProps {
+  id: string;
   name: string;
   description: string;
   college: string;
@@ -13,6 +15,7 @@ interface HackathonRowProps {
 }
 
 export default function HackathonRow({
+  id,
   name,
   description,
   college,
@@ -23,6 +26,7 @@ export default function HackathonRow({
   isUrgent = false,
   prize,
 }: HackathonRowProps) {
+  const navigate = useNavigate();
   const modeBadgeClass = {
     remote: 'mode-badge-remote',
     hybrid: 'mode-badge-hybrid',
@@ -60,7 +64,11 @@ export default function HackathonRow({
           <p className="font-display font-bold text-sm text-gold">{prize}</p>
         </div>
         <div className="col-span-1">
-          <button className="action-btn w-full border border-grid/30 py-2 font-mono text-[10px] tracking-widest uppercase rounded-sm">
+          <button
+            type="button"
+            onClick={() => navigate(`/hackathon/${id}`)}
+            className="action-btn w-full border border-grid/30 py-2 font-mono text-[10px] tracking-widest uppercase rounded-sm"
+          >
             VIEW
           </button>
         </div>

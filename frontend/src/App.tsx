@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import HackathonTable from './components/HackathonTable';
 import Individual from './pages/Individual';
+import HackathonDetailApi from './pages/HackathonDetailApi';
 import { NavbarProvider } from './context/NavbarContext';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HackathonTable />} />
           <Route path="/individual" element={<Individual />} />
+          <Route path="/hackathon/:id" element={<HackathonDetailApi />} />
         </Routes>
       </div>
     </NavbarProvider>

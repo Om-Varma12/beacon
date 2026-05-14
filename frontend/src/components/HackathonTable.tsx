@@ -129,6 +129,28 @@ function parsePrize(value: unknown): string {
   return String(value);
 }
 
+function stripHtml(value: string): string {
+  if (typeof window === 'undefined') {
+    return value.replace(/<[^>]*>/g, ' ');
+  }
+
+  const parser = new DOMParser();
+  const document = parser.parseFromString(value, 'text/html');
+  return document.body.textContent ?? '';
+}
+
+function buildDescriptionPreview(value: string): string {
+  const plainText = stripHtml(value)
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!plainText) {
+    return 'No description available.';
+  }
+
+  return plainText.length > 180 ? `${plainText.slice(0, 180).trimEnd()}…` : plainText;
+}
+
 function formatDeadline(deadline: string | undefined): string {
   if (!deadline) return 'TBD';
   const date = new Date(deadline);
@@ -171,11 +193,12 @@ function normalizeMode(mode: string | undefined): 'remote' | 'hybrid' | 'offline
 function mapToFrontendHackathon(item: BackendHackathon): Hackathon {
   const { daysLeft, isUrgent } = getDaysLeft(item.deadline);
   const navigationId = item.external_id ?? item.id ?? crypto.randomUUID();
+  const descriptionSource = item.description ?? 'No description available.';
 
   return {
     id: String(navigationId),
     name: item.title ?? 'Untitled Hackathon',
-    description: item.description ?? 'No description available.',
+    description: buildDescriptionPreview(descriptionSource),
     college: item.college_name ?? 'Unknown College',
     teamSize: parseTeamSize(item.team_size),
     mode: normalizeMode(item.mode),

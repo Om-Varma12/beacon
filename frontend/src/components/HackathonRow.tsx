@@ -66,7 +66,7 @@ export default function HackathonRow({
         <div className="col-span-1">
           <button
             type="button"
-            onClick={() => navigate(`/hackathon/${id}`)}
+            onClick={() => navigate(`/hackathons/${id}`)}
             className="action-btn w-full border border-grid/30 py-2 font-mono text-[10px] tracking-widest uppercase rounded-sm"
           >
             VIEW

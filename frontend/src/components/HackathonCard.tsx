@@ -86,7 +86,7 @@ export default function HackathonCard({
 
       <button
         type="button"
-        onClick={() => navigate(`/hackathon/${id}`)}
+        onClick={() => navigate(`/hackathons/${id}`)}
         className="mt-4 w-full border border-grid/30 py-2 font-mono text-[10px] tracking-widest uppercase rounded-sm hover:bg-forest hover:text-white transition-all"
       >
         View

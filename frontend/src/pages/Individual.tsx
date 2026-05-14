@@ -459,10 +459,11 @@ export default function Individual() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-4 font-mono text-[10px] tracking-widest uppercase transition-all relative ${
+                aria-current={activeTab === tab.id ? 'true' : 'false'}
+                className={`px-6 py-4 font-mono text-[10px] tracking-widest uppercase transition-all relative flex items-center gap-2 border-b-2 ${
                   activeTab === tab.id
-                    ? 'text-forest'
-                    : 'text-grid/60 hover:text-forest'
+                    ? 'bg-(--forest) text-(--paper) border-(--forest)'
+                    : 'text-grid/60 border-transparent hover:text-forest hover:border-grid/40'
                 }`}
               >
                 {tab.label}

@@ -73,7 +73,7 @@ async def scrape_hackathon_detail(client, hackathon):
 
         # enrich prizes
         if competition.get("prizes"):
-            hackathon["prizes"] = competition["prizes"]
+            hackathon["prizes"] = parse_prize(competition["prizes"])
 
         return hackathon
 

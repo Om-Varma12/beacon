@@ -13,8 +13,9 @@ function App() {
         <Navigation />
         <Routes>
           <Route path="/" element={<HackathonTable />} />
+          <Route path="/hackathons" element={<HackathonTable />} />
           <Route path="/individual" element={<Individual />} />
-          <Route path="/hackathon/:id" element={<HackathonDetailApi />} />
+          <Route path="/hackathons/:id" element={<HackathonDetailApi />} />
         </Routes>
       </div>
     </NavbarProvider>

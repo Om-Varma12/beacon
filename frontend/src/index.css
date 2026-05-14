@@ -18,10 +18,6 @@ body {
   color: var(--forest);
   margin: 0;
   padding: 0;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
 }
 
 * {
@@ -131,4 +127,22 @@ body {
 
 .deadline-normal {
   color: var(--forest);
+}
+
+.prize-card {
+  transition: all 0.3s ease-out;
+  border-radius: 0;
+}
+
+.prize-card:hover {
+  background-color: #FAFAF9 !important;
+  border-color: rgba(58, 58, 56, 0.4) !important;
+}
+
+.prize-card:hover .accent-bar {
+  filter: brightness(1.1);
+}
+
+.accent-bar {
+  transition: filter 0.3s ease-out;
 }

@@ -13,8 +13,10 @@ class HackathonService:
 
         if not hackathon:
             return None
+        
+        print(hackathon)
 
-        problems = self.problem_repo.get_by_hackathon_id(hackathon_id)
+        problems = self.problem_repo.get_by_hackathon_id(hackathon['id'])
 
         hackathon["problem_statements"] = problems
 

@@ -18,6 +18,13 @@ interface ResourceItem {
   content?: string;
 }
 
+interface Prize {
+  rank: number;
+  amount: string;
+  currency: string;
+  includes?: string;
+}
+
 interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -43,6 +50,7 @@ interface HackathonViewModel {
   rules: string[];
   judgingCriteria: string[];
   submissionRequirements: string[];
+  prizes: Prize[];
   resources: ResourceItem[];
 }
 
@@ -200,17 +208,45 @@ function buildViewModel(data: BackendHackathon | null): HackathonViewModel | nul
     ? problemStatements.map((problem) => problem.title)
     : [data.college_name ?? 'General Innovation'];
 
+  const prizes: Prize[] = [
+    {
+      rank: 1,
+      amount: '₹8,000',
+      currency: 'INR',
+      includes: 'Cash Prize + RCB 2026 Men\'s Official Jersey',
+    },
+    {
+      rank: 2,
+      amount: '₹4,000',
+      currency: 'INR',
+    },
+    {
+      rank: 3,
+      amount: '₹2,000',
+      currency: 'INR',
+      includes: 'Merchandise Pack',
+    },
+  ];
+
   return {
     id: String(data.id),
     title: data.title ?? 'Untitled Hackathon',
     organizer: data.college_name ?? 'Unknown organizer',
     deadline: data.deadline ?? '',
+    unstopLink: data.url ?? '',
     mode: normalizeMode(data.mode),
     teamSize,
     fee: data.is_paid ? 'paid' : 'free',
     description: data.description ?? 'No description available.',
     themes,
     problemStatements,
+    rules: [
+      'Teams must follow the published team size limit',
+      'Projects should be original work',
+      'Final submission should include source code and documentation',
+      'Use of third-party libraries is allowed if properly attributed',
+      'Follow the hackathon rules published on the source listing',
+    ],
     judgingCriteria: [
       'Innovation and Creativity',
       'Technical Complexity',
@@ -225,6 +261,7 @@ function buildViewModel(data: BackendHackathon | null): HackathonViewModel | nul
       'README with setup instructions',
       'Any requested attachments from the source listing',
     ],
+    prizes,
     resources: [
       { type: 'link', name: 'Original Hackathon Link', url: data.url ?? '#' },
       { type: 'doc', name: 'Listing Metadata', url: '#', content: JSON.stringify(data, null, 2) },
@@ -379,7 +416,7 @@ export default function HackathonDetailApi() {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/hackathon/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/hackathons/${id}`, {
           signal: abortController.signal,
         });
 
@@ -580,13 +617,15 @@ export default function HackathonDetailApi() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-4 font-mono text-[10px] tracking-widest uppercase transition-all relative ${
+                aria-current={activeTab === tab.id ? 'true' : 'false'}
+                className={`px-6 py-4 font-mono text-[10px] tracking-widest uppercase transition-all relative flex items-center gap-2 border-b-2 ${
                   activeTab === tab.id
-                    ? 'text-forest'
-                    : 'text-grid/60 hover:text-forest'
+                    ? 'bg-(--forest) text-(--paper) border-(--forest)'
+                    : 'text-grid/60 border-transparent hover:text-forest hover:border-grid/40'
                 }`}
               >
-                {tab.label}
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="inline sm:hidden">{tab.label}</span>
                 {activeTab === tab.id && (
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-forest" />
                 )}
@@ -628,20 +667,6 @@ export default function HackathonDetailApi() {
                   </div>
 
                   <div className="mb-6">
-                    <h3 className={sectionHeadingClass}>Themes</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {viewModel.themes.map((theme) => (
-                        <span
-                          key={theme}
-                          className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all cursor-pointer"
-                        >
-                          {theme}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
                     <h3 className={sectionHeadingClass}>Problem Statements</h3>
                     <div className="space-y-3">
                       {viewModel.problemStatements.map((ps) => (
@@ -652,31 +677,39 @@ export default function HackathonDetailApi() {
                       ))}
                     </div>
                   </div>
+                </section>
 
-                  <div className="mb-6">
-                    <h3 className={sectionHeadingClass}>Judging Criteria</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {viewModel.judgingCriteria.map((criteria) => (
-                        <span
-                          key={criteria}
-                          className="px-3 py-1 bg-paper border border-grid/20 font-mono text-[10px] tracking-wider uppercase"
-                        >
-                          {criteria}
-                        </span>
-                      ))}
-                    </div>
+                <section className="bg-white border border-grid/20 p-6">
+                  <h2 className="font-display text-2xl text-forest mb-4">Prize Pool</h2>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {viewModel?.prizes.map((prize) => (
+                      <div key={prize.rank} className="border border-grid/20 p-4 hover:border-forest transition-colors">
+                        <div className="flex justify-between items-center mb-3">
+                          <span className="font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-forest">
+                            {prize.rank === 1 ? '1st Prize' : prize.rank === 2 ? '2nd Prize' : '3rd Prize'}
+                          </span>
+                          <span className="font-mono text-[9px] uppercase text-grid/60">{prize.currency}</span>
+                        </div>
+
+                        <div className="py-2">
+                          <h3 className="font-display text-4xl font-bold text-forest tracking-tighter">{prize.amount}</h3>
+                        </div>
+
+                        {prize.includes && (
+                          <div className="pt-3">
+                            <p className="font-mono text-[9px] tracking-[0.1em] uppercase text-grid/50 mb-2">INCLUDES</p>
+                            <p className="text-[13px] text-forest leading-relaxed">{prize.includes}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
 
-                  <div>
-                    <h3 className={sectionHeadingClass}>Submission Requirements</h3>
-                    <ul className="space-y-2">
-                      {viewModel.submissionRequirements.map((req, index) => (
-                        <li key={index} className="flex items-start space-x-2 text-sm text-grid/80 leading-relaxed">
-                          <Icon icon="lucide:check" className="text-mint text-sm mt-0.5" />
-                          <span>{req}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  <div className="mt-8">
+                    <p className="font-mono text-[9px] text-grid/40 tracking-widest uppercase">
+                      * ALL PRIZES ARE SUBJECT TO TERMS AND CONDITIONS DEFINED BY THE ORGANIZER
+                    </p>
                   </div>
                 </section>
 

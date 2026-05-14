@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useNavbar } from '../context/NavbarContext';
@@ -134,6 +135,10 @@ interface Round {
   judgeFeedback: string;
   penalties: string[];
   ranking: number[];
+}
+
+interface HackathonQueryResult {
+  hackathon: BackendHackathon;
 }
 
 type TabType = 'overview' | 'analysis' | 'final-idea' | 'assets' | 'chat';
@@ -320,7 +325,6 @@ export default function HackathonDetailApi() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isNavbarVisible } = useNavbar();
-  const [hackathon, setHackathon] = useState<BackendHackathon | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -333,9 +337,29 @@ export default function HackathonDetailApi() {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isAnalysisRunning, setIsAnalysisRunning] = useState(false);
-  const [selectedIdea, setSelectedIdea] = useState<FinalIdea | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const hackathonQuery = useQuery<HackathonQueryResult, Error>({
+    queryKey: ['hackathon', id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE_URL}/hackathons/${id}`);
+
+      if (response.status === 404) {
+        throw new Error('Hackathon not found.');
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch hackathon: ${response.status}`);
+      }
+
+      const result = (await response.json()) as HackathonResponse;
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error ?? 'Backend returned no hackathon data');
+      }
+
+      return { hackathon: result.data };
+    },
+  });
 
   const [aiAnalysis] = useState({
     recommendedTheme: {
@@ -415,6 +439,8 @@ export default function HackathonDetailApi() {
     } satisfies FinalIdea,
   });
 
+  const selectedIdea = aiAnalysis.finalIdea;
+
   const executionPlan = [
     {
       day: 1,
@@ -448,72 +474,12 @@ export default function HackathonDetailApi() {
     },
   ];
 
-  useEffect(() => {
-    const abortController = new AbortController();
-
-    async function fetchHackathon() {
-      setLoading(true);
-      setError(null);
-
-      if (!id) {
-        setHackathon(null);
-        setError('Missing hackathon id.');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/hackathons/${id}`, {
-          signal: abortController.signal,
-        });
-
-        if (response.status === 404) {
-          setHackathon(null);
-          setError('Hackathon not found.');
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch hackathon: ${response.status}`);
-        }
-
-        const result = (await response.json()) as HackathonResponse;
-
-        if (!result.success || !result.data) {
-          throw new Error(result.error ?? 'Backend returned no hackathon data');
-        }
-
-        setHackathon(result.data);
-      } catch (fetchError) {
-        if (abortController.signal.aborted) {
-          return;
-        }
-
-        const message = fetchError instanceof Error ? fetchError.message : 'Unexpected error while loading hackathon';
-        setError(message);
-        setHackathon(null);
-      } finally {
-        if (!abortController.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    fetchHackathon();
-
-    return () => abortController.abort();
-  }, [id]);
+  const hackathon = hackathonQuery.data?.hackathon ?? null;
+  const loading = hackathonQuery.isPending;
+  const error = hackathonQuery.error?.message ?? null;
 
   const viewModel = useMemo(() => buildViewModel(hackathon), [hackathon]);
   const daysLeft = useMemo(() => getDaysUntil(viewModel?.deadline), [viewModel?.deadline]);
-
-  useEffect(() => {
-    if (!viewModel) {
-      return;
-    }
-
-    setSelectedIdea(aiAnalysis.finalIdea);
-  }, [aiAnalysis.finalIdea, viewModel]);
 
   const tabs = [
     { id: 'overview' as TabType, label: 'Overview' },

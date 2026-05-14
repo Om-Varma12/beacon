@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
 import { useNavbar } from '../context/NavbarContext';
@@ -36,6 +37,12 @@ interface HackathonsResponse {
   data: BackendHackathon[];
   count: number;
   error?: string;
+}
+
+interface HackathonListQueryResult {
+  hackathons: Hackathon[];
+  totalCount: number;
+  hasMore: boolean;
 }
 
 const itemsPerPage = 12;
@@ -122,6 +129,28 @@ function parsePrize(value: unknown): string {
   return String(value);
 }
 
+function stripHtml(value: string): string {
+  if (typeof window === 'undefined') {
+    return value.replace(/<[^>]*>/g, ' ');
+  }
+
+  const parser = new DOMParser();
+  const document = parser.parseFromString(value, 'text/html');
+  return document.body.textContent ?? '';
+}
+
+function buildDescriptionPreview(value: string): string {
+  const plainText = stripHtml(value)
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!plainText) {
+    return 'No description available.';
+  }
+
+  return plainText.length > 180 ? `${plainText.slice(0, 180).trimEnd()}…` : plainText;
+}
+
 function formatDeadline(deadline: string | undefined): string {
   if (!deadline) return 'TBD';
   const date = new Date(deadline);
@@ -164,11 +193,12 @@ function normalizeMode(mode: string | undefined): 'remote' | 'hybrid' | 'offline
 function mapToFrontendHackathon(item: BackendHackathon): Hackathon {
   const { daysLeft, isUrgent } = getDaysLeft(item.deadline);
   const navigationId = item.external_id ?? item.id ?? crypto.randomUUID();
+  const descriptionSource = item.description ?? 'No description available.';
 
   return {
     id: String(navigationId),
     name: item.title ?? 'Untitled Hackathon',
-    description: item.description ?? 'No description available.',
+    description: buildDescriptionPreview(descriptionSource),
     college: item.college_name ?? 'Unknown College',
     teamSize: parseTeamSize(item.team_size),
     mode: normalizeMode(item.mode),
@@ -185,23 +215,11 @@ export default function HackathonTable() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('deadline');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
-  const [hackathons, setHackathons] = useState<Hackathon[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const currentPage = Math.max(1, Number(searchParams.get('page') || 1));
-
-  const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
-
-  useEffect(() => {
-    const abortController = new AbortController();
-
-    async function fetchHackathons() {
-      setLoading(true);
-      setError(null);
-
+  const queryResult = useQuery<HackathonListQueryResult, Error>({
+    queryKey: ['hackathons', currentPage, sortBy],
+    queryFn: async () => {
       const offset = (currentPage - 1) * itemsPerPage;
       const sortConfig = sortParamMap[sortBy] ?? sortParamMap.deadline;
       const query = new URLSearchParams({
@@ -214,48 +232,38 @@ export default function HackathonTable() {
       const primaryUrl = `${API_BASE_URL}/hackathons?${query.toString()}`;
       const fallbackUrl = `${API_BASE_URL}/hackathon/?${query.toString()}`;
 
-      try {
-        let response = await fetch(primaryUrl, { signal: abortController.signal });
-        if (!response.ok && response.status === 404) {
-          response = await fetch(fallbackUrl, { signal: abortController.signal });
-        }
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch hackathons: ${response.status}`);
-        }
-
-        const result = (await response.json()) as HackathonsResponse;
-        if (!result.success) {
-          throw new Error(result.error ?? 'Backend returned unsuccessful response');
-        }
-
-        const mapped = (result.data ?? []).map(mapToFrontendHackathon);
-        setHackathons(mapped);
-        const returned = result.count ?? mapped.length;
-        // If backend returns page-sized results, assume there may be more pages
-        setHasMore(returned === itemsPerPage);
-        // Construct a conservative total count (known items so far)
-        setTotalCount((currentPage - 1) * itemsPerPage + returned);
-      } catch (fetchError) {
-        if (abortController.signal.aborted) {
-          return;
-        }
-
-        const message = fetchError instanceof Error ? fetchError.message : 'Unexpected error while fetching hackathons';
-        setError(message);
-        setHackathons([]);
-        setTotalCount(0);
-      } finally {
-        if (!abortController.signal.aborted) {
-          setLoading(false);
-        }
+      let response = await fetch(primaryUrl);
+      if (!response.ok && response.status === 404) {
+        response = await fetch(fallbackUrl);
       }
-    }
 
-    fetchHackathons();
+      if (!response.ok) {
+        throw new Error(`Failed to fetch hackathons: ${response.status}`);
+      }
 
-    return () => abortController.abort();
-  }, [currentPage, sortBy]);
+      const result = (await response.json()) as HackathonsResponse;
+      if (!result.success) {
+        throw new Error(result.error ?? 'Backend returned unsuccessful response');
+      }
+
+      const hackathons = (result.data ?? []).map(mapToFrontendHackathon);
+      const totalCount = result.count ?? hackathons.length;
+
+      return {
+        hackathons,
+        totalCount,
+        hasMore: totalCount > currentPage * itemsPerPage,
+      };
+    },
+  });
+
+  const hackathons = queryResult.data?.hackathons ?? [];
+  const totalCount = queryResult.data?.totalCount ?? 0;
+  const hasMore = queryResult.data?.hasMore ?? false;
+  const loading = queryResult.isPending;
+  const error = queryResult.error?.message ?? null;
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
 
   const displayedHackathons = useMemo(() => {
     if (!searchQuery.trim()) {

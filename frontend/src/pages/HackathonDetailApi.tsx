@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Icon } from '@iconify/react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { useNavbar } from '../context/NavbarContext';
@@ -19,10 +20,16 @@ interface ResourceItem {
 }
 
 interface Prize {
-  rank: number;
+  rank: string;
   amount: string;
   currency: string;
   includes?: string;
+}
+
+interface RewardItem {
+  rank: string;
+  currency: string;
+  label: string;
 }
 
 interface ChatMessage {
@@ -37,6 +44,7 @@ interface HackathonViewModel {
   title: string;
   organizer: string;
   deadline: string;
+  unstopLink: string;
   mode: 'remote' | 'hybrid' | 'offline';
   teamSize: string;
   fee: string;
@@ -51,6 +59,7 @@ interface HackathonViewModel {
   judgingCriteria: string[];
   submissionRequirements: string[];
   prizes: Prize[];
+  rewardItems: RewardItem[];
   resources: ResourceItem[];
 }
 
@@ -66,9 +75,20 @@ interface BackendHackathon {
   url?: string | null;
   start_date?: string | null;
   deadline?: string | null;
-  prizes?: unknown;
+  prizes?: Array<{
+    rank?: string | null;
+    cash?: number | null;
+    currencyCode?: string | null;
+    others?: string | null;
+  }> | null;
   created_at?: string | null;
   updated_at?: string | null;
+  resources?: Array<{
+    id?: number | string | null;
+    resource_type?: string | null;
+    title?: string | null;
+    url?: string | null;
+  }> | null;
   problem_statements?: ProblemStatement[];
 }
 
@@ -115,6 +135,10 @@ interface Round {
   judgeFeedback: string;
   penalties: string[];
   ranking: number[];
+}
+
+interface HackathonQueryResult {
+  hackathon: BackendHackathon;
 }
 
 type TabType = 'overview' | 'analysis' | 'final-idea' | 'assets' | 'chat';
@@ -194,6 +218,33 @@ function modeBadgeClass(mode: 'remote' | 'hybrid' | 'offline'): string {
   }[mode];
 }
 
+function formatPrizeAmount(cash?: number | null, currencyCode?: string | null, others?: string | null): string {
+  if (cash != null) {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: currencyCode ?? 'USD',
+        maximumFractionDigits: 0,
+      }).format(cash);
+    } catch {
+      return `${currencyCode ?? ''} ${cash}`.trim();
+    }
+  }
+
+  return others ?? 'Included';
+}
+
+function mapResourceType(resourceType?: string | null, url?: string | null): ResourceItem['type'] {
+  const normalized = (resourceType ?? '').toLowerCase();
+
+  if (normalized.includes('pdf')) return 'pdf';
+  if (normalized.includes('ppt') || normalized.includes('presentation')) return 'ppt';
+  if (normalized.includes('doc') || normalized.includes('word')) return 'doc';
+  if ((url ?? '').startsWith('http')) return 'link';
+
+  return 'link';
+}
+
 function buildViewModel(data: BackendHackathon | null): HackathonViewModel | null {
   if (!data) return null;
 
@@ -208,25 +259,28 @@ function buildViewModel(data: BackendHackathon | null): HackathonViewModel | nul
     ? problemStatements.map((problem) => problem.title)
     : [data.college_name ?? 'General Innovation'];
 
-  const prizes: Prize[] = [
-    {
-      rank: 1,
-      amount: '₹8,000',
-      currency: 'INR',
-      includes: 'Cash Prize + RCB 2026 Men\'s Official Jersey',
-    },
-    {
-      rank: 2,
-      amount: '₹4,000',
-      currency: 'INR',
-    },
-    {
-      rank: 3,
-      amount: '₹2,000',
-      currency: 'INR',
-      includes: 'Merchandise Pack',
-    },
-  ];
+  const prizes: Prize[] = (data.prizes ?? [])
+    .filter((prize) => prize.cash != null)
+    .map((prize) => ({
+      rank: prize.rank ?? 'Prize',
+      amount: formatPrizeAmount(prize.cash, prize.currencyCode, prize.others),
+      currency: prize.currencyCode ?? 'INR',
+      includes: prize.others ?? undefined,
+    }));
+
+  const rewardItems: RewardItem[] = (data.prizes ?? [])
+    .filter((prize) => prize.cash == null)
+    .map((prize) => ({
+      rank: prize.rank ?? 'Reward',
+      currency: prize.currencyCode ?? 'INR',
+      label: prize.others ?? 'Included',
+    }));
+
+  const resources: ResourceItem[] = (data.resources ?? []).map((resource) => ({
+    type: mapResourceType(resource.resource_type, resource.url),
+    name: resource.title ?? 'Resource',
+    url: resource.url ?? '#',
+  }));
 
   return {
     id: String(data.id),
@@ -262,10 +316,8 @@ function buildViewModel(data: BackendHackathon | null): HackathonViewModel | nul
       'Any requested attachments from the source listing',
     ],
     prizes,
-    resources: [
-      { type: 'link', name: 'Original Hackathon Link', url: data.url ?? '#' },
-      { type: 'doc', name: 'Listing Metadata', url: '#', content: JSON.stringify(data, null, 2) },
-    ],
+    rewardItems,
+    resources,
   };
 }
 
@@ -273,7 +325,6 @@ export default function HackathonDetailApi() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isNavbarVisible } = useNavbar();
-  const [hackathon, setHackathon] = useState<BackendHackathon | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -286,9 +337,29 @@ export default function HackathonDetailApi() {
   ]);
   const [chatInput, setChatInput] = useState('');
   const [isAnalysisRunning, setIsAnalysisRunning] = useState(false);
-  const [selectedIdea, setSelectedIdea] = useState<FinalIdea | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const hackathonQuery = useQuery<HackathonQueryResult, Error>({
+    queryKey: ['hackathon', id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE_URL}/hackathons/${id}`);
+
+      if (response.status === 404) {
+        throw new Error('Hackathon not found.');
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch hackathon: ${response.status}`);
+      }
+
+      const result = (await response.json()) as HackathonResponse;
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error ?? 'Backend returned no hackathon data');
+      }
+
+      return { hackathon: result.data };
+    },
+  });
 
   const [aiAnalysis] = useState({
     recommendedTheme: {
@@ -368,6 +439,8 @@ export default function HackathonDetailApi() {
     } satisfies FinalIdea,
   });
 
+  const selectedIdea = aiAnalysis.finalIdea;
+
   const executionPlan = [
     {
       day: 1,
@@ -401,72 +474,12 @@ export default function HackathonDetailApi() {
     },
   ];
 
-  useEffect(() => {
-    const abortController = new AbortController();
-
-    async function fetchHackathon() {
-      setLoading(true);
-      setError(null);
-
-      if (!id) {
-        setHackathon(null);
-        setError('Missing hackathon id.');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/hackathons/${id}`, {
-          signal: abortController.signal,
-        });
-
-        if (response.status === 404) {
-          setHackathon(null);
-          setError('Hackathon not found.');
-          return;
-        }
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch hackathon: ${response.status}`);
-        }
-
-        const result = (await response.json()) as HackathonResponse;
-
-        if (!result.success || !result.data) {
-          throw new Error(result.error ?? 'Backend returned no hackathon data');
-        }
-
-        setHackathon(result.data);
-      } catch (fetchError) {
-        if (abortController.signal.aborted) {
-          return;
-        }
-
-        const message = fetchError instanceof Error ? fetchError.message : 'Unexpected error while loading hackathon';
-        setError(message);
-        setHackathon(null);
-      } finally {
-        if (!abortController.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    fetchHackathon();
-
-    return () => abortController.abort();
-  }, [id]);
+  const hackathon = hackathonQuery.data?.hackathon ?? null;
+  const loading = hackathonQuery.isPending;
+  const error = hackathonQuery.error?.message ?? null;
 
   const viewModel = useMemo(() => buildViewModel(hackathon), [hackathon]);
   const daysLeft = useMemo(() => getDaysUntil(viewModel?.deadline), [viewModel?.deadline]);
-
-  useEffect(() => {
-    if (!viewModel) {
-      return;
-    }
-
-    setSelectedIdea(aiAnalysis.finalIdea);
-  }, [aiAnalysis.finalIdea, viewModel]);
 
   const tabs = [
     { id: 'overview' as TabType, label: 'Overview' },
@@ -687,7 +700,7 @@ export default function HackathonDetailApi() {
                       <div key={prize.rank} className="border border-grid/20 p-4 hover:border-forest transition-colors">
                         <div className="flex justify-between items-center mb-3">
                           <span className="font-mono text-[10px] font-bold tracking-[0.15em] uppercase text-forest">
-                            {prize.rank === 1 ? '1st Prize' : prize.rank === 2 ? '2nd Prize' : '3rd Prize'}
+                            {prize.rank}
                           </span>
                           <span className="font-mono text-[9px] uppercase text-grid/60">{prize.currency}</span>
                         </div>
@@ -698,13 +711,35 @@ export default function HackathonDetailApi() {
 
                         {prize.includes && (
                           <div className="pt-3">
-                            <p className="font-mono text-[9px] tracking-[0.1em] uppercase text-grid/50 mb-2">INCLUDES</p>
+                            <p className="font-mono text-[9px] tracking-widest uppercase text-grid/50 mb-2">INCLUDES</p>
                             <p className="text-[13px] text-forest leading-relaxed">{prize.includes}</p>
                           </div>
                         )}
                       </div>
                     ))}
                   </div>
+
+                  {viewModel?.rewardItems.length ? (
+                    <div className="mt-8">
+                      <h3 className={sectionHeadingClass}>Other Rewards</h3>
+                      <div className="space-y-3">
+                        {viewModel.rewardItems.map((reward) => (
+                          <div key={reward.rank} className="border border-grid/20 p-5 hover:border-forest transition-colors">
+                            <div className="flex items-center justify-between gap-4">
+                              <div>
+                                <p className="font-mono text-[10px] tracking-widest uppercase text-grid/60 mb-1">Included</p>
+                                <p className="font-display text-lg text-forest">{reward.rank}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-mono text-[10px] tracking-widest uppercase text-grid/60 mb-1">Type</p>
+                                <p className="font-mono text-xs text-forest">{reward.currency}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
 
                   <div className="mt-8">
                     <p className="font-mono text-[9px] text-grid/40 tracking-widest uppercase">
@@ -716,6 +751,24 @@ export default function HackathonDetailApi() {
                 <section className="bg-white border border-grid/20 p-6">
                   <h2 className="font-display text-2xl text-forest mb-4">Resources</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {viewModel.unstopLink && (
+                      <div className="border border-grid/20 p-4 hover:border-forest transition-colors flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-paper border border-grid/20 flex items-center justify-center">
+                            <Icon icon="lucide:external-link" className="text-forest" />
+                          </div>
+                          <span className="font-mono text-xs text-forest">Original Hackathon Link</span>
+                        </div>
+                        <a
+                          href={viewModel.unstopLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all"
+                        >
+                          Open
+                        </a>
+                      </div>
+                    )}
                     {viewModel.resources.map((resource, index) => (
                       <div
                         key={index}

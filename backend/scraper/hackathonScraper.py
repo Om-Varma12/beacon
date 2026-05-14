@@ -75,6 +75,20 @@ async def scrape_hackathon_detail(client, hackathon):
         if competition.get("prizes"):
             hackathon["prizes"] = parse_prize(competition["prizes"])
 
+
+        # enrich resources from attachments
+        attachments = competition.get("attachment", [])
+
+        hackathon["resources"] = [
+            {
+                "resource_type": attachment.get("file_type"),
+                "title": attachment.get("title"),
+                "url": attachment.get("download_url"),
+            }
+            for attachment in attachments
+            if attachment.get("download_url")
+        ]
+
         return hackathon
 
     except Exception as e:

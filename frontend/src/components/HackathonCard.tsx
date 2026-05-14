@@ -15,6 +15,7 @@ interface HackathonCardProps {
 }
 
 export default function HackathonCard({
+  id,
   name,
   description,
   college,

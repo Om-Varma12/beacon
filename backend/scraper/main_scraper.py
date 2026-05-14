@@ -1,7 +1,9 @@
 import asyncio
 import httpx
+
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
+from db.ResourceRepository import ResourceRepository
 from db.database import Database
 from scraper.hackathonScraper import scrape_hackathon_detail
 from scraper.pageScraper import scrape_pages
@@ -17,8 +19,10 @@ async def scraperHackathons(concurrency: int = 10):
     """
 
     db = Database()
+
     hack_repo = HackathonRepository(db)
     problem_repo = ProblemRepository(db)
+    resource_repo = ResourceRepository(db)
 
     llm = LLM()
     prbm_parser = ProblemStatementParserAgent(llm)
@@ -34,6 +38,16 @@ async def scraperHackathons(concurrency: int = 10):
 
                 if hackathon_id:
                     print(f"Inserted: {enriched['title']} | ID: {hackathon_id}")
+                    
+                    # Inserting resources
+                    resources = enriched.get("resources", [])
+                    for resource in resources:
+                        resource_id = resource_repo.create(hackathon_id, resource)
+
+                        if resource_id:
+                            print(f"Inserted resource id={resource_id}")
+                        else:
+                            print(f"Failed resource insert for hackathon id={hackathon_id}")
 
                     # Run parser agent on the enriched description
                     description = enriched.get("description") or ""

@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, BackgroundTasks, HTTPException
 from db.database import Database
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
+from db.ResourceRepository import ResourceRepository
 from db.HackathonService import HackathonService
 from scraper.main_scraper import scraperHackathons
 
@@ -24,9 +25,12 @@ def get_service():
 
     problem_repo = ProblemRepository(db)
 
+    resource_repo = ResourceRepository(db)
+
     return HackathonService(
         hackathon_repo,
         problem_repo,
+        resource_repo,
     )
 
 

@@ -44,3 +44,37 @@ class ResourceRepository:
 
         finally:
             self.db.release_conn(conn)
+            
+    
+    def get_by_hackathon_id(self, hackathon_id: int):
+        query = """
+            SELECT
+                id,
+                resource_type,
+                title,
+                url
+            FROM resources
+            WHERE hackathon_id = %s
+            ORDER BY id ASC
+        """
+
+        conn = self.db.get_conn()
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute(query, (hackathon_id,))
+                rows = cur.fetchall()
+
+                columns = [desc[0] for desc in cur.description]
+
+                return [
+                    dict(zip(columns, row))
+                    for row in rows
+                ]
+
+        except Exception as e:
+            print(f"DB error (ResourceRepository.get_by_hackathon_id): {e}")
+            return []
+
+        finally:
+            self.db.release_conn(conn)

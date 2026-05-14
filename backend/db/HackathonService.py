@@ -1,11 +1,8 @@
 class HackathonService:
-    def __init__(
-        self,
-        hackathon_repo,
-        problem_repo,
-    ):
+    def __init__(self, hackathon_repo, problem_repo, resource_repo):
         self.hackathon_repo = hackathon_repo
         self.problem_repo = problem_repo
+        self.resource_repo = resource_repo
 
 
     def get_hackathon_detail(self, hackathon_id: int):
@@ -17,7 +14,9 @@ class HackathonService:
         print(hackathon)
 
         problems = self.problem_repo.get_by_hackathon_id(hackathon['id'])
-
         hackathon["problem_statements"] = problems
+
+        resources = self.resource_repo.get_by_hackathon_id(hackathon['id'])
+        hackathon["resources"] = resources
 
         return hackathon

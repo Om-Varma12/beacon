@@ -15,12 +15,14 @@ Return ONLY valid JSON in this exact schema:
 {
   "agent_persona": "business",
   "project_title": "...",
+  "theme": "...",
   "problem_statement": "...",
   "solution_overview": "...",
   "core_features": ["...", "..."],
   "target_users": ["...", "..."],
   "overall_reasoning": "..."
 }
+Here "theme" is exactly the same as the "title" field from the problem statements provided in the initial theme input. It represents the specific problem statement theme that your idea is addressing.
 
 If round_type is "debate":
 You will receive own_idea, competitor_ideas, critiques_received, and judge_feedback.
@@ -38,6 +40,7 @@ Return ONLY valid JSON in this exact schema:
   "improved_idea": {
     "agent_persona": "business",
     "project_title": "...",
+    "theme": "...",
     "problem_statement": "...",
     "solution_overview": "...",
     "core_features": ["...", "..."],
@@ -45,6 +48,7 @@ Return ONLY valid JSON in this exact schema:
     "overall_reasoning": "..."
   }
 }
+Here "theme" is exactly the same as the "title" field from the problem statements provided in the initial theme input. It represents the specific problem statement theme that your idea is addressing.
 
 Rules:
 - Output JSON only

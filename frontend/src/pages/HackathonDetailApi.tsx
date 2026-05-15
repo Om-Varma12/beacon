@@ -141,6 +141,43 @@ interface HackathonQueryResult {
   hackathon: BackendHackathon;
 }
 
+interface AnalysisRound {
+  round_number?: number;
+  phase?: string | null;
+  ideas?: unknown;
+  debates?: unknown;
+  judge?: unknown;
+}
+
+interface AnalysisResult {
+  winner?: string | null;
+  leaderboard?: string[] | null;
+  final_scores?: Record<string, number> | null;
+  winning_idea?: {
+    title?: string | null;
+    description?: string | null;
+    target_users?: string[] | null;
+    core_features?: string[] | null;
+  } | null;
+  synthesized?: {
+    summary?: string | null;
+    strengths?: string[] | null;
+    weaknesses?: string[] | null;
+  } | null;
+  rounds?: AnalysisRound[] | null;
+}
+
+interface AnalysisPayload {
+  analysis_id?: number | null;
+  result?: AnalysisResult | null;
+}
+
+interface AnalysisResponse {
+  success: boolean;
+  data: AnalysisPayload;
+  error?: string;
+}
+
 type TabType = "overview" | "analysis" | "final-idea" | "assets" | "chat";
 
 const API_BASE_URL =
@@ -343,6 +380,38 @@ function buildViewModel(
   };
 }
 
+function formatAnalysisValue(value: unknown): string {
+  if (value == null) {
+    return "No data available.";
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return "No data available.";
+    }
+
+    return value
+      .map((item) => {
+        if (typeof item === "string") {
+          return item;
+        }
+
+        return JSON.stringify(item, null, 2);
+      })
+      .join("\n");
+  }
+
+  if (typeof value === "object") {
+    return JSON.stringify(value, null, 2);
+  }
+
+  return String(value);
+}
+
 export default function HackathonDetailApi() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -381,6 +450,30 @@ export default function HackathonDetailApi() {
       }
 
       return { hackathon: result.data };
+    },
+  });
+
+  const analysisQuery = useQuery<AnalysisResponse, Error>({
+    queryKey: ["hackathon-analysis", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE_URL}/hackathon/${id}/analysis`);
+
+      if (response.status === 404) {
+        throw new Error("Analysis not found.");
+      }
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch analysis: ${response.status}`);
+      }
+
+      const result = (await response.json()) as AnalysisResponse;
+
+      if (!result.success) {
+        throw new Error(result.error ?? "Backend returned no analysis data");
+      }
+
+      return result;
     },
   });
 
@@ -562,10 +655,6 @@ export default function HackathonDetailApi() {
   });
 
   const selectedIdea = aiAnalysis.finalIdea;
-  const analysisRound = aiAnalysis.rounds[0];
-  const sortedAnalysisAgents = [...analysisRound.agents].sort(
-    (a, b) => b.score - a.score,
-  );
 
   const executionPlan = [
     {
@@ -634,6 +723,13 @@ export default function HackathonDetailApi() {
     () => getDaysUntil(viewModel?.deadline),
     [viewModel?.deadline],
   );
+
+  const analysisData = analysisQuery.data?.data ?? null;
+  const analysisResult = analysisData?.result ?? null;
+  const hasAnalysis = Boolean(analysisData?.analysis_id);
+  const analysisLeaderboard = analysisResult?.leaderboard ?? [];
+  const analysisFinalScores = analysisResult?.final_scores ?? {};
+  const analysisRounds = analysisResult?.rounds ?? [];
 
   const tabs = [
     { id: "overview" as TabType, label: "Overview" },
@@ -1042,251 +1138,301 @@ export default function HackathonDetailApi() {
 
             {!loading && !error && activeTab === "analysis" && (
               <div className="space-y-4">
-                <div className="w-full bg-white border border-grid/20 border-t-[3px] border-t-mint flex flex-col items-center py-10 px-6 text-center">
-                  <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-forest">
-                    Winner
-                  </p>
-                  <h1 className="mb-3 font-display text-4xl font-bold tracking-tight text-forest md:text-5xl">
-                    {aiAnalysis.finalIdea.title}
-                  </h1>
-                  <p className="max-w-lg font-sans text-sm text-grid/70">
-                    {aiAnalysis.finalIdea.solutionDescription}
-                  </p>
-                  <div className="mt-6 h-0.5 w-48 bg-mint" />
-                </div>
-
-                <div className="flex flex-col items-end justify-center gap-4 md:flex-row">
-                  <div className="order-2 w-full flex-1 bg-white border border-grid/20 p-5 premium-card relative md:order-1 md:w-auto">
-                    <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gold" />
-                    <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-grid/60">
-                      2nd Place
-                    </p>
-                    <h3 className="mb-3 font-display text-base font-bold text-forest">
-                      {sortedAnalysisAgents[1].name}
-                    </h3>
-                    <div className="flex items-end justify-between">
-                      <span className="font-display text-2xl font-bold text-gold">
-                        {(sortedAnalysisAgents[1].score / 10).toFixed(1)}
-                      </span>
-                      <Icon icon="lucide:award" className="text-xl text-gold/40" />
-                    </div>
+                {analysisQuery.isPending && (
+                  <div className="bg-white border border-grid/20 p-6 text-center font-mono text-xs tracking-widest uppercase text-grid/60">
+                    Loading AI analysis...
                   </div>
+                )}
 
-                  <div className="order-1 w-full flex-1 bg-white border border-grid/20 p-6 premium-card relative md:order-2 md:w-auto md:-translate-y-2 md:pb-8">
-                    <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-mint" />
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-forest px-2 py-0.5">
-                      <p className="font-mono text-[8px] font-bold uppercase tracking-widest text-white">
-                        Champion
+                {!analysisQuery.isPending && analysisQuery.error && (
+                  <div className="bg-white border border-grid/20 p-6 text-center">
+                    <p className="font-mono text-xs tracking-widest uppercase text-coral">
+                      Unable to load AI analysis
+                    </p>
+                    <p className="mt-3 text-sm text-grid/70">
+                      {analysisQuery.error.message}
+                    </p>
+                  </div>
+                )}
+
+                {!analysisQuery.isPending && !analysisQuery.error && !hasAnalysis && (
+                  <div className="bg-white border border-grid/20 p-10 text-center">
+                    <p className="font-mono text-[10px] tracking-[0.25em] uppercase text-grid/40 mb-3">
+                      AI Analysis
+                    </p>
+                    <h2 className="font-display text-3xl text-forest mb-3">
+                      No AI analysis available yet
+                    </h2>
+                    <p className="mx-auto max-w-xl text-sm leading-relaxed text-grid/70">
+                      Run the analysis pipeline to generate a winner, rankings, score breakdowns, and debate rounds for this hackathon.
+                    </p>
+                  </div>
+                )}
+
+                {!analysisQuery.isPending && !analysisQuery.error && hasAnalysis && analysisResult && (
+                  <>
+                    <div className="w-full bg-white border border-grid/20 border-t-[3px] border-t-mint flex flex-col items-center py-10 px-6 text-center">
+                      <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-forest">
+                        Winner
                       </p>
+                      <h1 className="mb-3 font-display text-4xl font-bold tracking-tight text-forest md:text-5xl">
+                        {analysisResult.winner ?? "Winner not available"}
+                      </h1>
+                      {analysisResult.winning_idea?.title && (
+                        <p className="max-w-lg font-mono text-[10px] uppercase tracking-[0.2em] text-grid/50">
+                          Winning idea: {analysisResult.winning_idea.title}
+                        </p>
+                      )}
                     </div>
-                    <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-grid/60">
-                      1st Place
-                    </p>
-                    <h3 className="mb-4 font-display text-lg font-bold text-forest">
-                      {sortedAnalysisAgents[0].name}
-                    </h3>
-                    <div className="flex items-end justify-between">
-                      <span className="font-display text-3xl font-bold text-mint">
-                        {(sortedAnalysisAgents[0].score / 10).toFixed(1)}
-                      </span>
-                      <Icon icon="lucide:trophy" className="text-3xl text-mint" />
-                    </div>
-                  </div>
 
-                  <div className="order-3 w-full flex-1 bg-white border border-grid/20 p-5 premium-card relative md:w-auto">
-                    <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-coral" />
-                    <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-grid/60">
-                      3rd Place
-                    </p>
-                    <h3 className="mb-3 font-display text-base font-bold text-forest">
-                      {sortedAnalysisAgents[2].name}
-                    </h3>
-                    <div className="flex items-end justify-between">
-                      <span className="font-display text-2xl font-bold text-coral">
-                        {(sortedAnalysisAgents[2].score / 10).toFixed(1)}
-                      </span>
-                      <Icon icon="lucide:award" className="text-xl text-coral/40" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="w-full bg-white border border-grid/20 p-8 premium-card relative">
-                  <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-mint" />
-                  <p className="mb-3 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-grid/60">
-                    Winning Idea
-                  </p>
-                  <h2 className="mb-3 font-display text-2xl font-bold tracking-tight text-forest">
-                    {aiAnalysis.finalIdea.title}
-                  </h2>
-                  <p className="font-sans text-sm leading-[1.6] text-grid/80">
-                    {aiAnalysis.finalIdea.solutionDescription}
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="bg-white border border-grid/20 p-6 premium-card relative">
-                    <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-coral" />
-                    <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-grid/60">
-                      Target Users
-                    </p>
-                    <p className="font-sans text-sm text-forest">
-                      {aiAnalysis.finalIdea.targetUsers}
-                    </p>
-                  </div>
-
-                  <div className="bg-white border border-grid/20 p-6 premium-card relative">
-                    <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-mint" />
-                    <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-grid/60">
-                      Core Features
-                    </p>
-                    <ul className="space-y-3">
-                      {aiAnalysis.finalIdea.keyFeatures.map((feature, index) => (
-                        <li key={index} className="flex items-start space-x-2">
-                          <div className="bullet-point bg-mint mt-1" />
-                          <span className="font-sans text-sm text-forest">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="w-full bg-white border border-grid/20 border-t-2 border-t-forest p-8 premium-card">
-                  <h2 className="mb-6 font-display text-lg font-bold text-forest">
-                    Final Scores Comparison
-                  </h2>
-
-                  <div className="space-y-6">
-                    {sortedAnalysisAgents.map((agent, index) => {
-                      const colors = ["bg-mint", "bg-gold", "bg-coral"];
-
-                      return (
-                        <div
-                          key={agent.name}
-                          className="flex flex-col justify-between gap-3 md:flex-row md:items-center"
-                        >
-                          <div className="w-36">
-                            <p className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-forest">
-                              {agent.name}
-                            </p>
-                          </div>
-                          <div className="relative h-2.5 flex-1 score-bar-bg">
-                            <div
-                              className={`absolute inset-y-0 left-0 ${colors[index]}`}
-                              style={{ width: `${agent.score}%` }}
+                    {analysisLeaderboard.length > 0 && (
+                      <div className="flex flex-col items-end justify-center gap-4 md:flex-row">
+                        <div className="order-2 w-full flex-1 bg-white border border-grid/20 p-5 premium-card relative md:order-1 md:w-auto">
+                          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gold" />
+                          <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-grid/60">
+                            2nd Place
+                          </p>
+                          <h3 className="mb-3 font-display text-base font-bold text-forest capitalize">
+                            {analysisLeaderboard[1] ?? "TBD"}
+                          </h3>
+                          <div className="flex items-end justify-between">
+                            <span className="font-display text-2xl font-bold text-gold">
+                              {analysisLeaderboard[1] ? "2.0" : "-"}
+                            </span>
+                            <Icon
+                              icon="lucide:award"
+                              className="text-xl text-gold/40"
                             />
                           </div>
-                          <div className="flex items-center justify-end space-x-2 md:w-24">
-                            <span className="font-display text-base font-bold text-forest">
-                              {(agent.score / 10).toFixed(1)}
+                        </div>
+
+                        <div className="order-1 w-full flex-1 bg-white border border-grid/20 p-6 premium-card relative md:order-2 md:w-auto md:-translate-y-2 md:pb-8">
+                          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-mint" />
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-forest px-2 py-0.5">
+                            <p className="font-mono text-[8px] font-bold uppercase tracking-widest text-white">
+                              Champion
+                            </p>
+                          </div>
+                          <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.15em] text-grid/60">
+                            1st Place
+                          </p>
+                          <h3 className="mb-4 font-display text-lg font-bold text-forest capitalize">
+                            {analysisLeaderboard[0] ?? "TBD"}
+                          </h3>
+                          <div className="flex items-end justify-between">
+                            <span className="font-display text-3xl font-bold text-mint">
+                              {analysisLeaderboard[0] ? "1.0" : "-"}
                             </span>
-                            <span className="font-mono text-[10px] text-grid/50">
-                              ({agent.score}%)
-                            </span>
+                            <Icon
+                              icon="lucide:trophy"
+                              className="text-3xl text-mint"
+                            />
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                </div>
 
-                <div className="pb-8 pt-4 text-center">
-                  <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-grid/40">
-                    Generated by Agent Council Analysis v2.4.0
-                  </p>
-                </div>
-
-                {aiAnalysis.rounds.map((round) => (
-                  <div key={round.id} className="space-y-4">
-                    <div className="bg-white border border-grid/20 p-6">
-                      <h3 className="mb-4 font-display text-xl text-forest">
-                        {round.name}
-                      </h3>
-
-                      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-                        {round.agents.map((agent) => (
-                          <div
-                            key={agent.name}
-                            className="border border-grid/20 p-4 transition-colors hover:border-forest"
-                          >
-                            <div className="mb-3 flex items-center justify-between">
-                              <h4 className="font-mono text-xs uppercase tracking-widest text-forest">
-                                {agent.name}
-                              </h4>
-
-                              <span className="bg-forest px-2 py-1 font-mono text-[10px] text-white">
-                                {agent.score}
-                              </span>
-                            </div>
-
-                            <h5 className="mb-2 font-display text-lg text-forest">
-                              {agent.ideaTitle}
-                            </h5>
-
-                            <p className="mb-3 text-sm text-grid/70">
-                              {agent.description}
-                            </p>
-
-                            <div className="mb-3">
-                              <p className="mb-1 font-mono text-[9px] uppercase text-grid/60">
-                                Pros
-                              </p>
-
-                              <ul className="space-y-1">
-                                {agent.pros.map((pro, i) => (
-                                  <li
-                                    key={i}
-                                    className="flex items-start space-x-1 text-xs text-grid/80"
-                                  >
-                                    <Icon icon="lucide:plus" className="mt-0.5 text-[10px] text-mint" />
-                                    <span>{pro}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-
-                            <div className="mb-3">
-                              <p className="mb-1 font-mono text-[9px] uppercase text-grid/60">
-                                Cons
-                              </p>
-
-                              <ul className="space-y-1">
-                                {agent.cons.map((con, i) => (
-                                  <li
-                                    key={i}
-                                    className="flex items-start space-x-1 text-xs text-grid/80"
-                                  >
-                                    <Icon icon="lucide:minus" className="mt-0.5 text-[10px] text-coral" />
-                                    <span>{con}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-
-                            <details className="text-xs">
-                              <summary className="cursor-pointer font-mono text-[9px] uppercase text-grid/60 hover:text-forest">
-                                View Reasoning
-                              </summary>
-
-                              <p className="mt-2 text-grid/70">
-                                {agent.reasoning}
-                              </p>
-                            </details>
+                        <div className="order-3 w-full flex-1 bg-white border border-grid/20 p-5 premium-card relative md:w-auto">
+                          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-coral" />
+                          <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-grid/60">
+                            3rd Place
+                          </p>
+                          <h3 className="mb-3 font-display text-base font-bold text-forest capitalize">
+                            {analysisLeaderboard[2] ?? "TBD"}
+                          </h3>
+                          <div className="flex items-end justify-between">
+                            <span className="font-display text-2xl font-bold text-coral">
+                              {analysisLeaderboard[2] ? "3.0" : "-"}
+                            </span>
+                            <Icon
+                              icon="lucide:award"
+                              className="text-xl text-coral/40"
+                            />
                           </div>
-                        ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {Object.keys(analysisFinalScores).length > 0 && (
+                      <div className="w-full bg-white border border-grid/20 border-t-2 border-t-forest p-8">
+                        <h2 className="mb-6 font-display text-lg font-bold text-forest">
+                          Final Scores
+                        </h2>
+
+                        <div className="space-y-6">
+                          {Object.entries(analysisFinalScores)
+                            .sort(([, leftScore], [, rightScore]) => rightScore - leftScore)
+                            .map(([name, score], index) => {
+                              const colors = ["bg-mint", "bg-gold", "bg-coral"];
+
+                              return (
+                                <div
+                                  key={name}
+                                  className="flex flex-col justify-between gap-3 md:flex-row md:items-center"
+                                >
+                                  <div className="w-36">
+                                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-forest">
+                                      {name}
+                                    </p>
+                                  </div>
+                                  <div className="relative h-2.5 flex-1 score-bar-bg">
+                                    <div
+                                      className={`absolute inset-y-0 left-0 ${colors[index] ?? "bg-forest"}`}
+                                      style={{ width: `${score}%` }}
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-end space-x-2 md:w-24">
+                                    <span className="font-display text-base font-bold text-forest">
+                                      {(score / 10).toFixed(1)}
+                                    </span>
+                                    <span className="font-mono text-[10px] text-grid/50">
+                                      ({score}%)
+                                    </span>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="bg-white border border-grid/20 p-6">
+                        <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-grid/60">
+                          Winning Idea
+                        </p>
+                        <h2 className="mb-3 font-display text-2xl font-bold tracking-tight text-forest">
+                          {analysisResult.winning_idea?.title ?? "No winning idea title"}
+                        </h2>
+                        <p className="font-sans text-sm leading-[1.6] text-grid/80">
+                          {analysisResult.winning_idea?.description ?? "No winning idea description available."}
+                        </p>
                       </div>
 
-                      <div className="border-t border-grid/20 pt-4">
-                        <h4 className="mb-2 font-mono text-xs uppercase tracking-widest text-grid/60">
-                          Judge Feedback
-                        </h4>
-
-                        <p className="text-sm text-grid/80">
-                          {round.judgeFeedback}
+                      <div className="bg-white border border-grid/20 p-6">
+                        <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-grid/60">
+                          Synthesized Analysis
+                        </p>
+                        <p className="font-sans text-sm leading-[1.6] text-grid/80">
+                          {analysisResult.synthesized?.summary ?? "No synthesized summary available."}
                         </p>
                       </div>
                     </div>
-                  </div>
-                ))}
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="bg-white border border-grid/20 p-6">
+                        <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-grid/60">
+                          Target Users
+                        </p>
+                        <ul className="space-y-2">
+                          {(analysisResult.winning_idea?.target_users ?? []).map((user, index) => (
+                            <li key={`${user}-${index}`} className="text-sm text-forest">
+                              {user}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="bg-white border border-grid/20 p-6">
+                        <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-grid/60">
+                          Core Features
+                        </p>
+                        <ul className="space-y-3">
+                          {(analysisResult.winning_idea?.core_features ?? []).map((feature, index) => (
+                            <li key={`${feature}-${index}`} className="flex items-start space-x-2">
+                              <div className="bullet-point bg-mint mt-1" />
+                              <span className="font-sans text-sm text-forest">{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="bg-white border border-grid/20 p-6">
+                        <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-grid/60">
+                          Strengths
+                        </p>
+                        <ul className="space-y-2">
+                          {(analysisResult.synthesized?.strengths ?? []).map((strength, index) => (
+                            <li key={`${strength}-${index}`} className="text-sm text-forest">
+                              {strength}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <div className="bg-white border border-grid/20 p-6">
+                        <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-grid/60">
+                          Weaknesses
+                        </p>
+                        <ul className="space-y-2">
+                          {(analysisResult.synthesized?.weaknesses ?? []).map((weakness, index) => (
+                            <li key={`${weakness}-${index}`} className="text-sm text-forest">
+                              {weakness}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+
+                    <div className="w-full bg-white border border-grid/20 p-8">
+                      <h2 className="mb-6 font-display text-lg font-bold text-forest">
+                        Debate Rounds
+                      </h2>
+
+                      <div className="space-y-6">
+                        {analysisRounds.map((round, index) => (
+                          <div key={`${round.round_number ?? index}`} className="border border-grid/20 p-5">
+                            <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                              <h3 className="font-display text-xl text-forest">
+                                Round {round.round_number ?? index + 1}
+                              </h3>
+                              {round.phase && (
+                                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-grid/50">
+                                  {round.phase}
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                              <div className="border border-grid/20 p-4">
+                                <p className="mb-2 font-mono text-[10px] tracking-[0.2em] uppercase text-grid/60">
+                                  Ideas
+                                </p>
+                                <pre className="whitespace-pre-wrap text-xs leading-relaxed text-grid/80">
+                                  {formatAnalysisValue(round.ideas)}
+                                </pre>
+                              </div>
+
+                              <div className="border border-grid/20 p-4">
+                                <p className="mb-2 font-mono text-[10px] tracking-[0.2em] uppercase text-grid/60">
+                                  Debates
+                                </p>
+                                <pre className="whitespace-pre-wrap text-xs leading-relaxed text-grid/80">
+                                  {formatAnalysisValue(round.debates)}
+                                </pre>
+                              </div>
+
+                              <div className="border border-grid/20 p-4">
+                                <p className="mb-2 font-mono text-[10px] tracking-[0.2em] uppercase text-grid/60">
+                                  Judge
+                                </p>
+                                <pre className="whitespace-pre-wrap text-xs leading-relaxed text-grid/80">
+                                  {formatAnalysisValue(round.judge)}
+                                </pre>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="pb-8 pt-4 text-center">
+                      <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-grid/40">
+                        Analysis loaded from the backend
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 

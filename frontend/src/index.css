@@ -146,3 +146,25 @@ body {
 .accent-bar {
   transition: filter 0.3s ease-out;
 }
+
+.premium-card {
+  transition: all 0.3s ease-out;
+}
+
+.premium-card:hover {
+  background-color: #FAFAF9;
+  border-color: rgba(58, 58, 56, 0.4);
+}
+
+.score-bar-bg {
+  background-color: rgba(58, 58, 56, 0.1);
+}
+
+.bullet-point {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--forest);
+  margin-top: 6px;
+  flex-shrink: 0;
+}

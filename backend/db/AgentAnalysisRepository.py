@@ -60,3 +60,32 @@ class AgentAnalysisRepository:
 
         finally:
             self.db.release_conn(conn)
+            
+    def get_by_hackathon_id(self, hackathon_id: int):
+        query = """
+            SELECT *
+            FROM agent_analysis
+            WHERE hackathon_id = %s
+            LIMIT 1
+        """
+
+        conn = self.db.get_conn()
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute(query, (hackathon_id,))
+                row = cur.fetchone()
+                if not row:
+                    return None
+
+                columns = [desc[0] for desc in cur.description]
+                return dict(zip(columns, row))
+
+        except Exception as e:
+            print(
+                f"DB error (AgentAnalysisRepository.get_by_hackathon_id): {e}"
+            )
+            return None
+
+        finally:
+            self.db.release_conn(conn)

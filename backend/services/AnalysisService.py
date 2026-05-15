@@ -75,3 +75,34 @@ class AnalysisService:
             "analysis_id": analysis_id,
             "result": result
         }
+        
+    def get_analysis(self, hackathon_id: int):
+        hackathon = self.hackathon_repo.get_by_id(hackathon_id)
+
+        if not hackathon:
+            return None
+
+        analysis = self.analysis_repo.get_by_hackathon_id(
+            hackathon["id"]
+        )
+
+        if not analysis:
+            return {}
+
+        rounds = self.rounds_repo.get_by_analysis_id(
+            analysis["id"]
+        )
+
+        result = {
+            "winner": analysis.get("winner"),
+            "leaderboard": analysis.get("leaderboard"),
+            "final_scores": analysis.get("final_scores"),
+            "winning_idea": analysis.get("winning_idea"),
+            "synthesized": analysis.get("synthesized"),
+            "rounds": rounds
+        }
+
+        return {
+            "analysis_id": analysis["id"],
+            "result": result
+        }

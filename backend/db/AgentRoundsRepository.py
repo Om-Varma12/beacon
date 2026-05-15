@@ -58,3 +58,34 @@ class AgentRoundsRepository:
 
         finally:
             self.db.release_conn(conn)
+            
+    def get_by_analysis_id(self, analysis_id: int):
+        query = """
+            SELECT *
+            FROM agent_rounds
+            WHERE analysis_id = %s
+            ORDER BY round_number ASC
+        """
+
+        conn = self.db.get_conn()
+
+        try:
+            with conn.cursor() as cur:
+                cur.execute(query, (analysis_id,))
+                rows = cur.fetchall()
+
+                columns = [desc[0] for desc in cur.description]
+
+                return [
+                    dict(zip(columns, row))
+                    for row in rows
+                ]
+
+        except Exception as e:
+            print(
+                f"DB error (AgentRoundsRepository.get_by_analysis_id): {e}"
+            )
+            return []
+
+        finally:
+            self.db.release_conn(conn)

@@ -17,9 +17,11 @@ class AnalysisService:
         if not hackathon:
             return None
 
+        internal_hackathon_id = hackathon["id"]
+
 
         # Fetch Problem Statements
-        problems = self.problem_repo.get_by_hackathon_id(hackathon_id)
+        problems = self.problem_repo.get_by_hackathon_id(internal_hackathon_id)
 
 
         # Build Theme Payload
@@ -47,9 +49,15 @@ class AnalysisService:
 
         # Save Main Analysis
         analysis_id = self.analysis_repo.create(
-            hackathon_id,
+            internal_hackathon_id,
             result
         )
+
+        if not analysis_id:
+            return {
+                "analysis_id": None,
+                "result": result
+            }
 
 
         # Save Rounds

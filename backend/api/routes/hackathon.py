@@ -8,8 +8,8 @@ from db.ResourceRepository import ResourceRepository
 from db.AgentAnalysisRepository import AgentAnalysisRepository
 from db.AgentRoundsRepository import AgentRoundsRepository
 
-from backend.services.HackathonService import HackathonService
-from backend.services.AnalysisService import AnalysisService 
+from services.HackathonService import HackathonService
+from services.AnalysisService import AnalysisService 
 
 from scraper.main_scraper import scraperHackathons
 

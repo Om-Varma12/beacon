@@ -5,7 +5,12 @@ from db.database import Database
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
 from db.ResourceRepository import ResourceRepository
-from db.HackathonService import HackathonService
+from db.AgentAnalysisRepository import AgentAnalysisRepository
+from db.AgentRoundsRepository import AgentRoundsRepository
+
+from backend.services.HackathonService import HackathonService
+from backend.services.AnalysisService import AnalysisService 
+
 from scraper.main_scraper import scraperHackathons
 
 router = APIRouter()
@@ -32,6 +37,23 @@ def get_service():
         problem_repo,
         resource_repo,
     )
+
+def get_analysis_service():
+    hackathon_repo = HackathonRepository(db)
+    problem_repo = ProblemRepository(db)
+    analysis_repo = AgentAnalysisRepository(db)
+    rounds_repo = AgentRoundsRepository(db)
+
+    return AnalysisService(
+        hackathon_repo,
+        problem_repo,
+        analysis_repo,
+        rounds_repo
+    )
+    
+
+#                                 Routes                                       #    
+#------------------------------------------------------------------------------#
 
 
 @router.get("")
@@ -84,6 +106,26 @@ def get_hackathon(
 
     if data is None:
         raise HTTPException(status_code=404, detail="Hackathon not found")
+
+    return {
+        "success": True,
+        "data": data
+    }
+    
+@router.post("/{hackathon_id}/analyze")
+async def analyze_hackathon(
+    hackathon_id: int,
+    service: AnalysisService = Depends(get_analysis_service)
+):
+    data = await service.analyze_hackathon(
+        hackathon_id
+    )
+
+    if data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Hackathon not found"
+        )
 
     return {
         "success": True,

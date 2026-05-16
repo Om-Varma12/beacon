@@ -1176,7 +1176,7 @@ export default function HackathonDetailApi() {
                         Winner
                       </p>
                       <h1 className="mb-3 font-display text-4xl font-bold tracking-tight text-forest md:text-5xl">
-                        {analysisResult.winner ?? "Winner not available"}
+                        {(analysisResult.winner ?? "Winner not available").toString().toUpperCase()}
                       </h1>
                       {analysisResult.winning_idea?.title && (
                         <p className="max-w-lg font-mono text-[10px] uppercase tracking-[0.2em] text-grid/50">
@@ -1263,6 +1263,11 @@ export default function HackathonDetailApi() {
                             .map(([name, score], index) => {
                               const colors = ["bg-mint", "bg-gold", "bg-coral"];
 
+                              // Scores from backend are expected in 0-10 range.
+                              // Scale to 0-100 for display and progress width.
+                              const raw = Number(score) || 0;
+                              const scaled = Math.round(raw * 10);
+
                               return (
                                 <div
                                   key={name}
@@ -1276,15 +1281,15 @@ export default function HackathonDetailApi() {
                                   <div className="relative h-2.5 flex-1 score-bar-bg">
                                     <div
                                       className={`absolute inset-y-0 left-0 ${colors[index] ?? "bg-forest"}`}
-                                      style={{ width: `${score}%` }}
+                                      style={{ width: `${scaled}%` }}
                                     />
                                   </div>
-                                  <div className="flex items-center justify-end space-x-2 md:w-24">
+                                  <div className="flex items-center justify-end space-x-2 md:w-36">
                                     <span className="font-display text-base font-bold text-forest">
-                                      {(score / 10).toFixed(1)}
+                                      {scaled}%
                                     </span>
                                     <span className="font-mono text-[10px] text-grid/50">
-                                      ({score}%)
+                                      ({raw.toFixed(1)}/10)
                                     </span>
                                   </div>
                                 </div>
@@ -1300,10 +1305,10 @@ export default function HackathonDetailApi() {
                           Winning Idea
                         </p>
                         <h2 className="mb-3 font-display text-2xl font-bold tracking-tight text-forest">
-                          {analysisResult.winning_idea?.title ?? "No winning idea title"}
+                          {analysisResult.synthesized?.final_project_title ?? analysisResult.winning_idea?.title ?? "No winning idea title"}
                         </h2>
                         <p className="font-sans text-sm leading-[1.6] text-grid/80">
-                          {analysisResult.winning_idea?.description ?? "No winning idea description available."}
+                          {analysisResult.synthesized?.final_solution_overview ?? analysisResult.winning_idea?.description ?? "No winning idea description available."}
                         </p>
                       </div>
 
@@ -1312,7 +1317,7 @@ export default function HackathonDetailApi() {
                           Synthesized Analysis
                         </p>
                         <p className="font-sans text-sm leading-[1.6] text-grid/80">
-                          {analysisResult.synthesized?.summary ?? "No synthesized summary available."}
+                          {analysisResult.synthesized?.why_this_is_best ?? analysisResult.synthesized?.summary ?? "No synthesized summary available."}
                         </p>
                       </div>
                     </div>
@@ -1323,7 +1328,7 @@ export default function HackathonDetailApi() {
                           Target Users
                         </p>
                         <ul className="space-y-2">
-                          {(analysisResult.winning_idea?.target_users ?? []).map((user, index) => (
+                          {(analysisResult.synthesized?.final_target_users ?? analysisResult.winning_idea?.target_users ?? []).map((user, index) => (
                             <li key={`${user}-${index}`} className="text-sm text-forest">
                               {user}
                             </li>
@@ -1336,7 +1341,7 @@ export default function HackathonDetailApi() {
                           Core Features
                         </p>
                         <ul className="space-y-3">
-                          {(analysisResult.winning_idea?.core_features ?? []).map((feature, index) => (
+                          {(analysisResult.synthesized?.final_core_features ?? analysisResult.winning_idea?.core_features ?? []).map((feature, index) => (
                             <li key={`${feature}-${index}`} className="flex items-start space-x-2">
                               <div className="bullet-point bg-mint mt-1" />
                               <span className="font-sans text-sm text-forest">{feature}</span>
@@ -1352,11 +1357,15 @@ export default function HackathonDetailApi() {
                           Strengths
                         </p>
                         <ul className="space-y-2">
-                          {(analysisResult.synthesized?.strengths ?? []).map((strength, index) => (
-                            <li key={`${strength}-${index}`} className="text-sm text-forest">
-                              {strength}
-                            </li>
-                          ))}
+                          {(analysisResult.synthesized?.strengths ?? []).length > 0 ? (
+                            (analysisResult.synthesized?.strengths ?? []).map((strength, index) => (
+                              <li key={`${strength}-${index}`} className="text-sm text-forest">
+                                {strength}
+                              </li>
+                            ))
+                          ) : (
+                            <li className="text-sm text-grid/60">No strengths available.</li>
+                          )}
                         </ul>
                       </div>
 
@@ -1365,11 +1374,15 @@ export default function HackathonDetailApi() {
                           Weaknesses
                         </p>
                         <ul className="space-y-2">
-                          {(analysisResult.synthesized?.weaknesses ?? []).map((weakness, index) => (
-                            <li key={`${weakness}-${index}`} className="text-sm text-forest">
-                              {weakness}
-                            </li>
-                          ))}
+                          {(analysisResult.synthesized?.weaknesses ?? []).length > 0 ? (
+                            (analysisResult.synthesized?.weaknesses ?? []).map((weakness, index) => (
+                              <li key={`${weakness}-${index}`} className="text-sm text-forest">
+                                {weakness}
+                              </li>
+                            ))
+                          ) : (
+                            <li className="text-sm text-grid/60">No weaknesses available.</li>
+                          )}
                         </ul>
                       </div>
                     </div>

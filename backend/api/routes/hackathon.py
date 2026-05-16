@@ -131,3 +131,21 @@ async def analyze_hackathon(
         "success": True,
         "data": data
     }
+    
+@router.get("/{hackathon_id}/analysis")
+def get_analysis(
+    hackathon_id: int,
+    service: AnalysisService = Depends(get_analysis_service)
+):
+    data = service.get_analysis(hackathon_id)
+
+    if data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Hackathon not found"
+        )
+
+    return {
+        "success": True,
+        "data": data
+    }

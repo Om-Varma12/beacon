@@ -168,3 +168,66 @@ body {
   margin-top: 6px;
   flex-shrink: 0;
 }
+
+/* Debate Rounds Agent Cards */
+.agent-card {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--paper);
+  border: 1px solid rgba(58, 58, 56, 0.15);
+  position: relative;
+}
+
+.agent-card:hover:not(.w-full) {
+  background-color: rgba(58, 58, 56, 0.02);
+  border-color: rgba(26, 60, 43, 0.3);
+}
+
+.agent-card .expanded-content {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease 0.1s, visibility 0s linear 0.3s;
+}
+
+.agent-card.w-full .expanded-content {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease 0.1s, visibility 0s linear 0s;
+}
+
+.agent-card.w-full .compact-view {
+  border-bottom: 1px solid rgba(58, 58, 56, 0.1);
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+}
+
+.agent-card .close-btn {
+  display: none;
+}
+
+.agent-card.w-full .close-btn {
+  display: block;
+}
+
+/* Custom scrollbar for expanded cards */
+.agent-card.w-full {
+  overflow-y: auto;
+}
+
+.agent-card.w-full::-webkit-scrollbar {
+  width: 6px;
+}
+
+.agent-card.w-full::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.agent-card.w-full::-webkit-scrollbar-thumb {
+  background: var(--grid);
+  opacity: 0.2;
+  border-radius: 3px;
+}
+
+.agent-card.w-full::-webkit-scrollbar-thumb:hover {
+  background: var(--grid);
+  opacity: 0.4;
+}

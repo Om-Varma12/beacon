@@ -144,9 +144,38 @@ interface HackathonQueryResult {
 interface AnalysisRound {
   round_number?: number;
   phase?: string | null;
-  ideas?: unknown;
-  debates?: unknown;
-  judge?: unknown;
+  ideas?: Record<string, AnalysisAgentOutput> | null;
+  debates?: Record<string, AnalysisDebateOutput> | null;
+  judge?: AnalysisJudgeOutput | null;
+}
+
+interface AnalysisAgentOutput {
+  target_users?: string[] | null;
+  agent_persona?: string | null;
+  core_features?: string[] | null;
+  project_title?: string | null;
+  overall_reasoning?: string | null;
+  problem_statement?: string | null;
+  solution_overview?: string | null;
+}
+
+interface AnalysisCritiqueOutput {
+  critique?: string | null;
+  target_agent?: string | null;
+}
+
+interface AnalysisDebateOutput {
+  defense?: string | null;
+  agent_persona?: string | null;
+  improved_idea?: AnalysisAgentOutput | null;
+  criticisms_of_competitors?: AnalysisCritiqueOutput[] | null;
+}
+
+interface AnalysisJudgeOutput {
+  scores?: Record<string, number> | null;
+  summary?: string | null;
+  feedback?: Record<string, string | null> | string | null;
+  leaderboard?: string[] | null;
 }
 
 interface AnalysisResult {
@@ -158,11 +187,24 @@ interface AnalysisResult {
     description?: string | null;
     target_users?: string[] | null;
     core_features?: string[] | null;
+    agent_persona?: string | null;
+    project_title?: string | null;
+    problem_statement?: string | null;
+    solution_overview?: string | null;
+    overall_reasoning?: string | null;
   } | null;
   synthesized?: {
     summary?: string | null;
     strengths?: string[] | null;
     weaknesses?: string[] | null;
+    final_strategy?: string | null;
+    winning_persona?: string | null;
+    why_this_is_best?: string | null;
+    final_target_users?: string[] | null;
+    final_core_features?: string[] | null;
+    final_project_title?: string | null;
+    final_problem_statement?: string | null;
+    final_solution_overview?: string | null;
   } | null;
   rounds?: AnalysisRound[] | null;
 }
@@ -380,37 +422,33 @@ function buildViewModel(
   };
 }
 
-function formatAnalysisValue(value: unknown): string {
-  if (value == null) {
-    return "No data available.";
-  }
-
-  if (typeof value === "string") {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      return "No data available.";
-    }
-
-    return value
-      .map((item) => {
-        if (typeof item === "string") {
-          return item;
-        }
-
-        return JSON.stringify(item, null, 2);
-      })
-      .join("\n");
-  }
-
-  if (typeof value === "object") {
-    return JSON.stringify(value, null, 2);
-  }
-
-  return String(value);
+function formatAgentLabel(agent: string): string {
+  return agent
+    .replaceAll("_", " ")
+    .split(" ")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
 }
+
+function getScaledScore(score?: number | null): number {
+  const numericScore = Number(score ?? 0);
+
+  if (Number.isNaN(numericScore)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(numericScore * 10)));
+}
+
+function getRoundAgentOrder(round: AnalysisRound): string[] {
+  const leaderboard = round.judge?.leaderboard ?? [];
+  const ideaKeys = Object.keys(round.ideas ?? {});
+  const debateKeys = Object.keys(round.debates ?? {});
+
+  return Array.from(new Set([...leaderboard, ...ideaKeys, ...debateKeys]));
+}
+
+
 
 export default function HackathonDetailApi() {
   const { id } = useParams<{ id: string }>();
@@ -429,6 +467,14 @@ export default function HackathonDetailApi() {
   ]);
   const [chatInput, setChatInput] = useState("");
   const [isAnalysisRunning, setIsAnalysisRunning] = useState(false);
+  const [expandedCard, setExpandedCard] = useState<{ roundIndex: number; agent: string } | null>(null);
+  const handleCardExpand = (roundIdx: number, agentName: string) => {
+    if (expandedCard?.roundIndex === roundIdx && expandedCard?.agent === agentName) {
+      setExpandedCard(null);
+    } else {
+      setExpandedCard({ roundIndex: roundIdx, agent: agentName });
+    }
+  };
   const hackathonQuery = useQuery<HackathonQueryResult, Error>({
     queryKey: ["hackathon", id],
     enabled: Boolean(id),
@@ -781,6 +827,8 @@ export default function HackathonDetailApi() {
       setIsAnalysisRunning(false);
     }, 3000);
   };
+
+  
 
   const lastSaved = new Date();
   const sectionHeadingClass =
@@ -1188,7 +1236,7 @@ export default function HackathonDetailApi() {
                     {analysisLeaderboard.length > 0 && (
                       <div className="flex flex-col items-end justify-center gap-4 md:flex-row">
                         <div className="order-2 w-full flex-1 bg-white border border-grid/20 p-5 premium-card relative md:order-1 md:w-auto">
-                          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-gold" />
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gold" />
                           <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-grid/60">
                             2nd Place
                           </p>
@@ -1207,7 +1255,7 @@ export default function HackathonDetailApi() {
                         </div>
 
                         <div className="order-1 w-full flex-1 bg-white border border-grid/20 p-6 premium-card relative md:order-2 md:w-auto md:-translate-y-2 md:pb-8">
-                          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-mint" />
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-mint" />
                           <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-forest px-2 py-0.5">
                             <p className="font-mono text-[8px] font-bold uppercase tracking-widest text-white">
                               Champion
@@ -1231,7 +1279,7 @@ export default function HackathonDetailApi() {
                         </div>
 
                         <div className="order-3 w-full flex-1 bg-white border border-grid/20 p-5 premium-card relative md:w-auto">
-                          <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-coral" />
+                          <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-coral" />
                           <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-[0.15em] text-grid/60">
                             3rd Place
                           </p>
@@ -1274,7 +1322,7 @@ export default function HackathonDetailApi() {
                                   className="flex flex-col justify-between gap-3 md:flex-row md:items-center"
                                 >
                                   <div className="w-36">
-                                    <p className="font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-forest">
+                                    <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-forest">
                                       {name}
                                     </p>
                                   </div>
@@ -1387,55 +1435,235 @@ export default function HackathonDetailApi() {
                       </div>
                     </div>
 
-                    <div className="w-full bg-white border border-grid/20 p-8">
-                      <h2 className="mb-6 font-display text-lg font-bold text-forest">
-                        Debate Rounds
-                      </h2>
-
-                      <div className="space-y-6">
-                        {analysisRounds.map((round, index) => (
-                          <div key={`${round.round_number ?? index}`} className="border border-grid/20 p-5">
-                            <div className="mb-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                              <h3 className="font-display text-xl text-forest">
-                                Round {round.round_number ?? index + 1}
-                              </h3>
-                              {round.phase && (
-                                <span className="font-mono text-[10px] tracking-[0.2em] uppercase text-grid/50">
-                                  {round.phase}
-                                </span>
-                              )}
+                    <div className="w-full">
+                      <div className="mb-16 border-b border-grid/20 pb-8">
+                        <div className="flex justify-between items-baseline mb-4">
+                          <h1 className="font-display text-5xl lg:text-6xl text-forest leading-[0.85]">
+                            DEBATE<br />LOGS
+                          </h1>
+                          <div className="text-right">
+                            <div className="font-mono text-[10px] uppercase mb-1 tracking-widest text-grid/60">
+                              Analysis Phase Protocol
                             </div>
-
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                              <div className="border border-grid/20 p-4">
-                                <p className="mb-2 font-mono text-[10px] tracking-[0.2em] uppercase text-grid/60">
-                                  Ideas
-                                </p>
-                                <pre className="whitespace-pre-wrap text-xs leading-relaxed text-grid/80">
-                                  {formatAnalysisValue(round.ideas)}
-                                </pre>
-                              </div>
-
-                              <div className="border border-grid/20 p-4">
-                                <p className="mb-2 font-mono text-[10px] tracking-[0.2em] uppercase text-grid/60">
-                                  Debates
-                                </p>
-                                <pre className="whitespace-pre-wrap text-xs leading-relaxed text-grid/80">
-                                  {formatAnalysisValue(round.debates)}
-                                </pre>
-                              </div>
-
-                              <div className="border border-grid/20 p-4">
-                                <p className="mb-2 font-mono text-[10px] tracking-[0.2em] uppercase text-grid/60">
-                                  Judge
-                                </p>
-                                <pre className="whitespace-pre-wrap text-xs leading-relaxed text-grid/80">
-                                  {formatAnalysisValue(round.judge)}
-                                </pre>
-                              </div>
+                            <div className="font-mono text-[12px] font-bold border border-forest px-3 py-1">
+                              SESSION: {analysisResult.winner ?? "ANALYSIS"}
                             </div>
                           </div>
-                        ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-16">
+                        {analysisRounds.map((round, roundIndex) => {
+                          const roundNumber = round.round_number ?? roundIndex + 1;
+                          const roundOrder = getRoundAgentOrder(round);
+                          const roundScores = round.judge?.scores ?? {};
+                          const roundFeedback = round.judge?.feedback;
+
+                          const phaseLabels = [
+                            "Generation & Scoping",
+                            "Debate & Critique",
+                            "Final Evaluation",
+                          ];
+                          const phaseLabel = phaseLabels[roundIndex] ?? `Phase ${roundNumber}`;
+
+                          return (
+                            <section key={`${round.round_number ?? roundIndex}`} className="w-full">
+                              {roundIndex > 0 && (
+                                <div className="h-px bg-forest opacity-20 my-16" />
+                              )}
+
+                              <div className="flex justify-between items-center mb-8">
+                                <div>
+                                  <span className="font-mono text-[10px] text-white bg-forest px-2 py-0.5 uppercase mb-2 inline-block">
+                                    Phase {String(roundNumber).padStart(2, "0")}
+                                  </span>
+                                  <h2 className="font-display text-4xl">{phaseLabel}</h2>
+                                </div>
+                                <span className="font-mono text-[10px] uppercase text-grid/40">
+                                  {roundOrder.length} Records Collected
+                                </span>
+                              </div>
+
+                              <div className="flex flex-wrap gap-4 items-start">
+                                {roundOrder.map((agent) => {
+                                  const idea = round.ideas?.[agent];
+                                  const debate = round.debates?.[agent];
+                                  const agentScore = roundScores[agent];
+                                  const agentFeedback =
+                                    typeof roundFeedback === "string"
+                                      ? roundFeedback
+                                      : (typeof roundFeedback === "object" ? roundFeedback?.[agent] : null);
+
+                                  const agentType = agent.toLowerCase().includes("innovation")
+                                    ? "innovation"
+                                    : agent.toLowerCase().includes("practical")
+                                      ? "practical"
+                                      : agent.toLowerCase().includes("business")
+                                        ? "business"
+                                        : "other";
+                                  const agentBorderColor =
+                                    agentType === "innovation" ? "border-mint" : agentType === "practical" ? "border-coral" : "border-gold";
+                                  const agentTextColor = agentType === "innovation" ? "text-mint" : agentType === "practical" ? "text-coral" : "text-gold";
+                                  const agentCritiques = debate?.criticisms_of_competitors ?? [];
+                                  const isExpanded = expandedCard?.roundIndex === roundIndex && expandedCard?.agent === agent;
+
+                                  const title = idea?.project_title ?? debate?.improved_idea?.project_title ?? formatAgentLabel(agent);
+                                  const description = idea?.solution_overview ?? debate?.improved_idea?.solution_overview ?? "No description available.";
+
+                                  return (
+                                    <div
+                                      key={agent}
+                                      className={`agent-card bg-paper border border-grid/15 p-6 relative rounded-sm cursor-pointer border-l-4 ${agentBorderColor} transition-all duration-400 ${
+                                        isExpanded ? "w-full max-h-300 z-10" : "w-[calc(33.333%-11px)] max-h-40 overflow-hidden"
+                                      }`}
+                                      onClick={() => handleCardExpand(roundIndex, agent)}>
+                                      <button
+                                        className="close-btn absolute top-6 right-6 font-mono text-xl text-grid/60 hover:text-forest"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleCardExpand(roundIndex, agent);
+                                        }}
+                                      >
+                                        ×
+                                      </button>
+
+                                      <div className="compact-view">
+                                        <div className="flex justify-between items-start mb-3">
+                                          <span className={`font-mono text-[10px] uppercase tracking-widest font-bold ${agentTextColor}`}>
+                                            {agentType} / {formatAgentLabel(agent)}
+                                          </span>
+                                          <span className="font-mono text-[16px] font-bold">
+                                            {agentScore != null ? `${getScaledScore(agentScore)}` : "N/A"}
+                                          </span>
+                                        </div>
+                                        <h3 className="font-display text-xl mb-2">{title}</h3>
+                                        <p className="text-[13px] text-grid opacity-70 truncate">{description}</p>
+                                        {!isExpanded && (
+                                          <div className="mt-4 flex items-center gap-1 font-mono text-[9px] uppercase tracking-widest text-grid/40">
+                                            <Icon icon="lucide:maximize-2" className="text-sm" />
+                                            Tap to Expand
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      <div className="expanded-content">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                          <div className="space-y-6">
+                                            {idea?.problem_statement || debate?.improved_idea?.problem_statement ? (
+                                              <div>
+                                                <label className="font-mono text-[10px] uppercase text-grid/60">
+                                                  Problem Statement
+                                                </label>
+                                                <p className="text-[13px] mt-2 leading-relaxed">
+                                                  {idea?.problem_statement ?? debate?.improved_idea?.problem_statement}
+                                                </p>
+                                              </div>
+                                            ) : null}
+
+                                            {(idea?.problem_statement || debate?.improved_idea?.problem_statement) && (idea?.solution_overview || debate?.improved_idea?.solution_overview) ? (
+                                              <div className="h-px bg-grid/15" />
+                                            ) : null}
+
+                                            {idea?.solution_overview || debate?.improved_idea?.solution_overview ? (
+                                              <div>
+                                                <label className="font-mono text-[10px] uppercase text-grid/60">
+                                                  Solution Overview
+                                                </label>
+                                                <p className="text-[13px] mt-2 leading-relaxed">
+                                                  {idea?.solution_overview ?? debate?.improved_idea?.solution_overview}
+                                                </p>
+                                              </div>
+                                            ) : null}
+                                          </div>
+
+                                          <div className="space-y-6">
+                                            {(idea?.core_features?.length ?? 0) > 0 || (debate?.improved_idea?.core_features?.length ?? 0) > 0 ? (
+                                              <div>
+                                                <label className="font-mono text-[10px] uppercase text-grid/60">
+                                                  Core Features
+                                                </label>
+                                                <ul className="text-[13px] mt-2 space-y-2">
+                                                  {(idea?.core_features ?? debate?.improved_idea?.core_features ?? []).map((feature) => (
+                                                    <li key={feature} className="flex items-center gap-2">
+                                                      <span className="w-1.5 h-1.5 bg-forest" />
+                                                      {feature}
+                                                    </li>
+                                                  ))}
+                                                </ul>
+                                              </div>
+                                            ) : null}
+                                          </div>
+                                        </div>
+
+                                        {debate && (debate.defense || agentCritiques.length > 0) && (
+                                          <div className="mt-8 space-y-8">
+                                            {debate.defense && (
+                                              <div>
+                                                <label className="font-mono text-[10px] uppercase text-grid/60 mb-2 block">
+                                                  Defense Statement
+                                                </label>
+                                                <p className="text-[13px] leading-relaxed">{debate.defense}</p>
+                                              </div>
+                                            )}
+
+                                            {agentCritiques.length > 0 && (
+                                              <>
+                                                <div className="h-px bg-grid/15" />
+                                                <div>
+                                                  <label className="font-mono text-[10px] uppercase text-grid/60 mb-4 block">
+                                                    Criticisms Directed at Others
+                                                  </label>
+                                                  <div className="space-y-4">
+                                                    {agentCritiques.map((critique, critiqueIndex) => (
+                                                      <div
+                                                        key={`${agent}-critique-${critiqueIndex}`}
+                                                        className="p-4 bg-white/50 border border-grid/10"
+                                                      >
+                                                        <span className="font-mono text-[9px] uppercase text-forest font-bold">
+                                                          {critique.target_agent
+                                                            ? `Target: ${formatAgentLabel(critique.target_agent)}`
+                                                            : "Critique"}
+                                                        </span>
+                                                        <p className="text-[12px] mt-1">{critique.critique ?? "No critique text available."}</p>
+                                                      </div>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              </>
+                                            )}
+                                          </div>
+                                        )}
+
+                                        {agentFeedback && (
+                                          <div className="mt-8">
+                                            <div className="h-px bg-grid/15" />
+                                            <div className="mt-8">
+                                              <label className="font-mono text-[10px] uppercase text-grid/60 mb-2 block">
+                                                Judge Feedback
+                                              </label>
+                                              <p className="text-[13px] leading-relaxed">{agentFeedback}</p>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </section>
+                          );
+                        })}
+                      </div>
+
+                      <div className="mt-16 border-t border-grid/20 pt-12 flex justify-between items-center text-grid/40">
+                        <div className="font-mono text-[10px] uppercase">
+                          Analysis Completed // Protocol Secure
+                        </div>
+                        <div className="flex gap-6">
+                          <Icon icon="lucide:shield-check" className="text-xl" />
+                          <Icon icon="lucide:cpu" className="text-xl" />
+                          <Icon icon="lucide:database" className="text-xl" />
+                        </div>
                       </div>
                     </div>
 

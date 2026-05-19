@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
@@ -448,7 +448,44 @@ function getRoundAgentOrder(round: AnalysisRound): string[] {
   return Array.from(new Set([...leaderboard, ...ideaKeys, ...debateKeys]));
 }
 
+function getAgentType(agent: string): "innovation" | "practical" | "business" {
+  const normalized = agent.toLowerCase();
+  if (normalized.includes("innovation")) return "innovation";
+  if (normalized.includes("practical")) return "practical";
+  if (normalized.includes("business")) return "business";
+  return "business";
+}
 
+function getAgentColor(agentType: "innovation" | "practical" | "business"): string {
+  const colors = {
+    innovation: "coral",
+    practical: "mint",
+    business: "gold",
+  };
+  return colors[agentType];
+}
+
+function getAgentBorderColor(agentType: "innovation" | "practical" | "business"): string {
+  const colors = {
+    innovation: "border-coral",
+    practical: "border-mint",
+    business: "border-gold",
+  };
+  return colors[agentType];
+}
+
+function getAgentTextColor(agentType: "innovation" | "practical" | "business"): string {
+  const colors = {
+    innovation: "text-coral",
+    practical: "text-mint",
+    business: "text-gold",
+  };
+  return colors[agentType];
+}
+
+function getAgentRank(agent: string, leaderboard: string[]): number {
+  return leaderboard.indexOf(agent);
+}
 
 export default function HackathonDetailApi() {
   const { id } = useParams<{ id: string }>();
@@ -468,13 +505,6 @@ export default function HackathonDetailApi() {
   const [chatInput, setChatInput] = useState("");
   const [isAnalysisRunning, setIsAnalysisRunning] = useState(false);
   const [expandedCard, setExpandedCard] = useState<{ roundIndex: number; agent: string } | null>(null);
-  const handleCardExpand = (roundIdx: number, agentName: string) => {
-    if (expandedCard?.roundIndex === roundIdx && expandedCard?.agent === agentName) {
-      setExpandedCard(null);
-    } else {
-      setExpandedCard({ roundIndex: roundIdx, agent: agentName });
-    }
-  };
   const hackathonQuery = useQuery<HackathonQueryResult, Error>({
     queryKey: ["hackathon", id],
     enabled: Boolean(id),
@@ -777,6 +807,12 @@ export default function HackathonDetailApi() {
   const analysisFinalScores = analysisResult?.final_scores ?? {};
   const analysisRounds = analysisResult?.rounds ?? [];
 
+  useEffect(() => {
+    // Log analysis payload for debugging when nothing appears in the UI
+    // eslint-disable-next-line no-console
+    console.log("DEBUG: analysisData ->", analysisData);
+  }, [analysisData]);
+
   const tabs = [
     { id: "overview" as TabType, label: "Overview" },
     { id: "analysis" as TabType, label: "AI Analysis" },
@@ -828,7 +864,13 @@ export default function HackathonDetailApi() {
     }, 3000);
   };
 
-  
+  const handleCardExpand = (roundIndex: number, agent: string) => {
+    if (expandedCard?.roundIndex === roundIndex && expandedCard?.agent === agent) {
+      setExpandedCard(null);
+    } else {
+      setExpandedCard({ roundIndex, agent });
+    }
+  };
 
   const lastSaved = new Date();
   const sectionHeadingClass =
@@ -893,7 +935,7 @@ export default function HackathonDetailApi() {
             </div>
 
             <div className="lg:w-100">
-              <div className="bg-paper border border-grid/20 p-5">
+              <div className="bg-white border border-grid/20 p-5">
                 <div className="flex items-center space-x-2 mb-3">
                   <Icon icon="lucide:brain-circuit" className="text-forest" />
                   <span className="font-mono text-[10px] tracking-widest uppercase text-grid/60">
@@ -1121,7 +1163,7 @@ export default function HackathonDetailApi() {
                     {viewModel.unstopLink && (
                       <div className="border border-grid/20 p-4 hover:border-forest transition-colors flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-paper border border-grid/20 flex items-center justify-center">
+                          <div className="w-10 h-10 bg-white border border-grid/20 flex items-center justify-center">
                             <Icon
                               icon="lucide:external-link"
                               className="text-forest"
@@ -1147,7 +1189,7 @@ export default function HackathonDetailApi() {
                         className="border border-grid/20 p-4 hover:border-forest transition-colors flex items-center justify-between"
                       >
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-paper border border-grid/20 flex items-center justify-center">
+                          <div className="w-10 h-10 bg-white border border-grid/20 flex items-center justify-center">
                             <Icon
                               icon={
                                 resource.type === "ppt"
@@ -1219,6 +1261,14 @@ export default function HackathonDetailApi() {
 
                 {!analysisQuery.isPending && !analysisQuery.error && hasAnalysis && analysisResult && (
                   <>
+                    {analysisRounds.length === 0 && (
+                      <div className="bg-white border border-grid/20 p-6">
+                        <p className="font-mono text-[10px] tracking-widest uppercase text-grid/40 mb-3">AI Analysis (raw payload)</p>
+                        <pre className="max-h-96 overflow-auto text-xs p-2 bg-white border border-grid/10">
+                          {JSON.stringify(analysisData, null, 2)}
+                        </pre>
+                      </div>
+                    )}
                     <div className="w-full bg-white border border-grid/20 border-t-[3px] border-t-mint flex flex-col items-center py-10 px-6 text-center">
                       <p className="mb-2 font-mono text-[10px] font-bold uppercase tracking-[0.25em] text-forest">
                         Winner
@@ -1399,42 +1449,6 @@ export default function HackathonDetailApi() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="bg-white border border-grid/20 p-6">
-                        <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-grid/60">
-                          Strengths
-                        </p>
-                        <ul className="space-y-2">
-                          {(analysisResult.synthesized?.strengths ?? []).length > 0 ? (
-                            (analysisResult.synthesized?.strengths ?? []).map((strength, index) => (
-                              <li key={`${strength}-${index}`} className="text-sm text-forest">
-                                {strength}
-                              </li>
-                            ))
-                          ) : (
-                            <li className="text-sm text-grid/60">No strengths available.</li>
-                          )}
-                        </ul>
-                      </div>
-
-                      <div className="bg-white border border-grid/20 p-6">
-                        <p className="mb-4 font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-grid/60">
-                          Weaknesses
-                        </p>
-                        <ul className="space-y-2">
-                          {(analysisResult.synthesized?.weaknesses ?? []).length > 0 ? (
-                            (analysisResult.synthesized?.weaknesses ?? []).map((weakness, index) => (
-                              <li key={`${weakness}-${index}`} className="text-sm text-forest">
-                                {weakness}
-                              </li>
-                            ))
-                          ) : (
-                            <li className="text-sm text-grid/60">No weaknesses available.</li>
-                          )}
-                        </ul>
-                      </div>
-                    </div>
-
                     <div className="w-full">
                       <div className="mb-16 border-b border-grid/20 pb-8">
                         <div className="flex justify-between items-baseline mb-4">
@@ -1450,6 +1464,8 @@ export default function HackathonDetailApi() {
                           const roundOrder = getRoundAgentOrder(round);
                           const roundScores = round.judge?.scores ?? {};
                           const roundFeedback = round.judge?.feedback;
+                          const leaderboard = round.judge?.leaderboard ?? [];
+                          const rawSummary = round.judge?.summary ?? null;
 
                           const phaseLabels = [
                             "Generation & Scoping",
@@ -1485,6 +1501,7 @@ export default function HackathonDetailApi() {
                                     typeof roundFeedback === "string"
                                       ? roundFeedback
                                       : (typeof roundFeedback === "object" ? roundFeedback?.[agent] : null);
+                                  const agentCritiques = debate?.criticisms_of_competitors ?? [];
 
                                   const agentType = agent.toLowerCase().includes("innovation")
                                     ? "innovation"
@@ -1496,7 +1513,7 @@ export default function HackathonDetailApi() {
                                   const agentBorderColor =
                                     agentType === "innovation" ? "border-mint" : agentType === "practical" ? "border-coral" : "border-gold";
                                   const agentTextColor = agentType === "innovation" ? "text-mint" : agentType === "practical" ? "text-coral" : "text-gold";
-                                  const agentCritiques = debate?.criticisms_of_competitors ?? [];
+                                  const winnerBg = "bg-white";
                                   const isExpanded = expandedCard?.roundIndex === roundIndex && expandedCard?.agent === agent;
 
                                   const title = idea?.project_title ?? debate?.improved_idea?.project_title ?? formatAgentLabel(agent);
@@ -1505,10 +1522,11 @@ export default function HackathonDetailApi() {
                                   return (
                                     <div
                                       key={agent}
-                                      className={`agent-card bg-paper border border-grid/15 p-6 relative rounded-sm cursor-pointer border-l-4 ${agentBorderColor} transition-all duration-400 ${
+                                      className={`agent-card ${winnerBg} border border-grid/10 p-6 relative rounded-sm cursor-pointer border-l-4 ${agentBorderColor} transition-all duration-400 ${
                                         isExpanded ? "w-full max-h-300 z-10" : "w-[calc(33.333%-11px)] max-h-40 overflow-hidden"
                                       }`}
-                                      onClick={() => handleCardExpand(roundIndex, agent)}>
+                                      onClick={() => handleCardExpand(roundIndex, agent)}
+                                    >
                                       <button
                                         className="close-btn absolute top-6 right-6 font-mono text-xl text-grid/60 hover:text-forest"
                                         onClick={(e) => {
@@ -1646,8 +1664,6 @@ export default function HackathonDetailApi() {
                           );
                         })}
                       </div>
-
-                      
                     </div>
 
                   </>
@@ -1760,7 +1776,7 @@ export default function HackathonDetailApi() {
                                 <h4 className={labelHeadingClass}>
                                   {alt.title}
                                 </h4>
-                                <span className="px-2 py-1 bg-paper border border-grid/20 font-mono text-[10px]">
+                                <span className="px-2 py-1 bg-white border border-grid/20 font-mono text-[10px]">
                                   {alt.score}
                                 </span>
                               </div>
@@ -1780,16 +1796,15 @@ export default function HackathonDetailApi() {
                     </h2>
                     <div className="space-y-4">
                       {executionPlan.map((step) => (
-                        <div
-                          key={step.day}
-                          className="border border-grid/20 p-4"
+                        <div key={step.day}
+                          className="bg-white border border-grid/20 p-4"
                         >
                           <div className="flex items-center space-x-3 mb-3">
                             <div
                               className={`w-8 h-8 flex items-center justify-center font-mono text-xs ${
                                 step.completed
                                   ? "bg-forest text-white"
-                                  : "bg-paper border border-grid/20"
+                                  : "bg-white border border-grid/20"
                               }`}
                             >
                               {step.completed ? (
@@ -1842,10 +1857,10 @@ export default function HackathonDetailApi() {
 
                   <div className="space-y-6">
                     {(viewModel?.resources ?? []).map((asset, index) => (
-                      <div key={index} className="border border-grid/20 p-4">
+                      <div key={index} className="bg-white border border-grid/20 p-4">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-paper border border-grid/20 flex items-center justify-center">
+                            <div className="w-10 h-10 bg-white border border-grid/20 flex items-center justify-center">
                               <Icon
                                 icon={
                                   asset.type === "ppt"
@@ -1876,7 +1891,7 @@ export default function HackathonDetailApi() {
                           </div>
                         </div>
                         {asset.content && (
-                          <div className="bg-paper p-4 max-h-64 overflow-y-auto">
+                          <div className="bg-white p-4 max-h-64 overflow-y-auto">
                             <pre className="font-mono text-xs text-grid/80 whitespace-pre-wrap">
                               {asset.content}
                             </pre>
@@ -1904,7 +1919,7 @@ export default function HackathonDetailApi() {
                         className={`max-w-[80%] p-4 ${
                           message.role === "user"
                             ? "bg-forest text-white"
-                            : "bg-paper border border-grid/20"
+                            : "bg-white border border-grid/20"
                         }`}
                       >
                         <p className="text-sm">{message.content}</p>
@@ -1958,7 +1973,7 @@ export default function HackathonDetailApi() {
                     </h3>
                     <button
                       onClick={() => setIsChatExpanded(true)}
-                      className="p-1 hover:bg-paper transition-colors"
+                      className="p-1 hover:bg-white transition-colors"
                     >
                       <Icon icon="lucide:expand" className="text-grid/60" />
                     </button>
@@ -1974,7 +1989,7 @@ export default function HackathonDetailApi() {
                           className={`max-w-[90%] p-3 text-sm ${
                             message.role === "user"
                               ? "bg-forest text-white"
-                              : "bg-paper border border-grid/20"
+                              : "bg-white border border-grid/20"
                           }`}
                         >
                           {message.content}

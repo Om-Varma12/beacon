@@ -1441,14 +1441,6 @@ export default function HackathonDetailApi() {
                           <h1 className="font-display text-5xl lg:text-6xl text-forest leading-[0.85]">
                             DEBATE<br />LOGS
                           </h1>
-                          <div className="text-right">
-                            <div className="font-mono text-[10px] uppercase mb-1 tracking-widest text-grid/60">
-                              Analysis Phase Protocol
-                            </div>
-                            <div className="font-mono text-[12px] font-bold border border-forest px-3 py-1">
-                              SESSION: {analysisResult.winner ?? "ANALYSIS"}
-                            </div>
-                          </div>
                         </div>
                       </div>
 
@@ -1655,23 +1647,9 @@ export default function HackathonDetailApi() {
                         })}
                       </div>
 
-                      <div className="mt-16 border-t border-grid/20 pt-12 flex justify-between items-center text-grid/40">
-                        <div className="font-mono text-[10px] uppercase">
-                          Analysis Completed // Protocol Secure
-                        </div>
-                        <div className="flex gap-6">
-                          <Icon icon="lucide:shield-check" className="text-xl" />
-                          <Icon icon="lucide:cpu" className="text-xl" />
-                          <Icon icon="lucide:database" className="text-xl" />
-                        </div>
-                      </div>
+                      
                     </div>
 
-                    <div className="pb-8 pt-4 text-center">
-                      <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-grid/40">
-                        Analysis loaded from the backend
-                      </p>
-                    </div>
                   </>
                 )}
               </div>

@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 
 import { useNavbar } from "../context/NavbarContext";
@@ -858,11 +858,46 @@ export default function HackathonDetailApi() {
   };
 
   const handleRunAnalysis = () => {
-    setIsAnalysisRunning(true);
-    setTimeout(() => {
-      setIsAnalysisRunning(false);
-    }, 3000);
+    // If analysis already exists, do not trigger another run here.
+    if (hasAnalysis) return;
+
+    // Delegate to callAnalyze which performs the backend request.
+    callAnalyze();
   };
+
+  const queryClient = useQueryClient();
+
+  async function callAnalyze() {
+    if (!id) return;
+    try {
+      setIsAnalysisRunning(true);
+
+      const resp = await fetch(`${API_BASE_URL}/hackathon/${id}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!resp.ok) {
+        // keep UI responsive; log error
+        // eslint-disable-next-line no-console
+        console.error("Failed to run analysis", resp.status);
+        setIsAnalysisRunning(false);
+        return;
+      }
+
+      const result = (await resp.json()) as AnalysisResponse;
+
+      // Update react-query cache for analysis so the UI reflects the new data
+      queryClient.setQueryData(["hackathon-analysis", id], result);
+      // Optionally refetch the query
+      queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id] } as any);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Error running analysis", err);
+    } finally {
+      setIsAnalysisRunning(false);
+    }
+  }
 
   const handleCardExpand = (roundIndex: number, agent: string) => {
     if (expandedCard?.roundIndex === roundIndex && expandedCard?.agent === agent) {
@@ -943,26 +978,8 @@ export default function HackathonDetailApi() {
                   </span>
                 </div>
                 <h3 className="font-display text-xl text-forest mb-2">
-                  {aiAnalysis.recommendedTheme.name}
+                  {analysisResult?.winning_idea?.project_title ?? analysisResult?.synthesized?.final_project_title ?? aiAnalysis.recommendedTheme.name}
                 </h3>
-                <div className="mb-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-mono text-[9px] text-grid/60">
-                      Confidence
-                    </span>
-                    <span className="font-mono text-xs text-forest">
-                      {aiAnalysis.recommendedTheme.confidence}%
-                    </span>
-                  </div>
-                  <div className="w-full h-2 bg-grid/10 rounded-none overflow-hidden">
-                    <div
-                      className="h-full bg-forest transition-all duration-500"
-                      style={{
-                        width: `${aiAnalysis.recommendedTheme.confidence}%`,
-                      }}
-                    />
-                  </div>
-                </div>
                 <p className="font-mono text-[8px] text-grid/40 uppercase mb-4">
                   Based on multi-agent analysis
                 </p>
@@ -981,7 +998,11 @@ export default function HackathonDetailApi() {
                       "Run AI Analysis"
                     )}
                   </button>
-                  <button className="flex-1 border border-grid/30 py-2 px-4 font-mono text-[10px] tracking-widest uppercase hover:bg-forest hover:text-white transition-all">
+                  <button
+                    onClick={handleRunAnalysis}
+                    disabled={isAnalysisRunning || hasAnalysis}
+                    className={`flex-1 border border-forest bg-white py-2 px-4 font-mono text-[10px] tracking-widest uppercase text-forest transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-(--forest) hover:text-(--paper) hover:border-(--forest)`}
+                  >
                     Re-run
                   </button>
                 </div>
@@ -1449,8 +1470,8 @@ export default function HackathonDetailApi() {
                       </div>
                     </div>
 
-                    <div className="w-full">
-                      <div className="mb-16 border-b border-grid/20 pb-8">
+                    <div className="w-full mt-20">
+                      <div className=" border-grid/20 pb-8">
                         <div className="flex justify-between items-baseline mb-4">
                           <h1 className="font-display text-5xl lg:text-6xl text-forest leading-[0.85]">
                             DEBATE<br />LOGS
@@ -1458,7 +1479,7 @@ export default function HackathonDetailApi() {
                         </div>
                       </div>
 
-                      <div className="space-y-16">
+                      <div className="space-y-10">
                         {analysisRounds.map((round, roundIndex) => {
                           const roundNumber = round.round_number ?? roundIndex + 1;
                           const roundOrder = getRoundAgentOrder(round);
@@ -1476,9 +1497,6 @@ export default function HackathonDetailApi() {
 
                           return (
                             <section key={`${round.round_number ?? roundIndex}`} className="w-full">
-                              {roundIndex > 0 && (
-                                <div className="h-px bg-forest opacity-20 my-16" />
-                              )}
 
                               <div className="flex justify-between items-center mb-8">
                                 <div>
@@ -1550,8 +1568,6 @@ export default function HackathonDetailApi() {
                                         <p className="text-[13px] text-grid opacity-70 truncate">{description}</p>
                                         {!isExpanded && (
                                           <div className="mt-4 flex items-center gap-1 font-mono text-[9px] uppercase tracking-widest text-grid/40">
-                                            <Icon icon="lucide:maximize-2" className="text-sm" />
-                                            Tap to Expand
                                           </div>
                                         )}
                                       </div>

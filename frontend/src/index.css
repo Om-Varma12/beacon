@@ -172,14 +172,15 @@ body {
 /* Debate Rounds Agent Cards */
 .agent-card {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  background-color: var(--paper);
-  border: 1px solid rgba(58, 58, 56, 0.15);
+  background-color: #ffffff;
+  border: 1px solid #000000;
+  border-radius: 0;
   position: relative;
 }
 
 .agent-card:hover:not(.w-full) {
   background-color: rgba(58, 58, 56, 0.02);
-  border-color: rgba(26, 60, 43, 0.3);
+  border-color: rgba(58, 58, 56, 0.4);
 }
 
 .agent-card .expanded-content {

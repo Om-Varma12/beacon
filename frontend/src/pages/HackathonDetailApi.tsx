@@ -220,7 +220,7 @@ interface AnalysisResponse {
   error?: string;
 }
 
-type TabType = "overview" | "analysis" | "final-idea" | "assets" | "chat";
+type TabType = "overview" | "analysis" | "assets" | "chat";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
@@ -730,66 +730,6 @@ export default function HackathonDetailApi() {
     } satisfies FinalIdea,
   });
 
-  const selectedIdea = aiAnalysis.finalIdea;
-
-  const executionPlan = [
-    {
-      day: 1,
-      title: "Research & Planning",
-      tasks: [
-        "Review the hackathon listing",
-        "Identify requirements",
-        "Map the problem statements",
-        "Define team scope",
-      ],
-      completed: false,
-    },
-    {
-      day: 2,
-      title: "Architecture Design",
-      tasks: [
-        "Create page structure",
-        "Design data flow",
-        "Set API contracts",
-        "Plan UI sections",
-      ],
-      completed: false,
-    },
-    {
-      day: 3,
-      title: "Core Development",
-      tasks: [
-        "Build detail page",
-        "Wire backend data",
-        "Render the problem statements",
-        "Add interactions",
-      ],
-      completed: false,
-    },
-    {
-      day: 4,
-      title: "Refinement & Testing",
-      tasks: [
-        "Polish styling",
-        "Validate data mapping",
-        "Check missing fields",
-        "Fix edge cases",
-      ],
-      completed: false,
-    },
-    {
-      day: 5,
-      title: "Final Preparation",
-      tasks: [
-        "Review UX",
-        "Confirm navigation",
-        "Check live endpoint",
-        "Prepare handoff",
-      ],
-      completed: false,
-    },
-  ];
-
   const hackathon = hackathonQuery.data?.hackathon ?? null;
   const loading = hackathonQuery.isPending;
   const error = hackathonQuery.error?.message ?? null;
@@ -816,7 +756,6 @@ export default function HackathonDetailApi() {
   const tabs = [
     { id: "overview" as TabType, label: "Overview" },
     { id: "analysis" as TabType, label: "AI Analysis" },
-    { id: "final-idea" as TabType, label: "Final Idea" },
     { id: "assets" as TabType, label: "Assets" },
     { id: "chat" as TabType, label: "Chat" },
   ];
@@ -1039,8 +978,7 @@ export default function HackathonDetailApi() {
         <div className="flex gap-6">
           <div
             className={`transition-all duration-300 ${
-              (activeTab === "analysis" || activeTab === "final-idea") &&
-              !isChatExpanded
+              activeTab === "analysis" && !isChatExpanded
                 ? "w-[70%]"
                 : "w-full"
             }`}
@@ -1687,173 +1625,6 @@ export default function HackathonDetailApi() {
               </div>
             )}
 
-            {!loading &&
-              !error &&
-              activeTab === "final-idea" &&
-              selectedIdea && (
-                <div className="space-y-6">
-                  <div className="bg-white border border-grid/20 p-6">
-                    <h2 className="font-display text-3xl text-forest mb-6">
-                      {selectedIdea.title}
-                    </h2>
-
-                    <div className="space-y-6">
-                      <div>
-                        <h3 className={sectionHeadingClass}>
-                          Problem Statement
-                        </h3>
-                        <p className="text-sm text-grid/80 leading-relaxed">
-                          {selectedIdea.problemStatement}
-                        </p>
-                      </div>
-
-                      <div>
-                        <h3 className={sectionHeadingClass}>
-                          Solution Description
-                        </h3>
-                        <p className="text-sm text-grid/80 leading-relaxed">
-                          {selectedIdea.solutionDescription}
-                        </p>
-                      </div>
-
-                      <div>
-                        <h3 className={sectionHeadingClass}>Key Features</h3>
-                        <ul className="space-y-2">
-                          {selectedIdea.keyFeatures.map((feature, index) => (
-                            <li
-                              key={index}
-                              className="flex items-start space-x-2 text-sm text-grid/80 leading-relaxed"
-                            >
-                              <Icon
-                                icon="lucide:check-circle"
-                                className="text-mint text-sm mt-0.5"
-                              />
-                              <span>{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <div>
-                        <h3 className={sectionHeadingClass}>Target Users</h3>
-                        <p className="text-sm text-grid/80 leading-relaxed">
-                          {selectedIdea.targetUsers}
-                        </p>
-                      </div>
-
-                      <div>
-                        <h3 className={sectionHeadingClass}>
-                          Why This Idea Wins
-                        </h3>
-                        <p className="text-sm text-grid/80 leading-relaxed">
-                          {selectedIdea.whyThisWins}
-                        </p>
-                      </div>
-
-                      <div>
-                        <h3 className={sectionHeadingClass}>
-                          Evaluation Breakdown
-                        </h3>
-                        <div className="space-y-3">
-                          {Object.entries(selectedIdea.evaluation).map(
-                            ([key, value]) => (
-                              <div key={key}>
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="font-mono text-[10px] text-grid/60 uppercase">
-                                    {key}
-                                  </span>
-                                  <span className="font-mono text-xs text-forest">
-                                    {value}%
-                                  </span>
-                                </div>
-                                <div className="w-full h-2 bg-grid/10 rounded-none overflow-hidden">
-                                  <div
-                                    className="h-full bg-forest transition-all duration-500"
-                                    style={{ width: `${value}%` }}
-                                  />
-                                </div>
-                              </div>
-                            ),
-                          )}
-                        </div>
-                      </div>
-
-                      <div>
-                        <h3 className={sectionHeadingClass}>
-                          Alternative Ideas
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {selectedIdea.alternatives.map((alt, index) => (
-                            <div
-                              key={index}
-                              className="border border-grid/20 p-4"
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <h4 className={labelHeadingClass}>
-                                  {alt.title}
-                                </h4>
-                                <span className="px-2 py-1 bg-white border border-grid/20 font-mono text-[10px]">
-                                  {alt.score}
-                                </span>
-                              </div>
-                              <p className="text-sm text-grid/80 leading-relaxed">
-                                {alt.summary}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white border border-grid/20 p-6">
-                    <h2 className="font-display text-2xl text-forest mb-4">
-                      Execution Plan
-                    </h2>
-                    <div className="space-y-4">
-                      {executionPlan.map((step) => (
-                        <div key={step.day}
-                          className="bg-white border border-grid/20 p-4"
-                        >
-                          <div className="flex items-center space-x-3 mb-3">
-                            <div
-                              className={`w-8 h-8 flex items-center justify-center font-mono text-xs ${
-                                step.completed
-                                  ? "bg-forest text-white"
-                                  : "bg-white border border-grid/20"
-                              }`}
-                            >
-                              {step.completed ? (
-                                <Icon icon="lucide:check" />
-                              ) : (
-                                step.day
-                              )}
-                            </div>
-                            <h3 className={labelHeadingClass}>
-                              Day {step.day}: {step.title}
-                            </h3>
-                          </div>
-                          <ul className="space-y-2 ml-11">
-                            {step.tasks.map((task, index) => (
-                              <li
-                                key={index}
-                                className="flex items-start space-x-2 text-sm text-grid/80 leading-relaxed"
-                              >
-                                <Icon
-                                  icon="lucide:circle"
-                                  className="text-[8px] mt-1.5 text-grid/40"
-                                />
-                                <span>{task}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
             {!loading && !error && activeTab === "assets" && (
               <div className="space-y-6">
                 <div className="bg-white border border-grid/20 p-6">
@@ -1979,8 +1750,7 @@ export default function HackathonDetailApi() {
             )}
           </div>
 
-          {(activeTab === "analysis" || activeTab === "final-idea") &&
-            !isChatExpanded && (
+          {activeTab === "analysis" && !isChatExpanded && (
               <div className="w-[30%]">
                 <div className="bg-white border border-grid/20 p-4 sticky top-32">
                   <div className="flex items-center justify-between mb-4">
@@ -2054,11 +1824,11 @@ export default function HackathonDetailApi() {
             <span className="font-mono text-[9px] text-grid/40 uppercase">
               Last saved: {lastSaved.toLocaleString()}
             </span>
-            {selectedIdea && (
+            {hasAnalysis && (
               <span className="flex items-center space-x-1 text-mint">
                 <Icon icon="lucide:check-circle" className="text-xs" />
                 <span className="font-mono text-[9px] uppercase">
-                  Idea Selected
+                  Analysis Ready
                 </span>
               </span>
             )}

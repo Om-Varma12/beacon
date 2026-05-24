@@ -6,7 +6,7 @@ export function Hero() {
           {/* Left: Typography */}
           <div>
 
-            <h1 className="space-grotesk text-8xl font-bold tracking-tight leading-[0.9] text-forest mb-8">
+            <h1 className="typography-display-xl text-forest mb-8">
               Autonomous<br />
               Hackathon<br />
               Intelligence
@@ -14,16 +14,16 @@ export function Hero() {
 
             <div className="flex items-start gap-3 mb-12">
               <div className="w-px h-16 bg-forest" />
-              <p className="jetbrains text-sm uppercase tracking-wider text-grid leading-relaxed max-w-md">
+              <p className="typography-technical-label text-grid leading-relaxed max-w-md">
                 Multi-agent system for discovery, analysis, and submission generation
               </p>
             </div>
 
             <div className="flex items-center gap-4">
-              <a href="#deploy" className="jetbrains text-[10px] uppercase px-6 py-3 bg-forest text-white hover:bg-coral transition-all">
+              <a href="#deploy" className="jetbrains text-[10px] uppercase px-6 py-3 border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-all">
                 Deploy Agent
               </a>
-              <a href="#learn" className="jetbrains text-[10px] uppercase px-6 py-3 border border-forest text-forest hover:bg-forest hover:text-white transition-all">
+              <a href="#learn" className="jetbrains text-[10px] uppercase px-6 py-3 border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-all">
                 View Docs
               </a>
             </div>
@@ -32,12 +32,12 @@ export function Hero() {
           {/* Right: Abstract Wireframe */}
           <div className="flex justify-end">
             <div className="relative w-80 h-80 border border-forest flex items-center justify-center">
-              {/* Dashed Circular Orbit */}
+              {/* Concentric Square Orbits */}
               <svg className="absolute inset-0 w-full h-full" viewBox="0 0 320 320">
-                <circle cx="160" cy="160" r="120" fill="none" stroke="#1A3C2B" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
-                <circle cx="160" cy="160" r="80" fill="none" stroke="#1A3C2B" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
-                <line x1="0" y1="160" x2="320" y2="160" stroke="#3A3A38" strokeWidth="1" opacity="0.2" />
-                <line x1="160" y1="0" x2="160" y2="320" stroke="#3A3A38" strokeWidth="1" opacity="0.2" />
+                <rect x="40" y="40" width="240" height="240" fill="none" stroke="#022617" strokeWidth="1" strokeDasharray="4 4" opacity="0.4" />
+                <rect x="80" y="80" width="160" height="160" fill="none" stroke="#022617" strokeWidth="1" strokeDasharray="4 4" opacity="0.3" />
+                <line x1="0" y1="160" x2="320" y2="160" stroke="#3a3a38" strokeWidth="1" opacity="0.2" />
+                <line x1="160" y1="0" x2="160" y2="320" stroke="#3a3a38" strokeWidth="1" opacity="0.2" />
               </svg>
 
               {/* Central Node */}

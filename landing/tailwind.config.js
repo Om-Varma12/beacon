@@ -4,16 +4,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        paper: '#F7F7F5',
-        forest: '#1A3C2B',
-        grid: '#3A3A38',
-        coral: '#FF8C69',
-        mint: '#9EFFBF',
-        gold: '#F4D35E',
+        paper: '#fcf9f6',
+        forest: '#022617',
+        grid: '#3a3a38',
+        coral: '#9e4225',
+        mint: '#51b178',
+        gold: '#fe8b69',
       },
       fontFamily: {
         'space-grotesk': ['Space Grotesk', 'sans-serif'],
-        'general-sans': ['General Sans', 'sans-serif'],
+        'inter': ['Inter', 'sans-serif'],
         jetbrains: ['JetBrains Mono', 'monospace'],
       },
     },

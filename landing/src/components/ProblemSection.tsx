@@ -99,8 +99,6 @@ const colorMap = {
 
 export function StickyContentSwitch() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const stickyRef = useRef<HTMLDivElement>(null)
-  const cardsRef = useRef<HTMLDivElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const descriptionRef = useRef<HTMLParagraphElement>(null)
   const badgeRef = useRef<HTMLSpanElement>(null)
@@ -109,14 +107,16 @@ export function StickyContentSwitch() {
 
   useEffect(() => {
     const section = sectionRef.current
-    const sticky = stickyRef.current
-    const cards = cardsRef.current
     const heading = headingRef.current
     const description = descriptionRef.current
     const badge = badgeRef.current
     const stat = statRef.current
 
-    if (!section || !sticky || !cards || !heading || !description || !badge || !stat) return
+    if (!section || !heading || !description || !badge || !stat) return
+
+    // Find the parent scroll container (the overflow-y-auto div in App)
+    const scroller = section.closest('.overflow-y-auto') as HTMLElement
+    if (!scroller) return
 
     let currentIndex = -1
 
@@ -145,24 +145,20 @@ export function StickyContentSwitch() {
       })
     }
 
-    problems.forEach((_problem, index) => {
-      const cardElement = cards.children[index] as HTMLElement
-
+    // Create ScrollTriggers for each card using the PARENT scroller
+    const cardElements = section.querySelectorAll('.problem-card')
+    cardElements.forEach((card, index) => {
       ScrollTrigger.create({
-        trigger: cardElement,
-        scroller: cards,
+        trigger: card as HTMLElement,
+        scroller: scroller,
         start: 'top center',
         end: 'bottom center',
         onEnter: () => {
           swapContent(index)
-          cardElement.classList.add('card-active')
         },
         onEnterBack: () => {
           swapContent(index)
-          cardElement.classList.add('card-active')
-        },
-        onLeave: () => cardElement.classList.remove('card-active'),
-        onLeaveBack: () => cardElement.classList.remove('card-active')
+        }
       })
     })
 
@@ -173,19 +169,23 @@ export function StickyContentSwitch() {
 
   const currentProblem = problems[activeIndex]
 
+  const iconColorMap = {
+    coral: 'text-coral',
+    mint: 'text-mint',
+    gold: 'text-gold'
+  }
+
   return (
-    <section ref={sectionRef} className="h-screen snap-start flex flex-col bg-[#1A1A1A] border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-8 h-full">
-        <div className="grid grid-cols-2 gap-16 h-full">
-          {/* Left Sticky Column */}
-          <div
-            ref={stickyRef}
-            className="sticky top-0 h-screen flex flex-col justify-center"
-          >
+    <section ref={sectionRef} className="relative bg-primary-container border-b border-white/10">
+      <div className="max-w-7xl mx-auto px-8">
+        <div className="grid grid-cols-2 gap-16">
+          {/* Left Sticky Column — pinned within this tall section */}
+          <div className="sticky top-0 h-screen flex flex-col justify-center">
             <div className="space-y-8">
               {/* Badge */}
-              <div className="inline-flex items-center gap-2 border border-white/20 px-3 py-1">
-                <span ref={badgeRef} className="jetbrains text-[10px] uppercase tracking-widest text-white">
+              <div className="inline-flex items-center gap-2 border border-white/20 px-3 py-1.5 rounded-none bg-white/5">
+                <div className={`w-2 h-2 ${colorMap[currentProblem.color as keyof typeof colorMap]}`} />
+                <span ref={badgeRef} className="typography-technical-sm text-white">
                   {content[0].badge}
                 </span>
               </div>
@@ -193,29 +193,29 @@ export function StickyContentSwitch() {
               {/* Main Heading */}
               <h2
                 ref={headingRef}
-                className="space-grotesk text-6xl font-bold tracking-tight leading-[0.9] text-white"
+                className="typography-display-lg text-white"
                 dangerouslySetInnerHTML={{ __html: content[0].heading }}
               />
 
               {/* Description */}
               <p
                 ref={descriptionRef}
-                className="text-lg text-zinc-400 leading-relaxed max-w-md"
+                className="typography-body-lg text-white/70 leading-relaxed max-w-md"
               >
                 {content[0].description}
               </p>
 
               {/* Stat Card */}
-              <div className="bg-white/5 border border-white/10 p-6">
+              <div className="bg-white/5 border border-white/10 p-6 rounded-none">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="jetbrains text-[10px] uppercase tracking-widest text-zinc-500">Impact</p>
-                    <p className="space-grotesk text-2xl font-bold text-white">
+                    <p className="typography-technical-sm text-white/50">Impact</p>
+                    <p className="space-grotesk text-2xl font-bold text-white mt-1">
                       {currentProblem.title}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span ref={statRef} className="space-grotesk text-3xl font-bold text-[#E8C547]">
+                    <span ref={statRef} className="space-grotesk text-3xl font-bold text-gold">
                       {content[0].stat}
                     </span>
                   </div>
@@ -223,32 +223,36 @@ export function StickyContentSwitch() {
               </div>
 
               {/* Social Proof */}
-              <div className="flex items-center gap-4 text-zinc-500">
-                <div className="flex -space-x-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#1A1A1A] bg-white text-xs font-bold text-black">JD</div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#1A1A1A] bg-zinc-700 text-xs font-bold">AS</div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#1A1A1A] bg-zinc-600 text-xs font-bold text-white">+50</div>
+              <div className="flex items-center gap-4 text-white/50">
+                <div className="flex -space-x-1">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-none border border-primary-container bg-white text-[10px] font-bold text-black jetbrains">JD</div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-none border border-primary-container bg-zinc-700 text-[10px] font-bold jetbrains">AS</div>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-none border border-primary-container bg-zinc-600 text-[10px] font-bold text-white jetbrains">+50</div>
                 </div>
-                <p className="jetbrains text-sm italic">Join 5k+ hackers optimized by Beacon</p>
+                <p className="typography-technical-sm italic">Join 5k+ hackers optimized by Beacon</p>
               </div>
             </div>
           </div>
 
-          {/* Right Scrollable Column */}
-          <div ref={cardsRef} className="h-screen overflow-y-auto overflow-x-hidden snap-y snap-mandatory space-y-8 pb-32">
+          {/* Right Column — cards in normal document flow, each is a snap target */}
+          <div>
             {problems.map((problem) => (
               <div
                 key={problem.id}
-                className="problem-card group relative h-screen snap-start flex items-center justify-center"
+                className="problem-card min-h-screen snap-start flex items-center justify-center py-8"
               >
-                <div className="bg-white/5 border border-white/10 p-8 w-full max-w-lg hover:border-white/30 transition-all">
+                <div className="bg-white/5 border border-white/10 p-8 w-full max-w-lg hover:border-white/30 transition-all relative rounded-none">
+                  {/* Technical ID */}
+                  <div className="absolute top-4 right-4 typography-technical-sm text-white/40">
+                    ID // 01-0{problem.id}
+                  </div>
                   <div className="flex flex-col gap-6">
                     {/* Icon */}
                     <div className="flex items-start gap-4">
                       <div className="shrink-0">
-                        <div className={`w-16 h-16 rounded-xl ${colorMap[problem.color as keyof typeof colorMap]}/20 border ${colorMap[problem.color as keyof typeof colorMap]}/30 flex items-center justify-center ${colorMap[problem.color as keyof typeof colorMap]} relative`}>
-                          <Icon icon={problem.icon} width={24} />
-                          <div className={`absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-black ${colorMap[problem.color as keyof typeof colorMap]}`}>
+                        <div className={`w-12 h-12 rounded-none border border-white/15 bg-white/5 flex items-center justify-center ${iconColorMap[problem.color as keyof typeof iconColorMap]} relative`}>
+                          <Icon icon={problem.icon} width={20} />
+                          <div className={`absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-none text-[8px] font-bold text-black ${colorMap[problem.color as keyof typeof colorMap]}`}>
                             {problem.number}
                           </div>
                         </div>
@@ -259,7 +263,7 @@ export function StickyContentSwitch() {
                         <h3 className="space-grotesk text-xl font-bold text-white">
                           {problem.title}
                         </h3>
-                        <p className="text-sm leading-relaxed text-zinc-400">
+                        <p className="typography-body-md text-white/70">
                           {problem.description}
                         </p>
 
@@ -268,7 +272,7 @@ export function StickyContentSwitch() {
                           {problem.tags.map((tag) => (
                             <span
                               key={tag}
-                              className="jetbrains text-[10px] uppercase px-2 py-1 bg-white/10 border border-white/20 text-zinc-400"
+                              className="typography-technical-sm px-2 py-0.5 bg-white/5 border border-white/10 text-white/60 rounded-none"
                             >
                               {tag}
                             </span>
@@ -277,8 +281,8 @@ export function StickyContentSwitch() {
 
                         {/* Stat */}
                         <div className="flex items-center gap-2 pt-2">
-                          <Icon icon="lucide:bar-chart-2" width={16} className="text-zinc-500" />
-                          <span className="jetbrains text-xs text-zinc-400">{problem.stat}</span>
+                          <Icon icon="lucide:bar-chart-2" width={14} className="text-white/40" />
+                          <span className="typography-technical-sm text-white/50">{problem.stat}</span>
                         </div>
                       </div>
                     </div>

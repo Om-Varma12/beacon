@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
@@ -32,12 +32,10 @@ interface RewardItem {
   label: string;
 }
 
-interface ChatMessage {
-  id: string;
+type Message = {
   role: "user" | "assistant";
   content: string;
-  timestamp: Date;
-}
+};
 
 interface HackathonViewModel {
   id: string;
@@ -448,63 +446,25 @@ function getRoundAgentOrder(round: AnalysisRound): string[] {
   return Array.from(new Set([...leaderboard, ...ideaKeys, ...debateKeys]));
 }
 
-function getAgentType(agent: string): "innovation" | "practical" | "business" {
-  const normalized = agent.toLowerCase();
-  if (normalized.includes("innovation")) return "innovation";
-  if (normalized.includes("practical")) return "practical";
-  if (normalized.includes("business")) return "business";
-  return "business";
-}
-
-function getAgentColor(agentType: "innovation" | "practical" | "business"): string {
-  const colors = {
-    innovation: "coral",
-    practical: "mint",
-    business: "gold",
-  };
-  return colors[agentType];
-}
-
-function getAgentBorderColor(agentType: "innovation" | "practical" | "business"): string {
-  const colors = {
-    innovation: "border-coral",
-    practical: "border-mint",
-    business: "border-gold",
-  };
-  return colors[agentType];
-}
-
-function getAgentTextColor(agentType: "innovation" | "practical" | "business"): string {
-  const colors = {
-    innovation: "text-coral",
-    practical: "text-mint",
-    business: "text-gold",
-  };
-  return colors[agentType];
-}
-
-function getAgentRank(agent: string, leaderboard: string[]): number {
-  return leaderboard.indexOf(agent);
-}
-
 export default function HackathonDetailApi() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isNavbarVisible } = useNavbar();
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [isChatExpanded, setIsChatExpanded] = useState(false);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
+  const [chatMessages, setChatMessages] = useState<Message[]>([
     {
-      id: "1",
       role: "assistant",
       content:
         "Hello! I'm here to help you analyze this hackathon and develop your winning idea. What would you like to explore?",
-      timestamp: new Date(),
     },
   ]);
   const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
   const [isAnalysisRunning, setIsAnalysisRunning] = useState(false);
   const [expandedCard, setExpandedCard] = useState<{ roundIndex: number; agent: string } | null>(null);
+  const chatBottomRef = useRef<HTMLDivElement | null>(null);
   const hackathonQuery = useQuery<HackathonQueryResult, Error>({
     queryKey: ["hackathon", id],
     enabled: Boolean(id),
@@ -748,6 +708,10 @@ export default function HackathonDetailApi() {
   const analysisRounds = analysisResult?.rounds ?? [];
 
   useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [chatMessages, chatLoading]);
+
+  useEffect(() => {
     // Log analysis payload for debugging when nothing appears in the UI
     // eslint-disable-next-line no-console
     console.log("DEBUG: analysisData ->", analysisData);
@@ -767,33 +731,82 @@ export default function HackathonDetailApi() {
     "Suggest tech stack",
   ];
 
-  const handleSendMessage = () => {
-    if (!chatInput.trim()) return;
+  const handleSendMessage = async (messageOverride?: string) => {
+    const message = (messageOverride ?? chatInput).trim();
 
-    const newMessage: ChatMessage = {
-      id: Date.now().toString(),
+    if (!message || chatLoading || !id) {
+      return;
+    }
+
+    const userMessage: Message = {
       role: "user",
-      content: chatInput,
-      timestamp: new Date(),
+      content: message,
     };
 
-    setChatMessages([...chatMessages, newMessage]);
+    setChatMessages((prev) => [...prev, userMessage]);
     setChatInput("");
+    setChatError(null);
+    setChatLoading(true);
 
-    setTimeout(() => {
-      const aiResponse: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content:
-          "Based on the listing, I would center the solution on the actual problem statements and keep the scope tightly aligned to the published requirements.",
-        timestamp: new Date(),
+    try {
+      const apiResponse = await fetch(`${API_BASE_URL}/hackathon/${id}/chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ message }),
+      });
+
+      const payload = (await apiResponse.json()) as {
+        success?: boolean;
+        data?: {
+          agent?: string;
+          response?: string;
+          data?: {
+            response?: string;
+          };
+        };
+        error?: string;
       };
-      setChatMessages((prev) => [...prev, aiResponse]);
-    }, 1000);
+
+      const assistantResponse =
+        payload?.data?.data?.response ?? payload?.data?.response;
+
+      if (!apiResponse.ok || !payload?.success || !assistantResponse) {
+        throw new Error(
+          payload?.error ?? "The assistant could not respond right now.",
+        );
+      }
+
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: assistantResponse,
+        },
+      ]);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Something went wrong.";
+
+      setChatError(errorMessage);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            "I couldn't reach the assistant just now. Please try again in a moment.",
+        },
+      ]);
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
+    if (chatLoading) return;
     setChatInput(suggestion);
+    setChatError(null);
   };
 
   const handleRunAnalysis = () => {
@@ -1423,8 +1436,6 @@ export default function HackathonDetailApi() {
                           const roundOrder = getRoundAgentOrder(round);
                           const roundScores = round.judge?.scores ?? {};
                           const roundFeedback = round.judge?.feedback;
-                          const leaderboard = round.judge?.leaderboard ?? [];
-                          const rawSummary = round.judge?.summary ?? null;
 
                           const phaseLabels = [
                             "Generation & Scoping",
@@ -1692,59 +1703,125 @@ export default function HackathonDetailApi() {
             )}
 
             {!loading && !error && activeTab === "chat" && (
-              <div className="bg-white border border-grid/20 p-6">
-                <h2 className="font-display text-2xl text-forest mb-6">
-                  AI Assistant
-                </h2>
-                <div className="space-y-4">
-                  {chatMessages.map((message) => (
+              <div className="bg-white border border-grid/20 overflow-hidden flex min-h-[72vh] flex-col">
+                <div className="border-b border-grid/20 p-6">
+                  <div className="flex items-center justify-between gap-4 mb-2">
+                    <div>
+                      <h2 className="font-display text-2xl text-forest">
+                        AI Assistant
+                      </h2>
+                      <p className="mt-1 text-[11px] font-mono tracking-widest uppercase text-grid/50">
+                        Persistent hackathon thread powered by the backend
+                      </p>
+                    </div>
+                    <span className={`inline-flex items-center gap-2 font-mono text-[10px] tracking-widest uppercase ${chatLoading ? "text-grid/60" : "text-forest"}`}>
+                      <span className={`h-2 w-2 rounded-full ${chatLoading ? "bg-grid/40 animate-pulse" : "bg-mint"}`} />
+                      {chatLoading ? "Sending" : "Live"}
+                    </span>
+                  </div>
+                  <p className="text-sm text-grid/70 leading-relaxed max-w-3xl">
+                    Ask about the hackathon, the winning idea, or the next step.
+                    Messages are sent to the FastAPI backend and the assistant response is appended when it returns.
+                  </p>
+                </div>
+
+                {chatError && (
+                  <div className="border-b border-coral/30 bg-coral/10 px-6 py-3">
+                    <p className="font-mono text-[10px] tracking-widest uppercase text-coral">
+                      {chatError}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {chatMessages.map((message, index) => (
                     <div
-                      key={message.id}
+                      key={`${message.role}-${index}`}
                       className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[80%] p-4 ${
+                        className={`max-w-[80%] rounded-none border px-4 py-3 shadow-sm ${
                           message.role === "user"
-                            ? "bg-forest text-white"
-                            : "bg-white border border-grid/20"
+                            ? "bg-forest text-white border-forest"
+                            : "bg-white text-forest border-grid/20"
                         }`}
                       >
-                        <p className="text-sm">{message.content}</p>
-                        <p className="font-mono text-[9px] mt-2 opacity-60">
-                          {message.timestamp.toLocaleTimeString()}
+                        <div className="mb-2 flex items-center justify-between gap-3">
+                          <span className="font-mono text-[9px] tracking-widest uppercase opacity-70">
+                            {message.role === "user" ? "You" : "Assistant"}
+                          </span>
+                        </div>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                          {message.content}
                         </p>
                       </div>
                     </div>
                   ))}
+
+                  {chatLoading && (
+                    <div className="flex justify-start">
+                      <div className="max-w-[80%] border border-grid/20 bg-white px-4 py-3 text-forest shadow-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 animate-pulse rounded-full bg-mint" />
+                          <span className="font-mono text-[10px] tracking-widest uppercase text-grid/50">
+                            Thinking
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div ref={chatBottomRef} />
                 </div>
 
-                <div className="mt-6 space-y-2 mb-3">
-                  {suggestions.map((suggestion) => (
+                <div className="border-t border-grid/20 bg-white p-5">
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {suggestions.map((suggestion) => (
+                      <button
+                        key={suggestion}
+                        type="button"
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        disabled={chatLoading}
+                        className="border border-grid/20 px-3 py-2 font-mono text-[10px] tracking-widest uppercase text-grid/70 transition-all hover:border-forest hover:bg-forest hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {suggestion}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-end gap-3">
+                    <textarea
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="Ask about the idea, analysis, or next steps..."
+                      rows={2}
+                      disabled={chatLoading}
+                      className="min-h-14 flex-1 resize-none border border-grid/20 px-4 py-3 text-sm font-mono text-forest placeholder:text-grid/40 focus:border-forest focus:outline-none disabled:cursor-not-allowed disabled:bg-grid/5"
+                    />
                     <button
-                      key={suggestion}
-                      onClick={() => handleSuggestionClick(suggestion)}
-                      className="w-full text-left px-3 py-2 border border-grid/20 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all"
+                      onClick={() => handleSendMessage()}
+                      disabled={chatLoading || !chatInput.trim()}
+                      className="inline-flex min-h-14 items-center gap-2 border border-forest bg-forest px-4 py-3 font-mono text-[10px] tracking-widest uppercase text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {suggestion}
+                      {chatLoading ? (
+                        <>
+                          <Icon icon="lucide:loader-2" className="animate-spin" />
+                          <span>Sending</span>
+                        </>
+                      ) : (
+                        <>
+                          <Icon icon="lucide:send" />
+                          <span>Send</span>
+                        </>
+                      )}
                     </button>
-                  ))}
-                </div>
-
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    placeholder="Ask about the idea..."
-                    className="flex-1 border border-grid/20 px-3 py-2 text-sm font-mono focus:outline-none focus:border-forest transition-colors"
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    className="px-3 py-2 bg-forest text-white hover:opacity-90 transition-opacity"
-                  >
-                    <Icon icon="lucide:send" />
-                  </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1765,10 +1842,18 @@ export default function HackathonDetailApi() {
                     </button>
                   </div>
 
-                  <div className="h-96 overflow-y-auto mb-4 space-y-3">
-                    {chatMessages.map((message) => (
+                  {chatError && (
+                    <div className="mb-3 border border-coral/30 bg-coral/10 px-3 py-2">
+                      <p className="font-mono text-[9px] tracking-widest uppercase text-coral">
+                        {chatError}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="h-96 overflow-y-auto mb-4 space-y-3 pr-1">
+                    {chatMessages.map((message, index) => (
                       <div
-                        key={message.id}
+                        key={`${message.role}-${index}`}
                         className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                       >
                         <div
@@ -1782,6 +1867,21 @@ export default function HackathonDetailApi() {
                         </div>
                       </div>
                     ))}
+
+                    {chatLoading && (
+                      <div className="flex justify-start">
+                        <div className="max-w-[90%] border border-grid/20 bg-white p-3 text-forest">
+                          <div className="flex items-center gap-2">
+                            <span className="h-2 w-2 animate-pulse rounded-full bg-mint" />
+                            <span className="font-mono text-[9px] tracking-widest uppercase text-grid/50">
+                              Thinking
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div ref={chatBottomRef} />
                   </div>
 
                   <div className="space-y-2 mb-3">
@@ -1789,7 +1889,8 @@ export default function HackathonDetailApi() {
                       <button
                         key={suggestion}
                         onClick={() => handleSuggestionClick(suggestion)}
-                        className="w-full text-left px-3 py-2 border border-grid/20 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all"
+                        disabled={chatLoading}
+                        className="w-full text-left px-3 py-2 border border-grid/20 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         {suggestion}
                       </button>
@@ -1801,17 +1902,26 @@ export default function HackathonDetailApi() {
                       type="text"
                       value={chatInput}
                       onChange={(e) => setChatInput(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleSendMessage()
-                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
                       placeholder="Ask about the idea..."
-                      className="flex-1 border border-grid/20 px-3 py-2 text-sm font-mono focus:outline-none focus:border-forest transition-colors"
+                      disabled={chatLoading}
+                      className="flex-1 border border-grid/20 px-3 py-2 text-sm font-mono focus:outline-none focus:border-forest transition-colors disabled:cursor-not-allowed disabled:bg-grid/5"
                     />
                     <button
-                      onClick={handleSendMessage}
-                      className="px-3 py-2 bg-forest text-white hover:opacity-90 transition-opacity"
+                      onClick={() => handleSendMessage()}
+                      disabled={chatLoading || !chatInput.trim()}
+                      className="px-3 py-2 bg-forest text-white hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <Icon icon="lucide:send" />
+                      {chatLoading ? (
+                        <Icon icon="lucide:loader-2" className="animate-spin" />
+                      ) : (
+                        <Icon icon="lucide:send" />
+                      )}
                     </button>
                   </div>
                 </div>

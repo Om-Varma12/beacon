@@ -1,6 +1,4 @@
-import asyncio
 from fastapi import APIRouter, Depends, Query, BackgroundTasks, HTTPException
-from pydantic import BaseModel
 
 from db.database import Database
 from db.HackathonRepository import HackathonRepository
@@ -30,16 +28,15 @@ def get_repo():
 
 def get_service():
     hackathon_repo = HackathonRepository(db)
-
     problem_repo = ProblemRepository(db)
-
     resource_repo = ResourceRepository(db)
-
+    
     return HackathonService(
         hackathon_repo,
         problem_repo,
         resource_repo,
     )
+
 
 def get_analysis_service():
     hackathon_repo = HackathonRepository(db)
@@ -57,15 +54,10 @@ def get_analysis_service():
 
 def get_chat_service():
     hackathon_repo = HackathonRepository(db)
-
     problem_repo = ProblemRepository(db)
-
     resource_repo = ResourceRepository(db)
-
     analysis_repo = AgentAnalysisRepository(db)
-
     rounds_repo = AgentRoundsRepository(db)
-
     chat_repo = ChatMessageRepository(db)
 
     return ChatService(
@@ -182,7 +174,7 @@ def get_analysis(
 @router.post("/{hackathon_id}/chat")
 async def chat_with_hackathon(
     hackathon_id: int,
-    body: ChatRequest,
+    body,
     service: ChatService = Depends(get_chat_service)
 ):
     data = await service.chat(

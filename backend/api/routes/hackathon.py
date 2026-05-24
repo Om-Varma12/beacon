@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, BackgroundTasks, HTTPException
+from pydantic import BaseModel
 
 from db.database import Database
 from db.HackathonRepository import HackathonRepository
@@ -20,6 +21,9 @@ router = APIRouter()
 # Create one DB instance
 db = Database()
 
+
+class ChatModel(BaseModel):
+    message: str
 
 # Dependency
 def get_repo():
@@ -174,7 +178,7 @@ def get_analysis(
 @router.post("/{hackathon_id}/chat")
 async def chat_with_hackathon(
     hackathon_id: int,
-    body,
+    body: ChatModel,
     service: ChatService = Depends(get_chat_service)
 ):
     data = await service.chat(

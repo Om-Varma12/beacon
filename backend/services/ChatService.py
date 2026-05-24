@@ -1,4 +1,4 @@
-from agents.llm import LLM
+from agents.chat_llm import ChatLLM
 from agents.hackathon_chat_agent import HackathonChatAgent
 
 
@@ -18,7 +18,7 @@ class ChatService:
         self.analysis_repo = analysis_repo
         self.rounds_repo = rounds_repo
         self.chat_repo = chat_repo
-        self.llm = LLM()
+        self.llm = ChatLLM()
 
 
     async def chat(

@@ -13,7 +13,7 @@ class HackathonChatAgent(Agent):
         payload = (
             task
             if isinstance(task, str)
-            else json.dumps(task, indent=2)
+            else json.dumps(task, indent=2, default=str)
         )
 
         return f"""
@@ -28,9 +28,7 @@ class HackathonChatAgent(Agent):
 
 
     def parse_response(self, response):
-        parsed = super().parse_response(response)
-
         return {
             "agent": "hackathon_chat",
-            **parsed
+            "response": response
         }

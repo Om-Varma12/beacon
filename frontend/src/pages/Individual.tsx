@@ -2,24 +2,7 @@ import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useNavbar } from '../context/NavbarContext';
 
-interface AgentCard {
-  name: string;
-  ideaTitle: string;
-  description: string;
-  pros: string[];
-  cons: string[];
-  score: number;
-  reasoning: string;
-}
 
-interface Round {
-  id: number;
-  name: string;
-  agents: AgentCard[];
-  judgeFeedback: string;
-  penalties: string[];
-  ranking: number[];
-}
 
 interface FinalIdea {
   title: string;

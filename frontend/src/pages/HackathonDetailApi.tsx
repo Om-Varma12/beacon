@@ -2,6 +2,15 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import { parse } from "marked";
+import DOMPurify from "dompurify";
+
+function normalizeMarkdownSpacing(input?: string) {
+  if (!input) return "";
+  let s = input.replace(/\r\n/g, "\n");
+  s = s.replace(/\n{3,}/g, "\n\n");
+  return s.trim();
+}
 
 import { useNavbar } from "../context/NavbarContext";
 
@@ -740,7 +749,7 @@ export default function HackathonDetailApi() {
 
     const userMessage: Message = {
       role: "user",
-      content: message,
+      content: normalizeMarkdownSpacing(message),
     };
 
     setChatMessages((prev) => [...prev, userMessage]);
@@ -769,8 +778,9 @@ export default function HackathonDetailApi() {
         error?: string;
       };
 
-      const assistantResponse =
+      const assistantResponseRaw =
         payload?.data?.data?.response ?? payload?.data?.response;
+      const assistantResponse = normalizeMarkdownSpacing(assistantResponseRaw);
 
       if (!apiResponse.ok || !payload?.success || !assistantResponse) {
         throw new Error(
@@ -794,8 +804,9 @@ export default function HackathonDetailApi() {
         ...prev,
         {
           role: "assistant",
-          content:
+          content: normalizeMarkdownSpacing(
             "I couldn't reach the assistant just now. Please try again in a moment.",
+          ),
         },
       ]);
     } finally {
@@ -1751,9 +1762,12 @@ export default function HackathonDetailApi() {
                             {message.role === "user" ? "You" : "Assistant"}
                           </span>
                         </div>
-                        <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                          {message.content}
-                        </p>
+                        <div
+                          className="text-sm leading-relaxed whitespace-pre-wrap markdown-body"
+                          dangerouslySetInnerHTML={{
+                            __html: DOMPurify.sanitize(parse(normalizeMarkdownSpacing(message.content))),
+                          }}
+                        />
                       </div>
                     </div>
                   ))}
@@ -1863,7 +1877,11 @@ export default function HackathonDetailApi() {
                               : "border-grid/20 bg-white text-forest"
                           }`}
                         >
-                          {message.content}
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: DOMPurify.sanitize(parse(normalizeMarkdownSpacing(message.content))),
+                            }}
+                          />
                         </div>
                       </div>
                     ))}

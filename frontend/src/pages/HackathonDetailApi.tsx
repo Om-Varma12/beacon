@@ -1742,8 +1742,8 @@ export default function HackathonDetailApi() {
                       <div
                         className={`max-w-[80%] rounded-none border px-4 py-3 shadow-sm ${
                           message.role === "user"
-                            ? "bg-forest text-white border-forest"
-                            : "bg-white text-forest border-grid/20"
+                            ? "border-grid/20 bg-white text-forest"
+                            : "border-grid/20 bg-white text-forest"
                         }`}
                       >
                         <div className="mb-2 flex items-center justify-between gap-3">
@@ -1857,10 +1857,10 @@ export default function HackathonDetailApi() {
                         className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                       >
                         <div
-                          className={`max-w-[90%] p-3 text-sm ${
+                          className={`max-w-[90%] border p-3 text-sm ${
                             message.role === "user"
-                              ? "bg-forest text-white"
-                              : "bg-white border border-grid/20"
+                              ? "border-forest bg-forest text-white"
+                              : "border-grid/20 bg-white text-forest"
                           }`}
                         >
                           {message.content}

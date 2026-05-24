@@ -99,8 +99,6 @@ const colorMap = {
 
 export function StickyContentSwitch() {
   const sectionRef = useRef<HTMLDivElement>(null)
-  const stickyRef = useRef<HTMLDivElement>(null)
-  const cardsRef = useRef<HTMLDivElement>(null)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const descriptionRef = useRef<HTMLParagraphElement>(null)
   const badgeRef = useRef<HTMLSpanElement>(null)
@@ -109,14 +107,16 @@ export function StickyContentSwitch() {
 
   useEffect(() => {
     const section = sectionRef.current
-    const sticky = stickyRef.current
-    const cards = cardsRef.current
     const heading = headingRef.current
     const description = descriptionRef.current
     const badge = badgeRef.current
     const stat = statRef.current
 
-    if (!section || !sticky || !cards || !heading || !description || !badge || !stat) return
+    if (!section || !heading || !description || !badge || !stat) return
+
+    // Find the parent scroll container (the overflow-y-auto div in App)
+    const scroller = section.closest('.overflow-y-auto') as HTMLElement
+    if (!scroller) return
 
     let currentIndex = -1
 
@@ -145,24 +145,20 @@ export function StickyContentSwitch() {
       })
     }
 
-    problems.forEach((_problem, index) => {
-      const cardElement = cards.children[index] as HTMLElement
-
+    // Create ScrollTriggers for each card using the PARENT scroller
+    const cardElements = section.querySelectorAll('.problem-card')
+    cardElements.forEach((card, index) => {
       ScrollTrigger.create({
-        trigger: cardElement,
-        scroller: cards,
+        trigger: card as HTMLElement,
+        scroller: scroller,
         start: 'top center',
         end: 'bottom center',
         onEnter: () => {
           swapContent(index)
-          cardElement.classList.add('card-active')
         },
         onEnterBack: () => {
           swapContent(index)
-          cardElement.classList.add('card-active')
-        },
-        onLeave: () => cardElement.classList.remove('card-active'),
-        onLeaveBack: () => cardElement.classList.remove('card-active')
+        }
       })
     })
 
@@ -180,14 +176,11 @@ export function StickyContentSwitch() {
   }
 
   return (
-    <section ref={sectionRef} className="h-screen snap-start flex flex-col bg-primary-container border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-8 h-full">
-        <div className="grid grid-cols-2 gap-16 h-full">
-          {/* Left Sticky Column */}
-          <div
-            ref={stickyRef}
-            className="sticky top-0 h-screen flex flex-col justify-center"
-          >
+    <section ref={sectionRef} className="relative bg-primary-container border-b border-white/10">
+      <div className="max-w-7xl mx-auto px-8">
+        <div className="grid grid-cols-2 gap-16">
+          {/* Left Sticky Column — pinned within this tall section */}
+          <div className="sticky top-0 h-screen flex flex-col justify-center">
             <div className="space-y-8">
               {/* Badge */}
               <div className="inline-flex items-center gap-2 border border-white/20 px-3 py-1.5 rounded-none bg-white/5">
@@ -241,12 +234,12 @@ export function StickyContentSwitch() {
             </div>
           </div>
 
-          {/* Right Scrollable Column */}
-          <div ref={cardsRef} className="h-screen overflow-y-auto overflow-x-hidden snap-y snap-mandatory space-y-8 pb-32">
+          {/* Right Column — cards in normal document flow, each is a snap target */}
+          <div>
             {problems.map((problem) => (
               <div
                 key={problem.id}
-                className="problem-card group relative h-screen snap-start flex items-center justify-center"
+                className="problem-card min-h-screen snap-start flex items-center justify-center py-8"
               >
                 <div className="bg-white/5 border border-white/10 p-8 w-full max-w-lg hover:border-white/30 transition-all relative rounded-none">
                   {/* Technical ID */}

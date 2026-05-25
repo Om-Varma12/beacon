@@ -216,7 +216,8 @@ export default function HackathonTable() {
   const [sortBy, setSortBy] = useState('deadline');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
-  const currentPage = Math.max(1, Number(searchParams.get('page') || 1));
+  const parsedPage = Number(searchParams.get('page') || 1);
+  const currentPage = Number.isFinite(parsedPage) && parsedPage > 0 ? Math.floor(parsedPage) : 1;
   const queryResult = useQuery<HackathonListQueryResult, Error>({
     queryKey: ['hackathons', currentPage, sortBy],
     queryFn: async () => {
@@ -248,11 +249,14 @@ export default function HackathonTable() {
 
       const hackathons = (result.data ?? []).map(mapToFrontendHackathon);
       const totalCount = result.count ?? hackathons.length;
+      // Backend currently returns page count (len(data)), not global total count.
+      // Keep pagination working by treating a full page as "possibly has more".
+      const hasMore = totalCount > currentPage * itemsPerPage || hackathons.length === itemsPerPage;
 
       return {
         hackathons,
         totalCount,
-        hasMore: totalCount > currentPage * itemsPerPage,
+        hasMore,
       };
     },
   });
@@ -264,6 +268,7 @@ export default function HackathonTable() {
   const error = queryResult.error?.message ?? null;
 
   const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
+  const effectiveTotalPages = Math.max(totalPages, currentPage + (hasMore ? 1 : 0));
 
   const displayedHackathons = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -420,7 +425,12 @@ export default function HackathonTable() {
         </>
       )}
 
-      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} hasMore={hasMore} />
+      <Pagination
+        currentPage={currentPage}
+        totalPages={effectiveTotalPages}
+        onPageChange={handlePageChange}
+        hasMore={hasMore}
+      />
     </main>
   );
 }

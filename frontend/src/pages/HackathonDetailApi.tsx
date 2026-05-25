@@ -65,6 +65,7 @@ interface HackathonViewModel {
   rules: string[];
   judgingCriteria: string[];
   submissionRequirements: string[];
+  prizeDataMissing: boolean;
   prizes: Prize[];
   rewardItems: RewardItem[];
   resources: ResourceItem[];
@@ -423,6 +424,7 @@ function buildViewModel(
       "README with setup instructions",
       "Any requested attachments from the source listing",
     ],
+    prizeDataMissing: data.prizes == null,
     prizes,
     rewardItems,
     resources,
@@ -1063,6 +1065,12 @@ export default function HackathonDetailApi() {
                   <h2 className="font-display text-2xl text-forest mb-4">
                     Prize Pool
                   </h2>
+
+                  {viewModel?.prizeDataMissing ? (
+                    <p className="border border-grid/20 p-4 font-mono text-[10px] tracking-widest uppercase text-grid/60">
+                      No prizes data found
+                    </p>
+                  ) : null}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {viewModel?.prizes.map((prize) => (

@@ -21,12 +21,31 @@ body {
 }
 
 * {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(26, 60, 43, 0.7) rgba(58, 58, 56, 0.08);
 }
 
 *::-webkit-scrollbar {
-  display: none;
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(58, 58, 56, 0.08);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(26, 60, 43, 0.75), rgba(26, 60, 43, 0.55));
+  border: 2px solid rgba(247, 247, 245, 0.9);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(26, 60, 43, 0.9), rgba(26, 60, 43, 0.75));
+}
+
+*::-webkit-scrollbar-corner {
+  background: rgba(58, 58, 56, 0.08);
 }
 
 .font-mono {

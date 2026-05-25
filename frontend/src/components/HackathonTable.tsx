@@ -45,15 +45,11 @@ interface HackathonListQueryResult {
   hasMore: boolean;
 }
 
+type FeeFilter = 'all' | 'free' | 'paid';
+type ModeFilter = 'all' | 'remote' | 'offline';
+
 const itemsPerPage = 12;
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
-
-const sortParamMap: Record<string, { sort_by: string; order: 'asc' | 'desc' }> = {
-  deadline: { sort_by: 'deadline', order: 'asc' },
-  prizes: { sort_by: 'id', order: 'desc' },
-  newest: { sort_by: 'id', order: 'desc' },
-  teamSize: { sort_by: 'start_date', order: 'asc' },
-};
 
 function parseTeamSize(value: unknown): string {
   if (!value) return 'TBD';
@@ -209,25 +205,62 @@ function mapToFrontendHackathon(item: BackendHackathon): Hackathon {
   };
 }
 
+function getTeammateOptionsFromSize(teamSize: string): number[] {
+  const normalized = teamSize.trim().toUpperCase();
+  if (!normalized || normalized === 'TBD') {
+    return [];
+  }
+
+  const matches = teamSize.match(/\d+/g);
+  if (!matches || matches.length === 0) {
+    return [];
+  }
+
+  const numbers = matches
+    .map((value) => Number(value))
+    .filter((value) => Number.isFinite(value) && value > 0)
+    .sort((a, b) => a - b);
+
+  if (numbers.length === 0) {
+    return [];
+  }
+
+  if (numbers.length >= 2 && /-|to/i.test(teamSize)) {
+    const min = numbers[0];
+    const max = numbers[numbers.length - 1];
+    const span = max - min;
+
+    // Guardrail for malformed ranges like 1-1000.
+    if (span > 20) {
+      return [min, max];
+    }
+
+    return Array.from({ length: span + 1 }, (_, idx) => min + idx);
+  }
+
+  return Array.from(new Set(numbers));
+}
+
 export default function HackathonTable() {
   const { isNavbarVisible } = useNavbar();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('deadline');
+  const [feeFilter, setFeeFilter] = useState<FeeFilter>('all');
+  const [modeFilter, setModeFilter] = useState<ModeFilter>('all');
+  const [selectedTeammates, setSelectedTeammates] = useState<number[]>([]);
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   const parsedPage = Number(searchParams.get('page') || 1);
   const currentPage = Number.isFinite(parsedPage) && parsedPage > 0 ? Math.floor(parsedPage) : 1;
   const queryResult = useQuery<HackathonListQueryResult, Error>({
-    queryKey: ['hackathons', currentPage, sortBy],
+    queryKey: ['hackathons', currentPage],
     queryFn: async () => {
       const offset = (currentPage - 1) * itemsPerPage;
-      const sortConfig = sortParamMap[sortBy] ?? sortParamMap.deadline;
       const query = new URLSearchParams({
         limit: String(itemsPerPage),
         offset: String(offset),
-        sort_by: sortConfig.sort_by,
-        order: sortConfig.order,
+        sort_by: 'deadline',
+        order: 'asc',
       });
 
       const primaryUrl = `${API_BASE_URL}/hackathons?${query.toString()}`;
@@ -270,16 +303,52 @@ export default function HackathonTable() {
   const totalPages = Math.max(1, Math.ceil(totalCount / itemsPerPage));
   const effectiveTotalPages = Math.max(totalPages, currentPage + (hasMore ? 1 : 0));
 
-  const displayedHackathons = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return hackathons;
-    }
+  const teammateOptions = useMemo(() => {
+    const values = new Set<number>();
+    hackathons.forEach((hackathon) => {
+      getTeammateOptionsFromSize(hackathon.teamSize).forEach((count) => {
+        values.add(count);
+      });
+    });
 
+    return Array.from(values).sort((a, b) => a - b);
+  }, [hackathons]);
+
+  const displayedHackathons = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return hackathons.filter((hackathon) =>
-      [hackathon.name, hackathon.college, hackathon.description].some((field) => field.toLowerCase().includes(query)),
-    );
-  }, [hackathons, searchQuery]);
+
+    return hackathons.filter((hackathon) => {
+      const matchesSearch =
+        query.length === 0
+          ? true
+          : [hackathon.name, hackathon.college, hackathon.description].some((field) =>
+              field.toLowerCase().includes(query),
+            );
+
+      const isFree = hackathon.prize.trim().toUpperCase() === 'FREE';
+      const matchesFee = feeFilter === 'all' ? true : feeFilter === 'free' ? isFree : !isFree;
+
+      const matchesMode = modeFilter === 'all' ? true : hackathon.mode === modeFilter;
+
+      const teammateCounts = getTeammateOptionsFromSize(hackathon.teamSize);
+      const matchesTeammates =
+        selectedTeammates.length === 0
+          ? true
+          : selectedTeammates.some((count) => teammateCounts.includes(count));
+
+      return matchesSearch && matchesFee && matchesMode && matchesTeammates;
+    });
+  }, [hackathons, searchQuery, feeFilter, modeFilter, selectedTeammates]);
+
+  const toggleTeammateFilter = (count: number) => {
+    setSelectedTeammates((previous) => {
+      if (previous.includes(count)) {
+        return previous.filter((item) => item !== count);
+      }
+
+      return [...previous, count].sort((a, b) => a - b);
+    });
+  };
 
   const handlePageChange = (page: number) => {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -303,7 +372,7 @@ export default function HackathonTable() {
       </div>
 
       <div className="mb-8 space-y-6">
-        <div className="flex items-center space-x-4">
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex-1 relative">
             <Icon icon="lucide:search" className="absolute left-4 top-1/2 -translate-y-1/2 text-grid/40 text-lg" />
             <input
@@ -316,19 +385,72 @@ export default function HackathonTable() {
           </div>
           <div className="relative">
             <select
-              value={sortBy}
+              value={feeFilter}
               onChange={(e) => {
-                setSortBy(e.target.value);
+                setFeeFilter(e.target.value as FeeFilter);
               }}
               className="h-12 bg-white border border-grid/20 px-6 text-[12px] font-mono tracking-widest uppercase focus:outline-none focus:border-forest transition-colors rounded-none appearance-none pr-10"
->
-              <option value="deadline">SORT BY: DEADLINE</option>
-              <option value="prizes">SORT BY: PRIZES (HIGH TO LOW)</option>
-              <option value="newest">SORT BY: NEWEST</option>
-              <option value="teamSize">SORT BY: TEAM SIZE</option>
+            >
+              <option value="all">FEES: ALL</option>
+              <option value="free">FEES: FREE</option>
+              <option value="paid">FEES: PAID</option>
             </select>
-            <Icon icon="lucide:chevron-down" className="absolute right-3 top-1/2 -translate-y-1/2 text-grid/60 text-sm pointer-events-none" /> 
+            <Icon icon="lucide:chevron-down" className="absolute right-3 top-1/2 -translate-y-1/2 text-grid/60 text-sm pointer-events-none" />
           </div>
+          <div className="relative">
+            <select
+              value={modeFilter}
+              onChange={(e) => {
+                setModeFilter(e.target.value as ModeFilter);
+              }}
+              className="h-12 bg-white border border-grid/20 px-6 text-[12px] font-mono tracking-widest uppercase focus:outline-none focus:border-forest transition-colors rounded-none appearance-none pr-10"
+            >
+              <option value="all">MODE: ALL</option>
+              <option value="remote">MODE: REMOTE</option>
+              <option value="offline">MODE: OFFLINE</option>
+            </select>
+            <Icon icon="lucide:chevron-down" className="absolute right-3 top-1/2 -translate-y-1/2 text-grid/60 text-sm pointer-events-none" />
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 pt-1">
+          <p className="font-mono text-[10px] tracking-widest uppercase text-grid/60">TEAMMATES:</p>
+          {teammateOptions.length === 0 ? (
+            <span className="font-mono text-[10px] tracking-widest uppercase text-grid/40">No teammate data on this page</span>
+          ) : (
+            teammateOptions.map((count) => {
+              const isChecked = selectedTeammates.includes(count);
+
+              return (
+                <label
+                  key={count}
+                  className={`inline-flex items-center gap-2 border px-3 py-2 rounded-sm cursor-pointer transition-colors ${
+                    isChecked
+                      ? 'border-grid/20 bg-white text-grid/80 hover:border-forest'
+                      : 'border-grid/20 bg-white text-grid/80 hover:border-forest'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => toggleTeammateFilter(count)}
+                    className="h-3.5 w-3.5 accent-forest"
+                  />
+                  <span className="font-mono text-[10px] tracking-widest uppercase">{count}</span>
+                </label>
+              );
+            })
+          )}
+
+          {selectedTeammates.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedTeammates([])}
+              className="border border-grid/30 px-3 py-2 font-mono text-[10px] tracking-widest uppercase rounded-sm hover:bg-forest hover:text-white transition-all"
+            >
+              Clear Team Filter
+            </button>
+          )}
         </div>
       </div>
 

@@ -106,6 +106,23 @@ class HackathonRepository:
 
         finally:
             self.db.release_conn(conn)
+
+
+    def get_total_active_count(self):
+        conn = self.db.get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT COUNT(*)
+                    FROM hackathons
+                    WHERE deadline IS NULL OR deadline >= CURRENT_DATE
+                """)
+                result = cur.fetchone()
+
+                return int(result[0]) if result else 0
+
+        finally:
+            self.db.release_conn(conn)
             
         
     def get_by_id(self, hackathon_id: int):

@@ -468,6 +468,8 @@ export default function HackathonDetailApi() {
         "Hello! I'm here to help you analyze this hackathon and develop your winning idea. What would you like to explore?",
     },
   ]);
+
+  const hasUserSent = useMemo(() => chatMessages.some((m) => m.role === "user"), [chatMessages]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
@@ -1789,19 +1791,21 @@ export default function HackathonDetailApi() {
                 </div>
 
                 <div className="border-t border-grid/20 bg-white p-5">
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {suggestions.map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        type="button"
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        disabled={chatLoading}
-                        className="border border-grid/20 px-3 py-2 font-mono text-[10px] tracking-widest uppercase text-grid/70 transition-all hover:border-forest hover:bg-forest hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
+                  {!hasUserSent && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          type="button"
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          disabled={chatLoading}
+                          className="border border-grid/20 px-3 py-2 font-mono text-[10px] tracking-widest uppercase text-grid/70 transition-all hover:border-forest hover:bg-forest hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="flex items-end gap-3">
                     <textarea
@@ -1902,18 +1906,20 @@ export default function HackathonDetailApi() {
                     <div ref={chatBottomRef} />
                   </div>
 
-                  <div className="space-y-2 mb-3">
-                    {suggestions.map((suggestion) => (
-                      <button
-                        key={suggestion}
-                        onClick={() => handleSuggestionClick(suggestion)}
-                        disabled={chatLoading}
-                        className="w-full text-left px-3 py-2 border border-grid/20 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {suggestion}
-                      </button>
-                    ))}
-                  </div>
+                  {!hasUserSent && (
+                    <div className="space-y-2 mb-3">
+                      {suggestions.map((suggestion) => (
+                        <button
+                          key={suggestion}
+                          onClick={() => handleSuggestionClick(suggestion)}
+                          disabled={chatLoading}
+                          className="w-full text-left px-3 py-2 border border-grid/20 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
 
                   <div className="flex space-x-2">
                     <input

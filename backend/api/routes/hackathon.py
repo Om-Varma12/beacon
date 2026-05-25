@@ -88,10 +88,12 @@ def get_hackathons(
 ):
     try:
         data = repo.get_all(limit, offset, sort_by, order)
+        total_count = repo.get_total_active_count()
 
         return {
             "success": True,
-            "count": len(data),
+            "count": total_count,
+            "page_count": len(data),
             "data": data
         }
 

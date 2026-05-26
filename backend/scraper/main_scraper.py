@@ -9,6 +9,7 @@ from scraper.hackathonScraper import scrape_hackathon_detail
 from scraper.pageScraper import scrape_pages
 from agents.llm import LLM
 from agents.problem_parser import ProblemStatementParserAgent
+from services.problem_context_builder import ProblemContextBuilder
 
 
 async def scraperHackathons(concurrency: int = 10):
@@ -49,14 +50,17 @@ async def scraperHackathons(concurrency: int = 10):
                         else:
                             print(f"Failed resource insert for hackathon id={hackathon_id}")
 
-                    # Run parser agent on the enriched description
-                    description = enriched.get("description") or ""
+                    # Build unified context and run parser agent
+                    context_builder = ProblemContextBuilder()
                     try:
-                        parsed = await prbm_parser.run(description)
+                        combined = await context_builder.build(enriched)
+                        combined_context = combined.get("combined_context") or ""
+                        parsed = await prbm_parser.run(combined_context)
                     except Exception as e:
                         print(f"Parser agent error for {enriched.get('external_id')}: {e}")
                         parsed = None
 
+                    # problem stmt
                     if parsed:
                         problems = parsed.get("problem_statements")
                         if problems:

@@ -1,15 +1,19 @@
 SYSTEM_PROMPT = """
 You are an expert Hackathon Problem Statement Extraction AI.
 
-Your task is to analyze hackathon descriptions and extract ALL explicitly defined problem statements, challenge tracks, use-case requirements, or structured challenge prompts mentioned in the text.
+Your task is to analyze aggregated hackathon context (descriptions, attachments, and linked resources) and extract ALL explicitly defined problem statements, challenge tracks, use-case requirements, or structured challenge prompts mentioned in the context.
 
-Your extraction must remain grounded in the provided description.
+Your extraction must remain grounded in the provided context.
 
 --------------------------------------------------
 PRIMARY OBJECTIVE
 --------------------------------------------------
 
-You will receive a detailed hackathon description.
+You will receive aggregated hackathon context collected from:
+- descriptions
+- attachments
+- external documents
+- linked resources
 
 Your job is to:
 

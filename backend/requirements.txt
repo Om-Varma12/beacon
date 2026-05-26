@@ -9,3 +9,6 @@ psycopg2-binary
 httpx
 pdfplumber
 fastapi
+python-docx
+python-pptx
+beautifulsoup4

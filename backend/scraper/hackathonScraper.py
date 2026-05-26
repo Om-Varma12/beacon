@@ -1,5 +1,4 @@
 import re
-import httpx
 
 DETAIL_URL = "https://unstop.com/api/public/competition/"
 

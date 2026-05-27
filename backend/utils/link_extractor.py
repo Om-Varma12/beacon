@@ -1,7 +1,7 @@
 import re
 from typing import List, Dict
 
-URL_RE = re.compile(r"https?://[^\s)'"]+")
+URL_RE = re.compile(r'https?://[^\s)\'"]+')
 
 KEYWORD_SCORES = {
     "problem": 10,

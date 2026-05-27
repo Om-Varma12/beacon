@@ -506,7 +506,7 @@ export default function HackathonDetailApi() {
     queryKey: ["hackathon-analysis", id],
     enabled: Boolean(id),
     queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/hackathon/${id}/analysis`);
+      const response = await fetch(`${API_BASE_URL}/hackathons/${id}/analysis`);
 
       if (response.status === 404) {
         throw new Error("Analysis not found.");
@@ -762,7 +762,7 @@ export default function HackathonDetailApi() {
     setChatLoading(true);
 
     try {
-      const apiResponse = await fetch(`${API_BASE_URL}/hackathon/${id}/chat`, {
+      const apiResponse = await fetch(`${API_BASE_URL}/hackathons/${id}/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -839,7 +839,7 @@ export default function HackathonDetailApi() {
     try {
       setIsAnalysisRunning(true);
 
-      const resp = await fetch(`${API_BASE_URL}/hackathon/${id}/analyze`, {
+      const resp = await fetch(`${API_BASE_URL}/hackathons/${id}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });

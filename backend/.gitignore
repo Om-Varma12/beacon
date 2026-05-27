@@ -4,6 +4,7 @@
 __pycache__/
 *.pyc
 TODO
+ISSUES.md
 
 CLAUDE.MD
 contexts

@@ -263,13 +263,7 @@ export default function HackathonTable() {
         order: 'asc',
       });
 
-      const primaryUrl = `${API_BASE_URL}/hackathons?${query.toString()}`;
-      const fallbackUrl = `${API_BASE_URL}/hackathon/?${query.toString()}`;
-
-      let response = await fetch(primaryUrl);
-      if (!response.ok && response.status === 404) {
-        response = await fetch(fallbackUrl);
-      }
+      const response = await fetch(`${API_BASE_URL}/hackathons?${query.toString()}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch hackathons: ${response.status}`);

@@ -78,7 +78,7 @@ def get_chat_service():
 #------------------------------------------------------------------------------#
 
 
-@router.get("")
+@router.get("/")
 def get_hackathons(
     repo: HackathonRepository = Depends(get_repo),
     limit: int = Query(12, le=100),

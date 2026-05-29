@@ -176,7 +176,7 @@ export function StickyContentSwitch() {
   }
 
   return (
-    <section ref={sectionRef} className="relative bg-primary-container border-b border-white/10">
+    <section ref={sectionRef} data-scroll-corridor="true" className="relative bg-primary-container border-b border-white/10">
       <div className="max-w-7xl mx-auto px-8">
         <div className="grid grid-cols-2 gap-16">
           {/* Left Sticky Column — pinned within this tall section */}

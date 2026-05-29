@@ -75,6 +75,19 @@ body {
   -ms-user-select: none;
 }
 
+html {
+  scroll-behavior: auto;
+}
+
+.alive-scroll-container {
+  overscroll-behavior: contain;
+  scroll-behavior: auto;
+}
+
+.alive-scroll-content {
+  min-height: 100vh;
+}
+
 /* Hide Scrollbars */
 * {
   scrollbar-width: none;

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import { Icon } from '@iconify/react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -53,29 +53,10 @@ const journeySteps = [
   }
 ]
 
-const colorMap = {
-  coral: 'bg-coral',
-  mint: 'bg-mint',
-  gold: 'bg-gold'
-}
-
-const textColorMap = {
-  coral: 'text-coral',
-  mint: 'text-mint',
-  gold: 'text-gold'
-}
-
-const ringColorMap = {
-  coral: 'ring-coral/20',
-  mint: 'ring-mint/20',
-  gold: 'ring-gold/20'
-}
-
 export function ScrollJourney() {
   const sectionRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const pathRef = useRef<SVGPathElement>(null)
-  const [pathLength, setPathLength] = useState(0)
 
   useEffect(() => {
     const section = sectionRef.current
@@ -143,7 +124,6 @@ export function ScrollJourney() {
 
       const length = path.getTotalLength()
       cachedPathLength = length
-      setPathLength(length)
       path.setAttribute('stroke-dasharray', `${length} ${length}`)
       path.setAttribute('stroke-dashoffset', length.toString())
 
@@ -234,7 +214,7 @@ export function ScrollJourney() {
   }, [])
 
   return (
-    <section ref={sectionRef} id="journey-container" className="relative bg-paper border-b border-grid/20">
+    <section ref={sectionRef} id="journey-container" data-scroll-corridor="true" className="relative bg-paper border-b border-grid/20">
       {/* Hero Section */}
       <div className="h-screen min-h-[700px] flex items-center justify-center px-8 snap-start">
         <div className="text-center max-w-4xl">

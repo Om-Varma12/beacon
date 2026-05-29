@@ -3,6 +3,7 @@ import './App.css'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
 import { StickyContentSwitch } from './components/ProblemSection'
+import { ScrollJourney } from './components/ScrollJourney'
 import { BentoGrid } from './components/BentoGrid'
 import { FormCTA } from './components/FormCTA'
 import { Testimonials } from './components/Testimonials'
@@ -60,6 +61,7 @@ function App() {
         <Navbar visible={showNavbar} />
         <Hero />
         <StickyContentSwitch />
+        <ScrollJourney />
         <BentoGrid />
         <FormCTA />
         <Testimonials />

@@ -4,6 +4,7 @@ import './App.css'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
 import { StickyContentSwitch } from './components/ProblemSection'
+import { BehindTheIntelligence } from './components/behind-the-intelligence'
 import { ScrollJourney } from './components/ScrollJourney'
 import { BentoGrid } from './components/BentoGrid'
 import { FormCTA } from './components/FormCTA'
@@ -85,6 +86,7 @@ function App() {
           <Navbar visible={showNavbar} />
           <Hero />
           <StickyContentSwitch />
+          <BehindTheIntelligence />
           <ScrollJourney />
           <BentoGrid />
           <FormCTA />

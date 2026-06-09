@@ -1,8 +1,5 @@
 dotenv
 requests
-groq
-ollama
-playwright
 ipykernel
 supabase
 psycopg2-binary
@@ -12,3 +9,4 @@ fastapi
 python-docx
 python-pptx
 beautifulsoup4
+uvicorn

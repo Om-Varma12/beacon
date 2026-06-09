@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query, BackgroundTasks, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from db.database import Database
@@ -8,10 +9,12 @@ from db.ResourceRepository import ResourceRepository
 from db.AgentAnalysisRepository import AgentAnalysisRepository
 from db.AgentRoundsRepository import AgentRoundsRepository
 from db.ChatMessageRepository import ChatMessageRepository
+from db.AssetsRepository import AssetsRepository
 
 from services.HackathonService import HackathonService
 from services.AnalysisService import AnalysisService
 from services.ChatService import ChatService
+from services.AssetsService import AssetsService
 
 from scraper.main_scraper import scraperHackathons
 
@@ -71,6 +74,18 @@ def get_chat_service():
         analysis_repo,
         rounds_repo,
         chat_repo
+    )
+
+
+def get_assets_service():
+    hackathon_repo = HackathonRepository(db)
+    analysis_repo = AgentAnalysisRepository(db)
+    assets_repo = AssetsRepository(db)
+
+    return AssetsService(
+        hackathon_repo,
+        analysis_repo,
+        assets_repo
     )
     
     
@@ -198,3 +213,84 @@ async def chat_with_hackathon(
         "success": True,
         "data": data
     }
+
+
+@router.get("/{hackathon_id}/assets")
+async def get_assets(
+    hackathon_id: int,
+    service: AssetsService = Depends(get_assets_service)
+):
+    data = await service.get_assets(hackathon_id)
+    if data is None:
+        raise HTTPException(status_code=404, detail="Hackathon not found")
+
+    return {
+        "success": True,
+        "data": data
+    }
+
+
+@router.post("/{hackathon_id}/assets/generate")
+async def generate_assets(
+    hackathon_id: int,
+    service: AssetsService = Depends(get_assets_service)
+):
+    try:
+        data = await service.generate_assets(hackathon_id)
+        if data is None:
+            raise HTTPException(status_code=404, detail="Hackathon not found")
+
+        return {
+            "success": True,
+            "data": data
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate assets: {str(e)}")
+
+
+@router.get("/{hackathon_id}/assets/download/docx")
+async def download_assets_docx(
+    hackathon_id: int,
+    service: AssetsService = Depends(get_assets_service)
+):
+    from utils.asset_generator import generate_docx_proposal
+    data = await service.get_assets(hackathon_id)
+    if data is None or not data.get("generated") or not data.get("doc_content"):
+        raise HTTPException(status_code=404, detail="Assets not generated yet")
+    
+    doc_content = data["doc_content"]
+    file_stream = generate_docx_proposal(doc_content)
+    
+    title = doc_content.get('title') or "project"
+    safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '_')).rstrip()
+    filename = f"{safe_title.lower().replace(' ', '_')}_technical_proposal.docx"
+    return StreamingResponse(
+        file_stream,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+
+@router.get("/{hackathon_id}/assets/download/pptx")
+async def download_assets_pptx(
+    hackathon_id: int,
+    service: AssetsService = Depends(get_assets_service)
+):
+    from utils.asset_generator import generate_pptx_slides
+    data = await service.get_assets(hackathon_id)
+    if data is None or not data.get("generated") or not data.get("ppt_content"):
+        raise HTTPException(status_code=404, detail="Assets not generated yet")
+        
+    ppt_content = data["ppt_content"]
+    file_stream = generate_pptx_slides(ppt_content)
+    
+    title = ppt_content.get('title') or "project"
+    safe_title = "".join(c for c in title if c.isalnum() or c in (' ', '_')).rstrip()
+    filename = f"{safe_title.lower().replace(' ', '_')}_pitch_deck.pptx"
+    return StreamingResponse(
+        file_stream,
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )

@@ -228,6 +228,53 @@ interface AnalysisResponse {
   error?: string;
 }
 
+export interface DocContent {
+  title: string;
+  problem_statement: string;
+  solution_overview: string;
+  core_features: string[];
+  target_users: string[];
+  why_this_is_best: string;
+  recommended_tech_stack: {
+    frontend?: string[];
+    backend?: string[];
+    database?: string[];
+    ml_ai?: string[];
+    devops?: string[];
+    apis_services?: string[];
+  };
+  implementation_phases: { phase: string; tasks: string[] }[];
+  team_structure: string[];
+  unique_selling_points: string[];
+  risks_and_mitigations: { risk: string; mitigation: string }[];
+  judging_criteria_alignment: string[];
+}
+
+export interface PPTSlide {
+  slide_number: number;
+  title: string;
+  bullets: string[];
+  speaker_notes: string;
+}
+
+export interface PPTContent {
+  title: string;
+  organizer: string;
+  slides: PPTSlide[];
+}
+
+export interface AssetsPayload {
+  generated: boolean;
+  doc_content: DocContent | null;
+  ppt_content: PPTContent | null;
+}
+
+export interface AssetsResponse {
+  success: boolean;
+  data: AssetsPayload;
+  error?: string;
+}
+
 type TabType = "overview" | "analysis" | "assets" | "chat";
 
 const API_BASE_URL =
@@ -244,6 +291,127 @@ function formatDate(value?: string | null): string {
     year: "numeric",
   });
 }
+
+function convertDocToMarkdown(doc: DocContent): string {
+  let md = `# ${doc.title}\n\n`;
+  
+  md += `## 1. Problem Statement\n${doc.problem_statement}\n\n`;
+  md += `## 2. Solution Overview\n${doc.solution_overview}\n\n`;
+  
+  if (doc.target_users && doc.target_users.length > 0) {
+    md += `## 3. Target Users\n`;
+    doc.target_users.forEach(u => {
+      md += `- ${u}\n`;
+    });
+    md += `\n`;
+  }
+  
+  if (doc.core_features && doc.core_features.length > 0) {
+    md += `## 4. Core Features\n`;
+    doc.core_features.forEach(f => {
+      md += `- ${f}\n`;
+    });
+    md += `\n`;
+  }
+  
+  md += `## 5. Recommended Tech Stack\n`;
+  const tech = doc.recommended_tech_stack;
+  if (tech) {
+    if (tech.frontend && tech.frontend.length > 0) {
+      md += `### Frontend\n` + tech.frontend.map(item => `- ${item}`).join('\n') + `\n\n`;
+    }
+    if (tech.backend && tech.backend.length > 0) {
+      md += `### Backend\n` + tech.backend.map(item => `- ${item}`).join('\n') + `\n\n`;
+    }
+    if (tech.database && tech.database.length > 0) {
+      md += `### Database\n` + tech.database.map(item => `- ${item}`).join('\n') + `\n\n`;
+    }
+    if (tech.ml_ai && tech.ml_ai.length > 0) {
+      md += `### ML & AI\n` + tech.ml_ai.map(item => `- ${item}`).join('\n') + `\n\n`;
+    }
+    if (tech.devops && tech.devops.length > 0) {
+      md += `### DevOps\n` + tech.devops.map(item => `- ${item}`).join('\n') + `\n\n`;
+    }
+    if (tech.apis_services && tech.apis_services.length > 0) {
+      md += `### APIs & Third-party Services\n` + tech.apis_services.map(item => `- ${item}`).join('\n') + `\n\n`;
+    }
+  }
+  
+  if (doc.implementation_phases && doc.implementation_phases.length > 0) {
+    md += `## 6. Implementation Roadmap\n`;
+    doc.implementation_phases.forEach(phase => {
+      md += `### ${phase.phase}\n`;
+      phase.tasks.forEach(t => {
+        md += `- ${t}\n`;
+      });
+      md += `\n`;
+    });
+  }
+  
+  if (doc.team_structure && doc.team_structure.length > 0) {
+    md += `## 7. Team Structure & Roles\n`;
+    doc.team_structure.forEach(role => {
+      md += `- ${role}\n`;
+    });
+    md += `\n`;
+  }
+  
+  if (doc.unique_selling_points && doc.unique_selling_points.length > 0) {
+    md += `## 8. Unique Selling Points (USPs)\n`;
+    doc.unique_selling_points.forEach(usp => {
+      md += `- ${usp}\n`;
+    });
+    md += `\n`;
+  }
+  
+  if (doc.risks_and_mitigations && doc.risks_and_mitigations.length > 0) {
+    md += `## 9. Risks and Mitigations\n`;
+    md += `| Risk | Mitigation |\n|---|---|\n`;
+    doc.risks_and_mitigations.forEach(rm => {
+      md += `| ${rm.risk} | ${rm.mitigation} |\n`;
+    });
+    md += `\n`;
+  }
+  
+  if (doc.judging_criteria_alignment && doc.judging_criteria_alignment.length > 0) {
+    md += `## 10. Hackathon Judging Criteria Alignment\n`;
+    doc.judging_criteria_alignment.forEach(align => {
+      md += `- ${align}\n`;
+    });
+    md += `\n`;
+  }
+  
+  if (doc.why_this_is_best) {
+    md += `## 11. Strategic Value (Why this is the winning idea)\n${doc.why_this_is_best}\n\n`;
+  }
+  
+  return md;
+}
+
+function convertPptToMarkdown(ppt: PPTContent): string {
+  let md = `# ${ppt.title}\n`;
+  md += `*Presentation Slides Outline*\n`;
+  md += `*Organized by: ${ppt.organizer}*\n\n`;
+  md += `---\n\n`;
+  
+  if (ppt.slides) {
+    ppt.slides.forEach(slide => {
+      md += `## Slide ${slide.slide_number}: ${slide.title}\n\n`;
+      if (slide.bullets) {
+        slide.bullets.forEach(bullet => {
+          md += `- ${bullet}\n`;
+        });
+      }
+      md += `\n`;
+      md += `> **Speaker Notes:**\n`;
+      md += `> ${slide.speaker_notes}\n\n`;
+      md += `---\n\n`;
+    });
+  }
+  
+  return md;
+}
+
 
 function getDaysUntil(value?: string | null): number | null {
   if (!value) return null;
@@ -478,6 +646,13 @@ export default function HackathonDetailApi() {
   const [isAnalysisRunning, setIsAnalysisRunning] = useState(false);
   const [expandedCard, setExpandedCard] = useState<{ roundIndex: number; agent: string } | null>(null);
   const chatBottomRef = useRef<HTMLDivElement | null>(null);
+
+  const handleCopyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      console.log("Copied to clipboard!");
+    }).catch(err => console.error("Copy failed", err));
+  };
+
   const hackathonQuery = useQuery<HackathonQueryResult, Error>({
     queryKey: ["hackathon", id],
     enabled: Boolean(id),
@@ -525,6 +700,76 @@ export default function HackathonDetailApi() {
       return result;
     },
   });
+
+  // Assets-related states
+  const [activeAssetView, setActiveAssetView] = useState<"doc" | "ppt">("doc");
+  const [assetsGenerating, setAssetsGenerating] = useState(false);
+  const [assetsGeneratingText, setAssetsGeneratingText] = useState("Generating AI Blueprints & Pitch Slides...");
+  const [assetsError, setAssetsError] = useState<string | null>(null);
+  const [selectedSlideIndex, setSelectedSlideIndex] = useState(0);
+  const [collapsedSpeakerNotes, setCollapsedSpeakerNotes] = useState<Record<number, boolean>>({});
+
+  const assetsQuery = useQuery<AssetsResponse, Error>({
+    queryKey: ["hackathon-assets", id],
+    enabled: Boolean(id),
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE_URL}/hackathons/${id}/assets`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch assets: ${response.status}`);
+      }
+      const result = (await response.json()) as AssetsResponse;
+      if (!result.success) {
+        throw new Error(result.error ?? "Backend returned no assets data");
+      }
+      return result;
+    },
+  });
+
+  const handleGenerateAssets = async () => {
+    setAssetsGenerating(true);
+    setAssetsError(null);
+    try {
+      let currentHasAnalysis = hasAnalysis;
+      
+      // If we don't have analysis, run it first!
+      if (!currentHasAnalysis) {
+        setAssetsGeneratingText("Running AI Agent Debate to select winning idea...");
+        const analyzeResp = await fetch(`${API_BASE_URL}/hackathons/${id}/analyze`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (!analyzeResp.ok) {
+          throw new Error("Failed to run AI Analysis prior to asset generation.");
+        }
+        const analyzeResult = await analyzeResp.json();
+        // Update query client cache for analysis
+        queryClient.setQueryData(["hackathon-analysis", id], analyzeResult);
+        queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id] });
+        currentHasAnalysis = true;
+      }
+
+      setAssetsGeneratingText("Structuring Technical Proposal & Slide Deck...");
+      const response = await fetch(`${API_BASE_URL}/hackathons/${id}/assets/generate`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const errResult = await response.json().catch(() => ({}));
+        throw new Error(errResult.detail ?? `Failed to generate assets: ${response.status}`);
+      }
+      const result = await response.json();
+      if (!result.success || !result.data) {
+        throw new Error(result.error ?? "Failed to generate assets.");
+      }
+      queryClient.setQueryData(["hackathon-assets", id], result);
+      queryClient.invalidateQueries({ queryKey: ["hackathon-assets", id] });
+      setActiveAssetView("doc");
+    } catch (err) {
+      setAssetsError(err instanceof Error ? err.message : "An error occurred during generation.");
+    } finally {
+      setAssetsGenerating(false);
+      setAssetsGeneratingText("Generating AI Blueprints & Pitch Slides...");
+    }
+  };
 
   const [aiAnalysis] = useState({
     recommendedTheme: {
@@ -726,7 +971,6 @@ export default function HackathonDetailApi() {
 
   useEffect(() => {
     // Log analysis payload for debugging when nothing appears in the UI
-    // eslint-disable-next-line no-console
     console.log("DEBUG: analysisData ->", analysisData);
   }, [analysisData]);
 
@@ -846,7 +1090,6 @@ export default function HackathonDetailApi() {
 
       if (!resp.ok) {
         // keep UI responsive; log error
-        // eslint-disable-next-line no-console
         console.error("Failed to run analysis", resp.status);
         setIsAnalysisRunning(false);
         return;
@@ -857,9 +1100,8 @@ export default function HackathonDetailApi() {
       // Update react-query cache for analysis so the UI reflects the new data
       queryClient.setQueryData(["hackathon-analysis", id], result);
       // Optionally refetch the query
-      queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id] } as any);
+      queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id] });
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("Error running analysis", err);
     } finally {
       setIsAnalysisRunning(false);
@@ -1658,67 +1900,655 @@ export default function HackathonDetailApi() {
             )}
 
             {!loading && !error && activeTab === "assets" && (
-              <div className="space-y-6">
+              <div className="space-y-6 relative">
+                {assetsGenerating && (
+                  <div className="absolute inset-0 bg-paper/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center min-h-[400px]">
+                    <div className="w-16 h-16 border-4 border-forest border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="font-mono text-xs text-forest animate-pulse">
+                      {assetsGeneratingText}
+                    </p>
+                  </div>
+                )}
+
+                {/* Main Header / Actions */}
                 <div className="bg-white border border-grid/20 p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="font-display text-2xl text-forest">
-                      Generated Assets
-                    </h2>
-                    <div className="flex space-x-2">
-                      <button className="px-4 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase hover:bg-forest hover:text-white transition-all">
-                        Generate
-                      </button>
-                      <button className="px-4 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase hover:bg-forest hover:text-white transition-all">
-                        Download All
-                      </button>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                      <h2 className="font-display text-2xl text-forest">
+                        Technical Proposal & Slide Deck
+                      </h2>
+                      <p className="font-mono text-[10px] text-grid/60 uppercase tracking-wider mt-1">
+                        AI-Generated Execution Assets based on the Winning concept
+                      </p>
                     </div>
+
+                    {assetsQuery.data?.data?.generated && (
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/docx`;
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                          }}
+                          className="px-3 py-1.5 border border-forest bg-forest text-white font-mono text-[10px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Icon icon="lucide:file-text" /> Doc (.docx)
+                        </button>
+                        <button
+                          onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/pptx`;
+                            document.body.appendChild(link);
+                            link.click();
+                            link.remove();
+                          }}
+                          className="px-3 py-1.5 border border-forest bg-forest text-white font-mono text-[10px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Icon icon="lucide:presentation" /> Slides (.pptx)
+                        </button>
+                        <button
+                          onClick={() => {
+                            const doc = assetsQuery.data.data.doc_content;
+                            if (doc) {
+                              const md = convertDocToMarkdown(doc);
+                              const blob = new Blob([md], { type: "text/markdown" });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              a.href = url;
+                              a.download = `${doc.title.replace(/\s+/g, "_")}_technical_proposal.md`;
+                              a.click();
+                            }
+                          }}
+                          className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all flex items-center gap-1.5 cursor-pointer text-grid/80"
+                        >
+                          <Icon icon="lucide:download" /> Proposal (.md)
+                        </button>
+                        <button
+                          onClick={() => {
+                            const ppt = assetsQuery.data.data.ppt_content;
+                            if (ppt) {
+                              const md = convertPptToMarkdown(ppt);
+                              const blob = new Blob([md], { type: "text/markdown" });
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              a.href = url;
+                              a.download = `${ppt.title.replace(/\s+/g, "_")}_pitch_deck.md`;
+                              a.click();
+                            }
+                          }}
+                          className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all flex items-center gap-1.5 cursor-pointer text-grid/80"
+                        >
+                          <Icon icon="lucide:download" /> Slides (.md)
+                        </button>
+                        <button
+                          onClick={handleGenerateAssets}
+                          disabled={assetsGenerating}
+                          className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all flex items-center gap-1.5 cursor-pointer text-grid/70"
+                        >
+                          <Icon icon="lucide:refresh-cw" className={assetsGenerating ? "animate-spin" : ""} /> Regenerate
+                        </button>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="space-y-6">
-                    {(viewModel?.resources ?? []).map((asset, index) => (
-                      <div key={index} className="bg-white border border-grid/20 p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-white border border-grid/20 flex items-center justify-center">
-                              <Icon
-                                icon={
-                                  asset.type === "ppt"
-                                    ? "lucide:presentation"
-                                    : asset.type === "doc"
-                                      ? "lucide:file-text"
-                                      : "lucide:file"
-                                }
-                                className="text-forest"
-                              />
-                            </div>
-                            <div>
-                              <h4 className="font-mono text-xs text-forest">
-                                {asset.name}
-                              </h4>
-                              <p className="font-mono text-[9px] text-grid/40 uppercase">
-                                {asset.type.toUpperCase()}
+                  {assetsError && (
+                    <div className="mb-6 p-4 border border-coral bg-coral/10 text-forest font-mono text-xs flex items-center gap-2">
+                      <Icon icon="lucide:alert-circle" className="text-coral flex-shrink-0" />
+                      <span>{assetsError}</span>
+                    </div>
+                  )}
+
+                  {/* NOT GENERATED STATE */}
+                  {assetsQuery.data?.data?.generated === false && (
+                    <div className="py-12 flex flex-col items-center justify-center text-center max-w-xl mx-auto">
+                      <div className="w-16 h-16 bg-forest/5 border border-forest/10 flex items-center justify-center mb-6">
+                        <Icon icon="lucide:files" className="text-forest text-2xl" />
+                      </div>
+                      <h3 className="font-display text-xl text-forest mb-2">
+                        No Assets Generated Yet
+                      </h3>
+                      <p className="text-sm text-grid/70 mb-8 leading-relaxed">
+                        Create a fully detailed technical architecture proposal (Markdown document) and a complete slide outline (presentation outline with speaker notes) based on the winning hackathon idea.
+                      </p>
+
+                      <button
+                        onClick={handleGenerateAssets}
+                        disabled={assetsGenerating}
+                        className="px-6 py-3 border border-forest bg-forest text-white font-mono text-xs tracking-widest uppercase hover:bg-white hover:text-forest transition-all cursor-pointer flex items-center justify-center gap-2 mx-auto"
+                      >
+                        {assetsGenerating ? (
+                          <>
+                            <Icon icon="lucide:loader-2" className="animate-spin" />
+                            <span>Generating...</span>
+                          </>
+                        ) : hasAnalysis ? (
+                          "Generate Solution Blueprint"
+                        ) : (
+                          "Run AI Analysis & Generate Blueprint"
+                        )}
+                      </button>
+                      {!hasAnalysis && (
+                        <p className="font-mono text-[9px] text-coral uppercase tracking-wider mt-3">
+                          * Runs a multi-agent debate (10s) then generates slides & proposal
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {/* GENERATED CONTENT */}
+                  {assetsQuery.data?.data?.generated === true && (
+                    <div className="space-y-6">
+                      {/* View Switcher */}
+                      <div className="flex border-b border-grid/20 pb-4">
+                        <button
+                          onClick={() => setActiveAssetView("doc")}
+                          className={`px-4 py-2 font-mono text-xs tracking-wider uppercase border-b-2 transition-all mr-2 cursor-pointer ${
+                            activeAssetView === "doc"
+                              ? "border-forest text-forest font-bold"
+                              : "border-transparent text-grid/40 hover:text-forest"
+                          }`}
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <Icon icon="lucide:file-text" /> Technical Proposal (Doc)
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => setActiveAssetView("ppt")}
+                          className={`px-4 py-2 font-mono text-xs tracking-wider uppercase border-b-2 transition-all cursor-pointer ${
+                            activeAssetView === "ppt"
+                              ? "border-forest text-forest font-bold"
+                              : "border-transparent text-grid/40 hover:text-forest"
+                          }`}
+                        >
+                          <span className="flex items-center gap-1.5">
+                            <Icon icon="lucide:presentation" /> Pitch Slides (PPT)
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* DOCUMENT VIEW */}
+                      {activeAssetView === "doc" && assetsQuery.data.data.doc_content && (
+                        <div className="flex flex-col lg:flex-row gap-8">
+                          {/* Left Navigation Column */}
+                          <div className="w-full lg:w-1/4 lg:sticky lg:top-4 h-fit space-y-1">
+                            <p className="font-mono text-[10px] text-grid/40 uppercase tracking-widest px-3 mb-2 font-bold">
+                              Document Sections
+                            </p>
+                            {[
+                              { label: "Overview", targetId: "doc-overview" },
+                              { label: "Problem & Solution", targetId: "doc-prob-sol" },
+                              { label: "Core Features", targetId: "doc-features" },
+                              { label: "Recommended Tech Stack", targetId: "doc-tech" },
+                              { label: "Roadmap", targetId: "doc-roadmap" },
+                              { label: "Team Structure", targetId: "doc-team" },
+                              { label: "USPs", targetId: "doc-usps" },
+                              { label: "Risks & Mitigations", targetId: "doc-risks" },
+                              { label: "Judging Alignment", targetId: "doc-judging" }
+                            ].map((sec, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => {
+                                  document.getElementById(sec.targetId)?.scrollIntoView({ behavior: "smooth" });
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs font-mono border border-transparent hover:border-grid/20 hover:bg-paper/50 transition-all text-forest flex items-center justify-between cursor-pointer"
+                              >
+                                <span>{sec.label}</span>
+                                <Icon icon="lucide:chevron-right" className="text-grid/30" />
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Right Content Column */}
+                          <div className="w-full lg:w-3/4 space-y-8">
+                            {/* Title & Overview Card */}
+                            <div id="doc-overview" className="bg-white border border-grid/20 p-6 scroll-mt-6 relative group">
+                              <button
+                                onClick={() => {
+                                  const doc = assetsQuery.data.data.doc_content;
+                                  if (doc) {
+                                    handleCopyToClipboard(`# ${doc.title}\n\n${doc.why_this_is_best}`);
+                                  }
+                                }}
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                title="Copy section markdown"
+                              >
+                                <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
+                              </button>
+                              <h3 className="font-display text-2xl text-forest mb-2">
+                                {assetsQuery.data.data.doc_content.title}
+                              </h3>
+                              <div className="w-12 h-1 bg-forest mb-6"></div>
+                              <p className="text-sm leading-relaxed text-grid/80 italic">
+                                {assetsQuery.data.data.doc_content.why_this_is_best}
                               </p>
                             </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            <button className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all">
-                              Copy
-                            </button>
-                            <button className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all">
-                              Regenerate
-                            </button>
+
+                            {/* Problem & Solution Card */}
+                            <div id="doc-prob-sol" className="bg-white border border-grid/20 p-6 scroll-mt-6 relative group">
+                              <button
+                                onClick={() => {
+                                  const doc = assetsQuery.data.data.doc_content;
+                                  if (doc) {
+                                    handleCopyToClipboard(`## Problem Statement\n${doc.problem_statement}\n\n## Solution Overview\n${doc.solution_overview}`);
+                                  }
+                                }}
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                title="Copy section markdown"
+                              >
+                                <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
+                              </button>
+                              <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                  <h4 className="font-mono text-xs text-coral font-bold uppercase tracking-wider">
+                                    Problem Statement
+                                  </h4>
+                                  <p className="text-xs leading-relaxed text-grid/80">
+                                    {assetsQuery.data.data.doc_content.problem_statement}
+                                  </p>
+                                </div>
+                                <div className="space-y-3 border-t md:border-t-0 md:border-l border-grid/10 pt-6 md:pt-0 md:pl-6">
+                                  <h4 className="font-mono text-xs text-forest font-bold uppercase tracking-wider">
+                                    Proposed Solution
+                                  </h4>
+                                  <p className="text-xs leading-relaxed text-grid/80">
+                                    {assetsQuery.data.data.doc_content.solution_overview}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Core Features & Target Users */}
+                            <div id="doc-features" className="bg-white border border-grid/20 p-6 scroll-mt-6 relative group">
+                              <button
+                                onClick={() => {
+                                  const doc = assetsQuery.data.data.doc_content;
+                                  if (doc) {
+                                    handleCopyToClipboard(`## Key Features\n${doc.core_features.map(f => `- ${f}`).join('\n')}\n\n## Target Users\n${doc.target_users.map(u => `- ${u}`).join('\n')}`);
+                                  }
+                                }}
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                title="Copy section markdown"
+                              >
+                                <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
+                              </button>
+                              <div className="grid md:grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                  <h4 className="font-mono text-xs text-forest font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                    <Icon icon="lucide:zap" /> Core Features
+                                  </h4>
+                                  <ul className="space-y-3">
+                                    {(assetsQuery.data.data.doc_content.core_features ?? []).map((feat, idx) => (
+                                      <li key={idx} className="flex gap-2 text-xs text-grid/80 items-start">
+                                        <div className="w-1.5 h-1.5 bg-forest rounded-full mt-1.5 flex-shrink-0" />
+                                        <span>{feat}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                                <div className="space-y-4 border-t md:border-t-0 md:border-l border-grid/10 pt-6 md:pt-0 md:pl-6">
+                                  <h4 className="font-mono text-xs text-forest font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                    <Icon icon="lucide:users" /> Target Users
+                                  </h4>
+                                  <ul className="space-y-3">
+                                    {(assetsQuery.data.data.doc_content.target_users ?? []).map((user, idx) => (
+                                      <li key={idx} className="flex gap-2 text-xs text-grid/80 items-start">
+                                        <div className="w-1.5 h-1.5 bg-coral rounded-full mt-1.5 flex-shrink-0" />
+                                        <span>{user}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Tech Stack Card */}
+                            <div id="doc-tech" className="bg-white border border-grid/20 p-6 scroll-mt-6 relative group">
+                              <button
+                                onClick={() => {
+                                  const doc = assetsQuery.data.data.doc_content;
+                                  if (doc) {
+                                    let stackStr = `## Recommended Tech Stack\n`;
+                                    Object.entries(doc.recommended_tech_stack).forEach(([key, val]) => {
+                                      if (val && val.length > 0) {
+                                        stackStr += `### ${key.toUpperCase()}\n${val.map(v => `- ${v}`).join('\n')}\n\n`;
+                                      }
+                                    });
+                                    handleCopyToClipboard(stackStr);
+                                  }
+                                }}
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                title="Copy section markdown"
+                              >
+                                <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
+                              </button>
+                              <h4 className="font-mono text-xs text-forest font-bold uppercase tracking-wider mb-6 flex items-center gap-1.5">
+                                <Icon icon="lucide:layers" /> Recommended Tech Stack
+                              </h4>
+                              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                {Object.entries(assetsQuery.data.data.doc_content.recommended_tech_stack ?? {}).map(([category, items], idx) => {
+                                  if (!items || items.length === 0) return null;
+                                  const cleanCatName = category.replace("_", " ").toUpperCase();
+                                  return (
+                                    <div key={idx} className="border border-grid/10 p-4 bg-paper/20">
+                                      <p className="font-mono text-[9px] text-grid/40 uppercase tracking-widest font-bold mb-2">
+                                        {cleanCatName}
+                                      </p>
+                                      <div className="flex flex-wrap gap-1.5">
+                                        {items.map((techItem, tIdx) => (
+                                          <span
+                                            key={tIdx}
+                                            className="px-2 py-0.5 border border-grid/20 bg-white text-[10px] font-mono text-forest"
+                                          >
+                                            {techItem}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Implementation Roadmap Card */}
+                            <div id="doc-roadmap" className="bg-white border border-grid/20 p-6 scroll-mt-6 relative group">
+                              <button
+                                onClick={() => {
+                                  const doc = assetsQuery.data.data.doc_content;
+                                  if (doc) {
+                                    let roadmapStr = `## Implementation Roadmap\n`;
+                                    doc.implementation_phases.forEach(phase => {
+                                      roadmapStr += `### ${phase.phase}\n${phase.tasks.map(t => `- ${t}`).join('\n')}\n\n`;
+                                    });
+                                    handleCopyToClipboard(roadmapStr);
+                                  }
+                                }}
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                title="Copy section markdown"
+                              >
+                                <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
+                              </button>
+                              <h4 className="font-mono text-xs text-forest font-bold uppercase tracking-wider mb-6 flex items-center gap-1.5">
+                                <Icon icon="lucide:calendar-range" /> Implementation Roadmap
+                              </h4>
+                              <div className="space-y-6">
+                                {(assetsQuery.data.data.doc_content.implementation_phases ?? []).map((phase, pIdx) => (
+                                  <div key={pIdx} className="relative pl-6 border-l-2 border-forest/15 last:border-l-0 pb-2">
+                                    <div className="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-forest border-2 border-white" />
+                                    <h5 className="font-display text-sm text-forest font-bold mb-3">
+                                      {phase.phase}
+                                    </h5>
+                                    <div className="grid md:grid-cols-2 gap-2">
+                                      {phase.tasks.map((task, tIdx) => (
+                                        <div key={tIdx} className="flex gap-2 items-start text-xs border border-grid/5 bg-paper/10 p-2.5">
+                                          <Icon icon="lucide:check-square" className="text-forest/40 flex-shrink-0 mt-0.5" />
+                                          <span className="text-grid/80">{task}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Team Structure Card */}
+                            <div id="doc-team" className="bg-white border border-grid/20 p-6 scroll-mt-6 relative group">
+                              <button
+                                onClick={() => {
+                                  const doc = assetsQuery.data.data.doc_content;
+                                  if (doc) {
+                                    handleCopyToClipboard(`## Team Structure\n${doc.team_structure.map(r => `- ${r}`).join('\n')}`);
+                                  }
+                                }}
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                title="Copy section markdown"
+                              >
+                                <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
+                              </button>
+                              <h4 className="font-mono text-xs text-forest font-bold uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                                <Icon icon="lucide:users-round" /> Team Structure & Roles
+                              </h4>
+                              <div className="grid sm:grid-cols-2 gap-3">
+                                {(assetsQuery.data.data.doc_content.team_structure ?? []).map((role, idx) => (
+                                  <div key={idx} className="border border-grid/10 p-3 bg-white flex items-start gap-2.5">
+                                    <div className="w-8 h-8 rounded bg-forest/5 flex items-center justify-center flex-shrink-0">
+                                      <Icon icon="lucide:user" className="text-forest text-sm" />
+                                    </div>
+                                    <span className="text-xs text-grid/80 font-mono leading-relaxed">
+                                      {role}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* USPs & Value Card */}
+                            <div id="doc-usps" className="bg-white border border-grid/20 p-6 scroll-mt-6 relative group">
+                              <button
+                                onClick={() => {
+                                  const doc = assetsQuery.data.data.doc_content;
+                                  if (doc) {
+                                    handleCopyToClipboard(`## Unique Selling Points\n${doc.unique_selling_points.map(u => `- ${u}`).join('\n')}`);
+                                  }
+                                }}
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                title="Copy section markdown"
+                              >
+                                <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
+                              </button>
+                              <h4 className="font-mono text-xs text-forest font-bold uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                                <Icon icon="lucide:sparkles" /> Unique Selling Points (USPs)
+                              </h4>
+                              <div className="space-y-2.5">
+                                {(assetsQuery.data.data.doc_content.unique_selling_points ?? []).map((usp, idx) => (
+                                  <div key={idx} className="flex items-start gap-2.5 border border-forest/15 bg-mint/5 p-3.5">
+                                    <Icon icon="lucide:check-circle-2" className="text-forest text-sm flex-shrink-0 mt-0.5" />
+                                    <span className="text-xs text-grid/80 font-mono leading-relaxed">
+                                      {usp}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Risks & Mitigations Table */}
+                            <div id="doc-risks" className="bg-white border border-grid/20 p-6 scroll-mt-6 relative group">
+                              <button
+                                onClick={() => {
+                                  const doc = assetsQuery.data.data.doc_content;
+                                  if (doc) {
+                                    let riskStr = `## Risks and Mitigations\n| Risk | Mitigation |\n|---|---|\n`;
+                                    doc.risks_and_mitigations.forEach(r => {
+                                      riskStr += `| ${r.risk} | ${r.mitigation} |\n`;
+                                    });
+                                    handleCopyToClipboard(riskStr);
+                                  }
+                                }}
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                title="Copy section markdown"
+                              >
+                                <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
+                              </button>
+                              <h4 className="font-mono text-xs text-forest font-bold uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                                <Icon icon="lucide:shield-alert" /> Risks & Mitigations
+                              </h4>
+                              <div className="overflow-x-auto border border-grid/10">
+                                <table className="w-full text-left border-collapse text-xs">
+                                  <thead>
+                                    <tr className="bg-paper border-b border-grid/10">
+                                      <th className="p-3 font-mono font-bold uppercase text-coral">Risk</th>
+                                      <th className="p-3 font-mono font-bold uppercase text-forest">Mitigation</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-grid/10">
+                                    {(assetsQuery.data.data.doc_content.risks_and_mitigations ?? []).map((rm, idx) => (
+                                      <tr key={idx}>
+                                        <td className="p-3 font-medium text-grid/90 w-1/2 align-top">{rm.risk}</td>
+                                        <td className="p-3 text-grid/70 w-1/2 align-top bg-mint/5">{rm.mitigation}</td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+
+                            {/* Judging Criteria Alignment Card */}
+                            <div id="doc-judging" className="bg-white border border-grid/20 p-6 scroll-mt-6 relative group">
+                              <button
+                                onClick={() => {
+                                  const doc = assetsQuery.data.data.doc_content;
+                                  if (doc) {
+                                    handleCopyToClipboard(`## Judging Criteria Alignment\n${doc.judging_criteria_alignment.map(j => `- ${j}`).join('\n')}`);
+                                  }
+                                }}
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                title="Copy section markdown"
+                              >
+                                <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
+                              </button>
+                              <h4 className="font-mono text-xs text-forest font-bold uppercase tracking-wider mb-4 flex items-center gap-1.5">
+                                <Icon icon="lucide:award" /> Hackathon Judging Alignment
+                              </h4>
+                              <div className="space-y-3">
+                                {(assetsQuery.data.data.doc_content.judging_criteria_alignment ?? []).map((align, idx) => (
+                                  <div key={idx} className="flex gap-3 text-xs text-grid/80 items-start border border-grid/10 p-3.5 bg-paper/30">
+                                    <div className="w-5 h-5 border border-forest flex items-center justify-center text-[10px] font-mono font-bold text-forest bg-white flex-shrink-0 mt-0.5">
+                                      {idx + 1}
+                                    </div>
+                                    <span>{align}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        {asset.content && (
-                          <div className="bg-white p-4 max-h-64 overflow-y-auto">
-                            <pre className="font-mono text-xs text-grid/80 whitespace-pre-wrap">
-                              {asset.content}
-                            </pre>
+                      )}
+
+                      {/* PRESENTATION VIEW */}
+                      {activeAssetView === "ppt" && assetsQuery.data.data.ppt_content && (
+                        <div className="flex flex-col lg:flex-row gap-8">
+                          {/* Left Slide Selector */}
+                          <div className="w-full lg:w-1/4 space-y-2 max-h-[500px] overflow-y-auto pr-2">
+                            <p className="font-mono text-[10px] text-grid/40 uppercase tracking-widest px-3 mb-2 font-bold">
+                              Slides Outline
+                            </p>
+                            {(assetsQuery.data.data.ppt_content.slides ?? []).map((slide, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => setSelectedSlideIndex(idx)}
+                                className={`w-full text-left px-4 py-3 border font-mono transition-all text-xs flex items-center gap-3 cursor-pointer ${
+                                  selectedSlideIndex === idx
+                                    ? "bg-forest text-white border-forest"
+                                    : "bg-white text-forest border-grid/20 hover:border-forest/50"
+                                }`}
+                              >
+                                <div className={`w-5 h-5 flex items-center justify-center font-bold text-[10px] border ${
+                                  selectedSlideIndex === idx
+                                    ? "border-white/30 bg-white/10"
+                                    : "border-forest/20 bg-forest/5"
+                                }`}>
+                                  {slide.slide_number}
+                                </div>
+                                <span className="truncate flex-1 font-medium">{slide.title}</span>
+                              </button>
+                            ))}
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+
+                          {/* Center/Right Active Slide Render */}
+                          {assetsQuery.data.data.ppt_content.slides?.[selectedSlideIndex] && (
+                            <div className="w-full lg:w-3/4 space-y-6">
+                              {/* 16:9 Aspect Ratio Box Mock Slide */}
+                              <div className="border-4 border-grid bg-white shadow-lg relative overflow-hidden aspect-video flex flex-col justify-between p-8 md:p-12">
+                                {/* Slide Background watermark / lines */}
+                                <div className="absolute inset-0 opacity-[0.02] pointer-events-none">
+                                  <div className="w-full h-full bg-grid repeat bg-[size:20px_20px]" style={{ backgroundImage: "radial-gradient(var(--grid) 1px, transparent 1px)" }} />
+                                </div>
+
+                                {/* Slide Header */}
+                                <div className="flex justify-between items-start border-b border-grid/10 pb-4 relative z-10">
+                                  <div>
+                                    <p className="font-mono text-[8px] text-grid/40 uppercase tracking-widest">
+                                      PITCH DECK OUTLINE
+                                    </p>
+                                    <h4 className="font-display text-lg md:text-2xl text-forest font-bold mt-1">
+                                      {assetsQuery.data.data.ppt_content.slides[selectedSlideIndex].title}
+                                    </h4>
+                                  </div>
+                                  <div className="font-mono text-[10px] font-bold text-white bg-forest px-2 py-1 select-none">
+                                    SLIDE {assetsQuery.data.data.ppt_content.slides[selectedSlideIndex].slide_number}
+                                  </div>
+                                </div>
+
+                                {/* Slide Content Bullets */}
+                                <div className="flex-1 py-6 flex flex-col justify-center relative z-10">
+                                  <ul className="space-y-3.5 max-w-2xl">
+                                    {(assetsQuery.data.data.ppt_content.slides[selectedSlideIndex].bullets ?? []).map((bullet, bIdx) => (
+                                      <li key={bIdx} className="flex gap-3 text-xs md:text-sm text-grid/80 items-start">
+                                        <div className="w-2 h-2 bg-coral rounded-full mt-2 flex-shrink-0" />
+                                        <span className="leading-relaxed font-mono">{bullet}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+
+                                {/* Slide Footer */}
+                                <div className="flex justify-between items-center text-[8px] font-mono text-grid/40 pt-4 border-t border-grid/10 relative z-10">
+                                  <span>{assetsQuery.data.data.ppt_content.title.toUpperCase()}</span>
+                                  <span>{assetsQuery.data.data.ppt_content.organizer?.toUpperCase()}</span>
+                                </div>
+                              </div>
+
+                              {/* Controls */}
+                              <div className="flex justify-between items-center">
+                                <button
+                                  onClick={() => setSelectedSlideIndex(prev => Math.max(0, prev - 1))}
+                                  disabled={selectedSlideIndex === 0}
+                                  className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-forest flex items-center gap-1 cursor-pointer"
+                                >
+                                  <Icon icon="lucide:arrow-left" /> Previous
+                                </button>
+                                <span className="font-mono text-[10px] text-grid/60">
+                                  Slide {selectedSlideIndex + 1} of {assetsQuery.data.data.ppt_content.slides.length}
+                                </span>
+                                <button
+                                  onClick={() => setSelectedSlideIndex(prev => Math.min(assetsQuery.data.data.ppt_content.slides.length - 1, prev + 1))}
+                                  disabled={selectedSlideIndex === assetsQuery.data.data.ppt_content.slides.length - 1}
+                                  className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-forest flex items-center gap-1 cursor-pointer"
+                                >
+                                  Next <Icon icon="lucide:arrow-right" />
+                                </button>
+                              </div>
+
+                              {/* Speaker Notes */}
+                              <div className="bg-paper/40 border border-grid/20 p-5 font-mono">
+                                <div
+                                  onClick={() => setCollapsedSpeakerNotes(prev => ({
+                                    ...prev,
+                                    [selectedSlideIndex]: !prev[selectedSlideIndex]
+                                  }))}
+                                  className="flex items-center justify-between cursor-pointer border-b border-grid/10 pb-2 mb-3"
+                                >
+                                  <h5 className="text-[10px] uppercase font-bold tracking-widest text-forest flex items-center gap-1.5">
+                                    <Icon icon="lucide:mic" /> Speaker Notes & Talking Points
+                                  </h5>
+                                  <Icon
+                                    icon={collapsedSpeakerNotes[selectedSlideIndex] ? "lucide:chevron-down" : "lucide:chevron-up"}
+                                    className="text-grid/40 text-sm"
+                                  />
+                                </div>
+                                {!collapsedSpeakerNotes[selectedSlideIndex] && (
+                                  <p className="text-xs leading-relaxed text-grid/80 whitespace-pre-wrap">
+                                    {assetsQuery.data.data.ppt_content.slides[selectedSlideIndex].speaker_notes}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

@@ -284,8 +284,10 @@ export default function HackathonDetail() {
   const [lastSaved] = useState(new Date());
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedIdea(aiAnalysis.finalIdea);
   }, [aiAnalysis]);
+
 
   const handleSendMessage = () => {
     if (!chatInput.trim()) return;

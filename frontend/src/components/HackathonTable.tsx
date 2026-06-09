@@ -288,7 +288,8 @@ export default function HackathonTable() {
     },
   });
 
-  const hackathons = queryResult.data?.hackathons ?? [];
+  const EMPTY_HACKATHONS: Hackathon[] = useMemo(() => [], []);
+  const hackathons = queryResult.data?.hackathons ?? EMPTY_HACKATHONS;
   const totalCount = queryResult.data?.totalCount ?? 0;
   const hasMore = queryResult.data?.hasMore ?? false;
   const loading = queryResult.isPending;

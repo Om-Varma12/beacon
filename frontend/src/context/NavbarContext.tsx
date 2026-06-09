@@ -42,6 +42,7 @@ export const NavbarProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useNavbar = () => {
   const context = useContext(NavbarContext);
   if (context === undefined) {

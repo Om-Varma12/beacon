@@ -725,6 +725,9 @@ export default function HackathonDetailApi() {
     },
   });
 
+  const assetsPayload = assetsQuery.data?.data;
+  const pptContent = assetsPayload?.ppt_content;
+
   const handleGenerateAssets = async () => {
     setAssetsGenerating(true);
     setAssetsError(null);
@@ -748,7 +751,7 @@ export default function HackathonDetailApi() {
         currentHasAnalysis = true;
       }
 
-      setAssetsGeneratingText("Structuring Technical Proposal & Slide Deck...");
+      setAssetsGeneratingText("Structuring Solution Blueprint & Slide Deck...");
       const response = await fetch(`${API_BASE_URL}/hackathons/${id}/assets/generate`, {
         method: "POST",
       });
@@ -1516,6 +1519,60 @@ export default function HackathonDetailApi() {
                           Winning idea: {analysisResult.winning_idea.title}
                         </p>
                       )}
+
+                      {/* Winner Box Actions */}
+                      {assetsQuery.data?.data?.generated ? (
+                        <div className="flex flex-wrap justify-center gap-2.5 mt-5">
+                          <button
+                            onClick={() => {
+                              const link = document.createElement("a");
+                              link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/docx`;
+                              document.body.appendChild(link);
+                              link.click();
+                              link.remove();
+                            }}
+                            className="px-3.5 py-1.5 bg-forest text-white border border-forest font-mono text-[9px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Icon icon="lucide:file-text" /> Doc (.docx)
+                          </button>
+                          <button
+                            onClick={() => {
+                              const link = document.createElement("a");
+                              link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/pptx`;
+                              document.body.appendChild(link);
+                              link.click();
+                              link.remove();
+                            }}
+                            className="px-3.5 py-1.5 bg-forest text-white border border-forest font-mono text-[9px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Icon icon="lucide:presentation" /> Slides (.pptx)
+                          </button>
+                          <button
+                            onClick={() => setActiveTab("assets")}
+                            className="px-3.5 py-1.5 border border-grid/30 text-grid/80 font-mono text-[9px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+                          >
+                            View Blueprint <Icon icon="lucide:arrow-right" className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={handleGenerateAssets}
+                          disabled={assetsGenerating}
+                          className="mt-5 px-5 py-2.5 bg-forest text-white border border-forest font-mono text-[9px] tracking-widest uppercase hover:bg-white hover:text-forest transition-all cursor-pointer flex items-center gap-2"
+                        >
+                          {assetsGenerating ? (
+                            <>
+                              <Icon icon="lucide:loader-2" className="animate-spin" />
+                              <span>Generating blueprint...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Icon icon="lucide:wand-2" />
+                              <span>Generate Solution Blueprint</span>
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
 
                     {analysisLeaderboard.length > 0 && (
@@ -1681,6 +1738,82 @@ export default function HackathonDetailApi() {
                             </li>
                           ))}
                         </ul>
+                      </div>
+                    </div>
+
+                    {/* Solution Blueprint & Slide Deck Action Banner */}
+                    <div className="mt-8 bg-paper border border-grid/20 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden premium-card">
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-forest" />
+                      <div className="space-y-2">
+                        <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-forest bg-forest/5 border border-forest/10 px-2 py-0.5">
+                          Action Center
+                        </span>
+                        <h3 className="font-display text-xl text-forest mt-2">
+                          Generate Solution Blueprint & Slides
+                        </h3>
+                        <p className="text-xs text-grid/70 max-w-2xl leading-relaxed">
+                          Compile this winning concept into a comprehensive 5-phase Technical Solution Blueprint (Word Document & Markdown) and a 10-slide Pitch Presentation Deck (PowerPoint & Markdown) in one click.
+                        </p>
+                        {assetsError && (
+                          <div className="mt-2 text-xs text-coral font-mono flex items-center gap-1.5">
+                            <Icon icon="lucide:alert-circle" /> {assetsError}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex flex-col sm:flex-row gap-2.5 items-stretch md:items-center shrink-0">
+                        {assetsQuery.data?.data?.generated ? (
+                          <>
+                            <button
+                              onClick={() => {
+                                const link = document.createElement("a");
+                                link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/docx`;
+                                document.body.appendChild(link);
+                                link.click();
+                                link.remove();
+                              }}
+                              className="px-4 py-2 bg-forest text-white border border-forest font-mono text-[10px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                              <Icon icon="lucide:download" /> Docx Proposal
+                            </button>
+                            <button
+                              onClick={() => {
+                                const link = document.createElement("a");
+                                link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/pptx`;
+                                document.body.appendChild(link);
+                                link.click();
+                                link.remove();
+                              }}
+                              className="px-4 py-2 bg-forest text-white border border-forest font-mono text-[10px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center justify-center gap-2 cursor-pointer"
+                            >
+                              <Icon icon="lucide:presentation" /> PPTX Slides
+                            </button>
+                            <button
+                              onClick={() => setActiveTab("assets")}
+                              className="px-4 py-2 border border-grid/30 text-grid/80 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                            >
+                              View Blueprint <Icon icon="lucide:arrow-right" />
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={handleGenerateAssets}
+                            disabled={assetsGenerating}
+                            className="px-5 py-3 bg-forest text-white border border-forest font-mono text-[10px] tracking-widest uppercase hover:bg-white hover:text-forest transition-all cursor-pointer flex items-center justify-center gap-2"
+                          >
+                            {assetsGenerating ? (
+                              <>
+                                <Icon icon="lucide:loader-2" className="animate-spin" />
+                                <span>{assetsGeneratingText.includes("Debate") ? "Debating..." : "Generating..."}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Icon icon="lucide:wand-2" />
+                                <span>Generate Blueprint & Slides</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -1910,17 +2043,42 @@ export default function HackathonDetailApi() {
                   </div>
                 )}
 
-                {/* Main Header / Actions */}
-                <div className="bg-white border border-grid/20 p-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                    <div>
-                      <h2 className="font-display text-2xl text-forest">
-                        Technical Proposal & Slide Deck
-                      </h2>
-                      <p className="font-mono text-[10px] text-grid/60 uppercase tracking-wider mt-1">
-                        AI-Generated Execution Assets based on the Winning concept
-                      </p>
+                {assetsQuery.isPending && (
+                  <div className="bg-white border border-grid/20 p-12 text-center flex flex-col items-center justify-center min-h-[350px]">
+                    <div className="w-10 h-10 border-4 border-forest border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p className="font-mono text-xs text-forest animate-pulse">
+                      Loading Solution Blueprint & Slide Deck...
+                    </p>
+                  </div>
+                )}
+
+                {assetsQuery.error && (
+                  <div className="bg-white border border-coral p-12 text-center flex flex-col items-center justify-center min-h-[350px]">
+                    <div className="w-12 h-12 bg-coral/5 border border-coral/10 flex items-center justify-center mb-4">
+                      <Icon icon="lucide:alert-triangle" className="text-coral text-2xl" />
                     </div>
+                    <p className="font-mono text-xs text-coral font-bold uppercase tracking-wider">
+                      Unable to load AI assets
+                    </p>
+                    <p className="mt-3 text-sm text-grid/70 max-w-md mx-auto">
+                      {assetsQuery.error.message}
+                    </p>
+                  </div>
+                )}
+
+                {!assetsQuery.isPending && !assetsQuery.error && (
+                  <>
+                    {/* Main Header / Actions */}
+                    <div className="bg-white border border-grid/20 p-6">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                        <div>
+                          <h2 className="font-display text-2xl text-forest">
+                            Solution Blueprint & Pitch Slides
+                          </h2>
+                          <p className="font-mono text-[10px] text-grid/60 uppercase tracking-wider mt-1">
+                            AI-Generated Solution Blueprint and Slide Outline based on the Winning Idea
+                          </p>
+                        </div>
 
                     {assetsQuery.data?.data?.generated && (
                       <div className="flex flex-wrap gap-2">
@@ -2051,7 +2209,7 @@ export default function HackathonDetailApi() {
                           }`}
                         >
                           <span className="flex items-center gap-1.5">
-                            <Icon icon="lucide:file-text" /> Technical Proposal (Doc)
+                            <Icon icon="lucide:file-text" /> Solution Blueprint (Doc)
                           </span>
                         </button>
                         <button
@@ -2426,14 +2584,14 @@ export default function HackathonDetailApi() {
                       )}
 
                       {/* PRESENTATION VIEW */}
-                      {activeAssetView === "ppt" && assetsQuery.data.data.ppt_content && (
+                      {activeAssetView === "ppt" && pptContent && (
                         <div className="flex flex-col lg:flex-row gap-8">
                           {/* Left Slide Selector */}
                           <div className="w-full lg:w-1/4 space-y-2 max-h-[500px] overflow-y-auto pr-2">
                             <p className="font-mono text-[10px] text-grid/40 uppercase tracking-widest px-3 mb-2 font-bold">
                               Slides Outline
                             </p>
-                            {(assetsQuery.data.data.ppt_content.slides ?? []).map((slide, idx) => (
+                            {(pptContent.slides ?? []).map((slide, idx) => (
                               <button
                                 key={idx}
                                 onClick={() => setSelectedSlideIndex(idx)}
@@ -2456,7 +2614,7 @@ export default function HackathonDetailApi() {
                           </div>
 
                           {/* Center/Right Active Slide Render */}
-                          {assetsQuery.data.data.ppt_content.slides?.[selectedSlideIndex] && (
+                          {pptContent.slides?.[selectedSlideIndex] && (
                             <div className="w-full lg:w-3/4 space-y-6">
                               {/* 16:9 Aspect Ratio Box Mock Slide */}
                               <div className="border-4 border-grid bg-white shadow-lg relative overflow-hidden aspect-video flex flex-col justify-between p-8 md:p-12">
@@ -2472,18 +2630,18 @@ export default function HackathonDetailApi() {
                                       PITCH DECK OUTLINE
                                     </p>
                                     <h4 className="font-display text-lg md:text-2xl text-forest font-bold mt-1">
-                                      {assetsQuery.data.data.ppt_content.slides[selectedSlideIndex].title}
+                                      {pptContent.slides[selectedSlideIndex].title}
                                     </h4>
                                   </div>
                                   <div className="font-mono text-[10px] font-bold text-white bg-forest px-2 py-1 select-none">
-                                    SLIDE {assetsQuery.data.data.ppt_content.slides[selectedSlideIndex].slide_number}
+                                    SLIDE {pptContent.slides[selectedSlideIndex].slide_number}
                                   </div>
                                 </div>
 
                                 {/* Slide Content Bullets */}
                                 <div className="flex-1 py-6 flex flex-col justify-center relative z-10">
                                   <ul className="space-y-3.5 max-w-2xl">
-                                    {(assetsQuery.data.data.ppt_content.slides[selectedSlideIndex].bullets ?? []).map((bullet, bIdx) => (
+                                    {(pptContent.slides[selectedSlideIndex].bullets ?? []).map((bullet, bIdx) => (
                                       <li key={bIdx} className="flex gap-3 text-xs md:text-sm text-grid/80 items-start">
                                         <div className="w-2 h-2 bg-coral rounded-full mt-2 flex-shrink-0" />
                                         <span className="leading-relaxed font-mono">{bullet}</span>
@@ -2494,8 +2652,8 @@ export default function HackathonDetailApi() {
 
                                 {/* Slide Footer */}
                                 <div className="flex justify-between items-center text-[8px] font-mono text-grid/40 pt-4 border-t border-grid/10 relative z-10">
-                                  <span>{assetsQuery.data.data.ppt_content.title.toUpperCase()}</span>
-                                  <span>{assetsQuery.data.data.ppt_content.organizer?.toUpperCase()}</span>
+                                  <span>{pptContent.title.toUpperCase()}</span>
+                                  <span>{pptContent.organizer?.toUpperCase()}</span>
                                 </div>
                               </div>
 
@@ -2509,11 +2667,11 @@ export default function HackathonDetailApi() {
                                   <Icon icon="lucide:arrow-left" /> Previous
                                 </button>
                                 <span className="font-mono text-[10px] text-grid/60">
-                                  Slide {selectedSlideIndex + 1} of {assetsQuery.data.data.ppt_content.slides.length}
+                                  Slide {selectedSlideIndex + 1} of {pptContent.slides.length}
                                 </span>
                                 <button
-                                  onClick={() => setSelectedSlideIndex(prev => Math.min(assetsQuery.data.data.ppt_content.slides.length - 1, prev + 1))}
-                                  disabled={selectedSlideIndex === assetsQuery.data.data.ppt_content.slides.length - 1}
+                                  onClick={() => setSelectedSlideIndex(prev => Math.min((pptContent?.slides?.length ?? 1) - 1, prev + 1))}
+                                  disabled={selectedSlideIndex === (pptContent?.slides?.length ?? 1) - 1}
                                   className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-forest flex items-center gap-1 cursor-pointer"
                                 >
                                   Next <Icon icon="lucide:arrow-right" />
@@ -2539,7 +2697,7 @@ export default function HackathonDetailApi() {
                                 </div>
                                 {!collapsedSpeakerNotes[selectedSlideIndex] && (
                                   <p className="text-xs leading-relaxed text-grid/80 whitespace-pre-wrap">
-                                    {assetsQuery.data.data.ppt_content.slides[selectedSlideIndex].speaker_notes}
+                                    {pptContent.slides[selectedSlideIndex].speaker_notes}
                                   </p>
                                 )}
                               </div>
@@ -2550,8 +2708,10 @@ export default function HackathonDetailApi() {
                     </div>
                   )}
                 </div>
-              </div>
+              </>
             )}
+          </div>
+        )}
 
             {!loading && !error && activeTab === "chat" && (
               <div className="bg-white border border-grid/20 overflow-hidden flex min-h-[72vh] flex-col">

@@ -1199,7 +1199,7 @@ export default function HackathonDetailApi() {
                   <button
                     onClick={handleRunAnalysis}
                     disabled={isAnalysisRunning}
-                    className="flex-1 bg-forest text-white py-2 px-4 font-mono text-[10px] tracking-widest uppercase hover:opacity-90 transition-opacity disabled:opacity-50"
+                    className="flex-1 border border-forest text-forest hover:bg-[var(--forest)] hover:text-white py-2 px-4 font-mono text-[10px] tracking-widest uppercase transition-all disabled:opacity-50"
                   >
                     {isAnalysisRunning ? (
                       <span className="flex items-center justify-center space-x-2">
@@ -1415,7 +1415,7 @@ export default function HackathonDetailApi() {
                           href={viewModel.unstopLink}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all"
+                          className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all"
                         >
                           Open
                         </a>
@@ -1531,7 +1531,7 @@ export default function HackathonDetailApi() {
                               link.click();
                               link.remove();
                             }}
-                            className="px-3.5 py-1.5 bg-forest text-white border border-forest font-mono text-[9px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center gap-1.5 cursor-pointer"
+                            className="px-3.5 py-1.5 border border-forest text-forest font-mono text-[9px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
                           >
                             <Icon icon="lucide:file-text" /> Doc (.docx)
                           </button>
@@ -1543,13 +1543,13 @@ export default function HackathonDetailApi() {
                               link.click();
                               link.remove();
                             }}
-                            className="px-3.5 py-1.5 bg-forest text-white border border-forest font-mono text-[9px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center gap-1.5 cursor-pointer"
+                            className="px-3.5 py-1.5 border border-forest text-forest font-mono text-[9px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
                           >
                             <Icon icon="lucide:presentation" /> Slides (.pptx)
                           </button>
                           <button
                             onClick={() => setActiveTab("assets")}
-                            className="px-3.5 py-1.5 border border-grid/30 text-grid/80 font-mono text-[9px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
+                            className="px-3.5 py-1.5 border border-grid/30 text-grid/80 font-mono text-[9px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
                           >
                             View Blueprint <Icon icon="lucide:arrow-right" className="w-3 h-3" />
                           </button>
@@ -1558,7 +1558,7 @@ export default function HackathonDetailApi() {
                         <button
                           onClick={handleGenerateAssets}
                           disabled={assetsGenerating}
-                          className="mt-5 px-5 py-2.5 bg-forest text-white border border-forest font-mono text-[9px] tracking-widest uppercase hover:bg-white hover:text-forest transition-all cursor-pointer flex items-center gap-2"
+                          className="mt-5 px-5 py-2.5 border border-forest text-forest hover:bg-[var(--forest)] hover:text-white font-mono text-[9px] tracking-widest uppercase transition-all cursor-pointer flex items-center gap-2"
                         >
                           {assetsGenerating ? (
                             <>
@@ -1772,7 +1772,7 @@ export default function HackathonDetailApi() {
                                 link.click();
                                 link.remove();
                               }}
-                              className="px-4 py-2 bg-forest text-white border border-forest font-mono text-[10px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center justify-center gap-2 cursor-pointer"
+                              className="px-4 py-2 border border-forest text-forest font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
                               <Icon icon="lucide:download" /> Docx Proposal
                             </button>
@@ -1784,7 +1784,7 @@ export default function HackathonDetailApi() {
                                 link.click();
                                 link.remove();
                               }}
-                              className="px-4 py-2 bg-forest text-white border border-forest font-mono text-[10px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center justify-center gap-2 cursor-pointer"
+                              className="px-4 py-2 border border-forest text-forest font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
                               <Icon icon="lucide:presentation" /> PPTX Slides
                             </button>
@@ -1799,7 +1799,7 @@ export default function HackathonDetailApi() {
                           <button
                             onClick={handleGenerateAssets}
                             disabled={assetsGenerating}
-                            className="px-5 py-3 bg-forest text-white border border-forest font-mono text-[10px] tracking-widest uppercase hover:bg-white hover:text-forest transition-all cursor-pointer flex items-center justify-center gap-2"
+                            className="px-5 py-3 border border-forest text-forest hover:bg-[var(--forest)] hover:text-white font-mono text-[10px] tracking-widest uppercase transition-all cursor-pointer flex items-center justify-center gap-2"
                           >
                             {assetsGenerating ? (
                               <>
@@ -2079,8 +2079,7 @@ export default function HackathonDetailApi() {
                             AI-Generated Solution Blueprint and Slide Outline based on the Winning Idea
                           </p>
                         </div>
-
-                    {assetsQuery.data?.data?.generated && (
+                    {assetsQuery.data?.data?.generated && (
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => {
@@ -2090,7 +2089,7 @@ export default function HackathonDetailApi() {
                             link.click();
                             link.remove();
                           }}
-                          className="px-3 py-1.5 border border-forest bg-forest text-white font-mono text-[10px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="px-3 py-1.5 border border-forest text-forest font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                           <Icon icon="lucide:file-text" /> Doc (.docx)
                         </button>
@@ -2102,7 +2101,7 @@ export default function HackathonDetailApi() {
                             link.click();
                             link.remove();
                           }}
-                          className="px-3 py-1.5 border border-forest bg-forest text-white font-mono text-[10px] tracking-wider uppercase hover:bg-white hover:text-forest transition-all flex items-center gap-1.5 cursor-pointer"
+                          className="px-3 py-1.5 border border-forest text-forest font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                           <Icon icon="lucide:presentation" /> Slides (.pptx)
                         </button>
@@ -2174,7 +2173,7 @@ export default function HackathonDetailApi() {
                       <button
                         onClick={handleGenerateAssets}
                         disabled={assetsGenerating}
-                        className="px-6 py-3 border border-forest bg-forest text-white font-mono text-xs tracking-widest uppercase hover:bg-white hover:text-forest transition-all cursor-pointer flex items-center justify-center gap-2 mx-auto"
+                        className="px-6 py-3 border border-forest text-forest hover:bg-[var(--forest)] hover:text-white font-mono text-xs tracking-widest uppercase transition-all cursor-pointer flex items-center justify-center gap-2 mx-auto"
                       >
                         {assetsGenerating ? (
                           <>
@@ -2823,7 +2822,7 @@ export default function HackathonDetailApi() {
                     <button
                       onClick={() => handleSendMessage()}
                       disabled={chatLoading || !chatInput.trim()}
-                      className="inline-flex min-h-14 items-center gap-2 border border-forest bg-forest px-4 py-3 font-mono text-[10px] tracking-widest uppercase text-white transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="inline-flex min-h-14 items-center gap-2 border border-forest hover:bg-[var(--forest)] px-4 py-3 font-mono text-[10px] tracking-widest uppercase text-forest transition-all hover:text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {chatLoading ? (
                         <>
@@ -2937,7 +2936,7 @@ export default function HackathonDetailApi() {
                     <button
                       onClick={() => handleSendMessage()}
                       disabled={chatLoading || !chatInput.trim()}
-                      className="px-3 py-2 bg-forest text-white hover:opacity-90 transition-opacity disabled:cursor-not-allowed disabled:opacity-50"
+                      className="px-3 py-2 border border-forest hover:bg-[var(--forest)] text-forest hover:text-white transition-all disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {chatLoading ? (
                         <Icon icon="lucide:loader-2" className="animate-spin" />
@@ -2965,7 +2964,7 @@ export default function HackathonDetailApi() {
               </span>
             )}
           </div>
-          <button className="px-4 py-2 bg-forest text-white font-mono text-[10px] tracking-widest uppercase hover:opacity-90 transition-opacity">
+          <button className="px-4 py-2 border border-forest hover:bg-[var(--forest)] text-forest font-mono text-[10px] tracking-widest uppercase hover:text-white transition-all">
             Save Progress
           </button>
         </div>

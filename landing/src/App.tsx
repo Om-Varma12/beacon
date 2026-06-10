@@ -10,6 +10,7 @@ import { BentoGrid } from './components/BentoGrid'
 import { FormCTA } from './components/FormCTA'
 import { Testimonials } from './components/Testimonials'
 import FAQ from './components/FAQ'
+import { RegisterSection } from './components/RegisterSection'
 import { Footer } from './components/Footer'
 
 function App() {
@@ -91,6 +92,7 @@ function App() {
           <BentoGrid />
           <FormCTA />
           <Testimonials />
+          <RegisterSection />
           <FAQ />
           <Footer />
         </motion.div>

@@ -1,13 +1,11 @@
-import { Icon } from '@iconify/react'
-
 export function Footer() {
   return (
-    <footer className="py-12 border-t border-grid/20 bg-transparent">
+    <footer className="py-7 border-t border-grid/20 bg-transparent">
       <div className="max-w-7xl mx-auto px-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-forest flex items-center justify-center rounded-none">
-              <Icon icon="lucide:zap" className="text-white text-sm" />
+            <div className="w-8 h-8 flex items-center justify-center rounded-none">
+              <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
             </div>
             <span className="typography-technical-sm text-forest font-semibold">Beacon</span>
           </div>

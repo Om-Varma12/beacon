@@ -456,7 +456,7 @@ export function BehindTheIntelligence() {
   }
 
   return (
-    <section className="min-h-screen py-24 px-margin-md border-b border-outline/20 flex items-center bg-paper relative z-10">
+    <section className="min-h-screen py-24 px-margin-md border-b border-outline/20 flex items-center bg-transparent relative z-10">
       <div className="max-w-7xl mx-auto w-full">
         {/* Section Header */}
         <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">

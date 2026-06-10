@@ -2,8 +2,8 @@ import { Icon } from '@iconify/react'
 
 export function FAQ() {
   return (
-    <section className="py-24 px-8 border-b border-grid/20 bg-paper/55">
-      <div className="max-w-3xl mx-auto bg-paper/35 p-6">
+    <section className="py-24 px-8 border-b border-grid/20 bg-transparent">
+      <div className="max-w-3xl mx-auto bg-transparent p-6">
         <h2 className="font-display text-4xl mb-12 text-center uppercase text-primary">
           Frequently Asked Questions
         </h2>

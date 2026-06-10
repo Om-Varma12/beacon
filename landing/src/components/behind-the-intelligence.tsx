@@ -105,9 +105,9 @@ function DebateVisualizer() {
     return () => clearInterval(interval)
   }, [])
   const agentLogs = [
-    { agent: 'AGENT_01 // CRITIC', msg: 'Warning: Chatbot is an over-saturated niche.', color: 'border-l-2 border-coral bg-coral/5 text-coral' },
-    { agent: 'AGENT_02 // STRATEGIST', msg: 'Pivot: Integrate Git-verified developer metrics.', color: 'border-l-2 border-gold bg-gold/5 text-secondary' },
-    { agent: 'AGENT_03 // ARCHITECT', msg: 'Viability: 92%. Code generation approved.', color: 'border-l-2 border-mint bg-mint/5 text-primary' }
+    { agent: 'AGENT_01 CRITIC', msg: 'Warning: Chatbot is an over-saturated niche.', color: 'border-l-2 border-coral bg-coral/5 text-coral' },
+    { agent: 'AGENT_02 STRATEGIST', msg: 'Pivot: Integrate Git-verified developer metrics.', color: 'border-l-2 border-gold bg-gold/5 text-secondary' },
+    { agent: 'AGENT_03 ARCHITECT', msg: 'Viability: 92%. Code generation approved.', color: 'border-l-2 border-mint bg-mint/5 text-primary' }
   ]
   return (
     <div className="w-full h-full flex flex-col justify-between p-2.5 jetbrains text-[11px] text-primary">
@@ -145,7 +145,7 @@ function DiscoveryVisualizer() {
     <div className="w-full h-full flex flex-col justify-between p-2.5 jetbrains text-[11px] text-primary relative overflow-hidden">
       <div className="absolute left-0 w-full h-[1.5px] bg-coral/30 pointer-events-none" style={{ animation: 'scan-line 3s linear infinite' }} />
       <div className="flex justify-between items-center border-b border-outline/25 pb-1 mb-1">
-        <span className="text-outline text-[10px] font-bold">REGISTRY_SCANNER // VOL_49</span>
+        <span className="text-outline text-[10px] font-bold">REGISTRY_SCANNER VOL_49</span>
         <span className="text-coral font-bold">MATCH_CALCULATION</span>
       </div>
       <div className="flex-1 flex flex-col justify-center gap-1.5">
@@ -215,7 +215,7 @@ function ProdVisualizer() {
   return (
     <div className="w-full h-full flex flex-col justify-between p-4 jetbrains text-[11px] text-primary">
       <div className="flex justify-between items-center border-b border-outline/25 pb-2 mb-2">
-        <span className="text-outline text-[10px] font-bold">COMPILER_STDOUT // BEACON_CLI</span>
+        <span className="text-outline text-[10px] font-bold">COMPILER_STDOUT BEACON_CLI</span>
         <span className="text-mint font-bold flex items-center gap-1"><span className="w-1.5 h-1.5 bg-mint animate-pulse" /> COMPILING</span>
       </div>
       <div className="flex-1 flex flex-col justify-end gap-1 font-mono text-[9px] overflow-hidden text-primary/80">
@@ -363,7 +363,7 @@ function DesktopBehindTheIntelligence() {
                     <div className="corner-marker corner-tr" />
                     <div className="corner-marker corner-bl" />
                     <div className="corner-marker corner-br" />
-                    <div className="absolute top-4 right-4 typography-technical-sm text-primary/40 font-mono">SYS_ID // {module.techId}</div>
+                    <div className="absolute top-4 right-4 typography-technical-sm text-primary/40 font-mono">SYS_ID {module.techId}</div>
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
                         <div className="inline-flex items-center gap-2 border border-outline/25 px-2.5 py-1 bg-surface-container-low mb-4">
@@ -393,7 +393,7 @@ function DesktopBehindTheIntelligence() {
                 ) : (
                   <>
                     <div className="flex justify-between items-start">
-                      <span className="typography-technical-sm text-primary/50 font-bold">{module.number} // {module.techId.split('_')[0]}</span>
+                      <span className="typography-technical-sm text-primary/50 font-bold">{module.number} {module.techId.split('_')[0]}</span>
                       <Icon icon="lucide:arrow-up-right" className="text-primary/20 group-hover:text-coral transition-colors" width={16} />
                     </div>
                     <div className="mt-8 flex-1 flex flex-col justify-between">
@@ -401,7 +401,7 @@ function DesktopBehindTheIntelligence() {
                         <h4 className="space-grotesk text-xl font-bold text-primary group-hover:text-coral transition-colors">{module.title}</h4>
                         <p className="text-[11px] text-primary/60 mt-1 font-mono uppercase tracking-wider">{module.tagline.split(' & ')[0]}</p>
                       </div>
-                      <span className="typography-technical-sm text-primary/30 mt-auto pt-6 self-end group-hover:text-primary/70 transition-colors">SCAN MODULE // ➔</span>
+                      <span className="typography-technical-sm text-primary/30 mt-auto pt-6 self-end group-hover:text-primary/70 transition-colors">SCAN MODULE ➔</span>
                     </div>
                   </>
                 )}

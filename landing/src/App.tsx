@@ -1,5 +1,6 @@
-import { useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
+import { Icon } from '@iconify/react'
 import './App.css'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
@@ -24,6 +25,19 @@ function App() {
   })
   const scannerY = useTransform(smoothScrollProgress, [0, 1], ['12vh', '88vh'])
 
+  const [showScrollTop, setShowScrollTop] = useState(false)
+
+  useEffect(() => {
+    return scrollYProgress.onChange((v) => {
+      setShowScrollTop(v > 0.05)
+    })
+  }, [scrollYProgress])
+
+  const handleScrollToTop = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
 
   return (
     <>
@@ -36,6 +50,18 @@ function App() {
         className="pointer-events-none fixed right-4 z-[60] hidden h-8 w-px bg-forest/50 md:block"
         style={{ top: scannerY }}
       />
+      
+      <motion.button
+        onClick={handleScrollToTop}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: showScrollTop ? 1 : 0, scale: showScrollTop ? 1 : 0.8 }}
+        transition={{ duration: 0.2 }}
+        className={`fixed bottom-6 right-5 md:bottom-8 md:right-8 z-[70] flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-forest text-paper shadow-lg hover:bg-forest/90 transition-colors ${showScrollTop ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        aria-label="Scroll to top"
+      >
+        <Icon icon="lucide:arrow-up" width={20} />
+      </motion.button>
+
       <div ref={containerRef} className="alive-scroll-container relative z-10 h-screen overflow-y-auto overflow-x-hidden">
         <motion.div
           className="alive-scroll-content"

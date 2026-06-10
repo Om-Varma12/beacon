@@ -7,54 +7,18 @@ interface SpinnerProps {
 }
 
 const bars = [
-  {
-    animationDelay: '-1.2s',
-    transform: 'rotate(.0001deg) translate(146%)'
-  },
-  {
-    animationDelay: '-1.1s',
-    transform: 'rotate(30deg) translate(146%)'
-  },
-  {
-    animationDelay: '-1.0s',
-    transform: 'rotate(60deg) translate(146%)'
-  },
-  {
-    animationDelay: '-0.9s',
-    transform: 'rotate(90deg) translate(146%)'
-  },
-  {
-    animationDelay: '-0.8s',
-    transform: 'rotate(120deg) translate(146%)'
-  },
-  {
-    animationDelay: '-0.7s',
-    transform: 'rotate(150deg) translate(146%)'
-  },
-  {
-    animationDelay: '-0.6s',
-    transform: 'rotate(180deg) translate(146%)'
-  },
-  {
-    animationDelay: '-0.5s',
-    transform: 'rotate(210deg) translate(146%)'
-  },
-  {
-    animationDelay: '-0.4s',
-    transform: 'rotate(240deg) translate(146%)'
-  },
-  {
-    animationDelay: '-0.3s',
-    transform: 'rotate(270deg) translate(146%)'
-  },
-  {
-    animationDelay: '-0.2s',
-    transform: 'rotate(300deg) translate(146%)'
-  },
-  {
-    animationDelay: '-0.1s',
-    transform: 'rotate(330deg) translate(146%)'
-  }
+  { animationDelay: '-1.2s', transform: 'rotate(.0001deg) translate(146%)' },
+  { animationDelay: '-1.1s', transform: 'rotate(30deg) translate(146%)' },
+  { animationDelay: '-1.0s', transform: 'rotate(60deg) translate(146%)' },
+  { animationDelay: '-0.9s', transform: 'rotate(90deg) translate(146%)' },
+  { animationDelay: '-0.8s', transform: 'rotate(120deg) translate(146%)' },
+  { animationDelay: '-0.7s', transform: 'rotate(150deg) translate(146%)' },
+  { animationDelay: '-0.6s', transform: 'rotate(180deg) translate(146%)' },
+  { animationDelay: '-0.5s', transform: 'rotate(210deg) translate(146%)' },
+  { animationDelay: '-0.4s', transform: 'rotate(240deg) translate(146%)' },
+  { animationDelay: '-0.3s', transform: 'rotate(270deg) translate(146%)' },
+  { animationDelay: '-0.2s', transform: 'rotate(300deg) translate(146%)' },
+  { animationDelay: '-0.1s', transform: 'rotate(330deg) translate(146%)' }
 ]
 
 const Spinner = ({ size = 20, color = '#fcf9f6' }: SpinnerProps) => {
@@ -63,12 +27,8 @@ const Spinner = ({ size = 20, color = '#fcf9f6' }: SpinnerProps) => {
       <style>
         {`
           @keyframes spin {
-              0% {
-                  opacity: 0.15;
-              }
-              100% {
-                  opacity: 1;
-              }
+              0% { opacity: 0.15; }
+              100% { opacity: 1; }
           }
         `}
       </style>
@@ -132,15 +92,15 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
   }
 
   return (
-    <section className="min-h-screen py-24 flex flex-col justify-center">
-      <div className="max-w-2xl mx-auto px-8 w-full">
+    <section id="waitlist" className="py-16 md:py-24 flex flex-col justify-center">
+      <div className="max-w-2xl mx-auto px-6 md:px-8 w-full">
         {/* Section Header */}
-        <div className="mb-12 text-center">
+        <div className="mb-10 md:mb-12 text-center">
           <span className="typography-technical-label text-grid">JOIN THE WAITLIST</span>
-          <h2 className="typography-display-lg text-forest mt-2">Secure Early Access</h2>
+          <h2 className="typography-display-lg text-forest mt-2 text-4xl md:text-[64px]">Secure Early Access</h2>
         </div>
 
-        <div className="relative bg-paper border border-grid/20 p-8 md:p-12">
+        <div className="relative bg-paper border border-grid/20 p-6 md:p-12">
           {/* Corner Markers */}
           <div className="corner-marker corner-tl" />
           <div className="corner-marker corner-tr" />
@@ -148,17 +108,14 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
           <div className="corner-marker corner-br" />
 
           {/* Description */}
-          <p className="typography-body-lg text-grid text-center leading-relaxed max-w-xl mx-auto mb-8">
+          <p className="typography-body-lg text-grid text-center leading-relaxed max-w-xl mx-auto mb-8 text-base md:text-lg">
             Be among the first to experience autonomous hackathon intelligence. Register your interest and help shape the future by suggesting features you'd like to see.
           </p>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label
-                htmlFor="email"
-                className="typography-technical-sm text-forest mb-2 block"
-              >
+              <label htmlFor="email" className="typography-technical-sm text-forest mb-2 block">
                 Email Address *
               </label>
               <input
@@ -173,10 +130,7 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
             </div>
 
             <div>
-              <label
-                htmlFor="message"
-                className="typography-technical-sm text-forest mb-2 block"
-              >
+              <label htmlFor="message" className="typography-technical-sm text-forest mb-2 block">
                 Feature Suggestions (Optional)
               </label>
               <textarea
@@ -184,8 +138,8 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Tell us what features you'd like to see implemented..."
-                rows={5}
-                className="w-full bg-transparent border border-grid/20 px-0 py-3 jetbrains text-sm focus:outline-none focus:border-forest transition-colors resize-none disabled:bg-transparent disabled:cursor-not-allowed"
+                rows={4}
+                className="w-full bg-transparent border border-grid/20 px-3 py-3 jetbrains text-sm focus:outline-none focus:border-forest transition-colors resize-none disabled:bg-transparent disabled:cursor-not-allowed"
                 disabled={loading || success}
               />
               <p className="mt-2 typography-technical-sm text-grid/60">

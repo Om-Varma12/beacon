@@ -76,12 +76,12 @@ body {
 }
 
 html {
-  scroll-behavior: auto;
+  scroll-behavior: smooth;
 }
 
 .alive-scroll-container {
   overscroll-behavior: contain;
-  scroll-behavior: auto;
+  scroll-behavior: smooth;
 }
 
 .alive-scroll-content {

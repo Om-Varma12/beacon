@@ -1,23 +1,21 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
+import { Icon } from '@iconify/react'
 import './App.css'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
 import { StickyContentSwitch } from './components/ProblemSection'
 import { BehindTheIntelligence } from './components/behind-the-intelligence'
 import { ScrollJourney } from './components/ScrollJourney'
-import { BentoGrid } from './components/BentoGrid'
-import { FormCTA } from './components/FormCTA'
-import { Testimonials } from './components/Testimonials'
+// import { BentoGrid } from './components/BentoGrid'
+// import { FormCTA } from './components/FormCTA'
+// import { Testimonials } from './components/Testimonials'
 import FAQ from './components/FAQ'
 import { RegisterSection } from './components/RegisterSection'
 import { Footer } from './components/Footer'
 
 function App() {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [showNavbar, setShowNavbar] = useState(true)
-  const lastScrollTop = useRef(0)
-  const autoHideTimerRef = useRef<number | null>(null)
   const shouldReduceMotion = useReducedMotion()
   const { scrollYProgress } = useScroll({ container: containerRef })
   const smoothScrollProgress = useSpring(scrollYProgress, {
@@ -27,44 +25,19 @@ function App() {
   })
   const scannerY = useTransform(smoothScrollProgress, [0, 1], ['12vh', '88vh'])
 
+  const [showScrollTop, setShowScrollTop] = useState(false)
+
   useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
+    return scrollYProgress.onChange((v) => {
+      setShowScrollTop(v > 0.05)
+    })
+  }, [scrollYProgress])
 
-    const handleScroll = () => {
-      const scrollTop = container.scrollTop
-
-      // Clear any existing auto-hide timer
-      if (autoHideTimerRef.current) {
-        clearTimeout(autoHideTimerRef.current)
-      }
-
-      if (scrollTop <= 10) {
-        // At the very top - always show
-        setShowNavbar(true)
-      } else if (scrollTop > lastScrollTop.current) {
-        // Scrolling down - hide immediately
-        setShowNavbar(false)
-      } else {
-        // Scrolling up - show
-        setShowNavbar(true)
-
-        // Auto-hide after 1.5 seconds of scroll inactivity
-        autoHideTimerRef.current = window.setTimeout(() => {
-          setShowNavbar(false)
-        }, 1500)
-      }
-      lastScrollTop.current = scrollTop
+  const handleScrollToTop = () => {
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
     }
-
-    container.addEventListener('scroll', handleScroll)
-    return () => {
-      container.removeEventListener('scroll', handleScroll)
-      if (autoHideTimerRef.current) {
-        clearTimeout(autoHideTimerRef.current)
-      }
-    }
-  }, [])
+  }
 
   return (
     <>
@@ -77,21 +50,33 @@ function App() {
         className="pointer-events-none fixed right-4 z-[60] hidden h-8 w-px bg-forest/50 md:block"
         style={{ top: scannerY }}
       />
-      <div ref={containerRef} className="alive-scroll-container relative z-10 h-screen overflow-y-auto overflow-x-hidden snap-y snap-mandatory">
+      
+      <motion.button
+        onClick={handleScrollToTop}
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: showScrollTop ? 1 : 0, scale: showScrollTop ? 1 : 0.8 }}
+        transition={{ duration: 0.2 }}
+        className={`fixed bottom-6 right-5 md:bottom-8 md:right-8 z-[70] flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-forest text-paper shadow-lg hover:bg-forest/90 transition-colors ${showScrollTop ? 'pointer-events-auto' : 'pointer-events-none'}`}
+        aria-label="Scroll to top"
+      >
+        <Icon icon="lucide:arrow-up" width={20} />
+      </motion.button>
+
+      <div ref={containerRef} className="alive-scroll-container relative z-10 h-screen overflow-y-auto overflow-x-hidden">
         <motion.div
           className="alive-scroll-content"
           initial={shouldReduceMotion ? false : { opacity: 0.96 }}
           animate={shouldReduceMotion ? undefined : { opacity: 1 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         >
-          <Navbar visible={showNavbar} />
+          <Navbar />
           <Hero />
           <StickyContentSwitch />
           <BehindTheIntelligence />
           <ScrollJourney />
-          <BentoGrid />
+          {/* <BentoGrid />
           <FormCTA />
-          <Testimonials />
+          <Testimonials /> */}
           <RegisterSection />
           <FAQ />
           <Footer />

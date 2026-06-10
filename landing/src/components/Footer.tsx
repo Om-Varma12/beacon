@@ -2,7 +2,7 @@ import { Icon } from '@iconify/react'
 
 export function Footer() {
   return (
-    <footer className="py-12 border-t border-grid/20 snap-start bg-transparent">
+    <footer className="py-12 border-t border-grid/20 bg-transparent">
       <div className="max-w-7xl mx-auto px-8">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

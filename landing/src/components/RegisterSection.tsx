@@ -132,10 +132,10 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
   }
 
   return (
-    <section className="min-h-screen py-24 snap-start flex flex-col justify-center">
+    <section className="min-h-screen py-24 flex flex-col justify-center">
       <div className="max-w-2xl mx-auto px-8 w-full">
         <div className="mb-12">
-          <span className="typography-technical-label text-grid">05 // JOIN THE WAITLIST</span>
+          <span className="typography-technical-label text-grid">JOIN THE WAITLIST</span>
         </div>
 
         <div className="relative bg-paper border border-grid/20 p-8 md:p-12">
@@ -236,18 +236,14 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
 
           {/* Stats */}
           <div className="mt-8 pt-6 border-t border-grid/20">
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-2 gap-4 text-center">
               <div>
-                <div className="text-2xl font-bold space-grotesk mb-1 text-forest">1,247</div>
+                <div className="text-2xl font-bold space-grotesk mb-1 text-forest">147</div>
                 <div className="typography-technical-sm text-grid/60 uppercase">Registered</div>
               </div>
               <div>
                 <div className="text-2xl font-bold space-grotesk mb-1 text-forest">89</div>
                 <div className="typography-technical-sm text-grid/60 uppercase">Suggestions</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold space-grotesk mb-1 text-coral">Q2 2026</div>
-                <div className="typography-technical-sm text-grid/60 uppercase">Launch</div>
               </div>
             </div>
           </div>

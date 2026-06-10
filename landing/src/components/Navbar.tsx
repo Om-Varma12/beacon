@@ -15,7 +15,7 @@ export function Navbar({ visible = true }: NavbarProps) {
           <Icon icon="lucide:zap" className="text-white text-sm" />
         </a>
 
-        {/* Center Navigation */}
+        {/* Center Navigation
         <div className="flex items-center gap-8">
           <a href="#products" className="jetbrains text-[10px] uppercase tracking-wider text-forest hover:text-coral transition-colors">
             01 // PRODUCTS
@@ -29,7 +29,7 @@ export function Navbar({ visible = true }: NavbarProps) {
           <a href="#docs" className="jetbrains text-[10px] uppercase tracking-wider text-forest hover:text-coral transition-colors">
             04 // DOCS
           </a>
-        </div>
+        </div> */}
 
         {/* Right Buttons */}
         <div className="flex items-center gap-4">

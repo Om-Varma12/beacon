@@ -70,6 +70,8 @@ export function ScrollJourney() {
     if (!scroller) return
 
     let cachedPathLength = 0
+    let pathStartTop = 0
+    let pathEndBottom = 0
 
     const calculatePath = () => {
       const steps = journeySteps.map(step =>
@@ -109,11 +111,12 @@ export function ScrollJourney() {
 
       // Conclusion curve to center bottom
       const lastPoint = points[points.length - 1]
+      let conclusionY = lastPoint.y
       const footer = document.getElementById('journey-footer')
       if (footer) {
         const footerRect = footer.getBoundingClientRect()
         const centerX = svgRect.width / 2
-        const conclusionY = footerRect.top + footerRect.height / 3 - svgRect.top
+        conclusionY = footerRect.top + footerRect.height / 3 - svgRect.top
 
         const midY = (lastPoint.y + conclusionY) / 2
 
@@ -124,6 +127,8 @@ export function ScrollJourney() {
 
       const length = path.getTotalLength()
       cachedPathLength = length
+      pathStartTop = points[0]?.y || 0
+      pathEndBottom = conclusionY
       path.setAttribute('stroke-dasharray', `${length} ${length}`)
       path.setAttribute('stroke-dashoffset', length.toString())
 
@@ -135,17 +140,22 @@ export function ScrollJourney() {
     }
 
     const updatePathProgress = () => {
+      if (cachedPathLength === 0) {
+        calculatePath()
+      }
       if (cachedPathLength === 0) return
 
-      const heroSection = document.querySelector('#journey-container > .snap-start') as HTMLElement | null
-      const footerSection = document.getElementById('journey-footer')
+      // The journey container relative to the scroller content top
+      const containerTop = section.offsetTop
 
-      if (!heroSection || !footerSection) return
+      // Absolute positions relative to the scrollable content top
+      const pathStartAbsolute = containerTop + pathStartTop
+      const pathEndAbsolute = containerTop + pathEndBottom
 
-      const heroTop = heroSection.offsetTop
-      const footerBottom = footerSection.offsetTop + footerSection.offsetHeight
+      // Viewport scroll center relative to scrollable content top
       const viewCenter = scroller.scrollTop + scroller.clientHeight * 0.5
-      const progress = Math.max(0, Math.min(1, (viewCenter - heroTop) / (footerBottom - heroTop)))
+
+      const progress = Math.max(0, Math.min(1, (viewCenter - pathStartAbsolute) / (pathEndAbsolute - pathStartAbsolute)))
 
       path.setAttribute('stroke-dashoffset', (cachedPathLength * (1 - progress)).toString())
     }
@@ -216,7 +226,7 @@ export function ScrollJourney() {
   return (
     <section ref={sectionRef} id="journey-container" data-scroll-corridor="true" className="relative bg-paper border-b border-grid/20">
       {/* Hero Section */}
-      <div className="h-screen min-h-[700px] flex items-center justify-center px-8 snap-start">
+      <div id="journey-hero" className="h-screen min-h-[700px] flex items-center justify-center px-8">
         <div className="text-center max-w-4xl">
           <h1 className="typography-display-lg text-forest mb-8">
             One AI Workflow<br />
@@ -261,7 +271,9 @@ export function ScrollJourney() {
           <div
             key={step.id}
             id={`step-${step.id}-section`}
-            className="h-screen min-h-[900px] flex items-center snap-start"
+            className={`h-screen min-h-[900px] flex ${
+              step.id === 1 ? 'items-start pt-0' : 'items-center'
+            }`}
           >
             <div className="max-w-7xl mx-auto px-8 w-full">
               <div
@@ -316,7 +328,7 @@ export function ScrollJourney() {
       {/* Footer Section */}
       <div
         id="journey-footer"
-        className="h-screen min-h-[700px] flex items-center justify-center relative snap-start"
+        className="h-screen min-h-[700px] flex items-center justify-center relative"
         style={{ zIndex: 2 }}
       >
         <div className="text-center">

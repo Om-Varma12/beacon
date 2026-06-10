@@ -1,6 +1,6 @@
 export function Hero() {
   return (
-    <section className="min-h-screen pt-32 pb-24 border-b border-grid/20 snap-start flex flex-col justify-center">
+    <section className="min-h-screen pt-32 pb-24 border-b border-grid/20 flex flex-col justify-center">
       <div className="max-w-7xl mx-auto px-8">
         <div className="grid grid-cols-2 gap-16 items-center">
           {/* Left: Typography */}
@@ -13,9 +13,9 @@ export function Hero() {
             </h1>
 
             <div className="flex items-start gap-3 mb-12">
-              <div className="w-px h-16 bg-forest" />
+              <div className="w-px h-12 bg-forest" />
               <p className="typography-technical-label text-grid leading-relaxed max-w-md">
-                Multi-agent system for discovery, analysis, and submission generation
+                <br></br>Multi-agent system for discovery, analysis, and submission generation<br></br>
               </p>
             </div>
 

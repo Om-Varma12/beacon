@@ -1,6 +1,6 @@
 export function FormCTA() {
   return (
-    <section className="min-h-screen py-24 snap-start flex flex-col justify-center">
+    <section className="min-h-screen py-24 flex flex-col justify-center">
       <div className="max-w-7xl mx-auto px-8">
         <div className="max-w-2xl mx-auto">
           <div className="mb-12 text-center">

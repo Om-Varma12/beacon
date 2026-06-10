@@ -77,7 +77,7 @@ function App() {
         className="pointer-events-none fixed right-4 z-[60] hidden h-8 w-px bg-forest/50 md:block"
         style={{ top: scannerY }}
       />
-      <div ref={containerRef} className="alive-scroll-container relative z-10 h-screen overflow-y-auto overflow-x-hidden snap-y snap-mandatory">
+      <div ref={containerRef} className="alive-scroll-container relative z-10 h-screen overflow-y-auto overflow-x-hidden">
         <motion.div
           className="alive-scroll-content"
           initial={shouldReduceMotion ? false : { opacity: 0.96 }}

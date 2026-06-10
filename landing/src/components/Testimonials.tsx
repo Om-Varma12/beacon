@@ -2,7 +2,7 @@ import { Icon } from '@iconify/react'
 
 export function Testimonials() {
   return (
-    <section className="min-h-screen py-24 border-t border-grid/20 snap-start flex flex-col justify-center">
+    <section className="min-h-screen py-24 border-t border-grid/20 flex flex-col justify-center">
       <div className="max-w-7xl mx-auto px-8">
         <div className="mb-12">
           <span className="typography-technical-label text-grid">04 // SYSTEM FEEDBACK</span>

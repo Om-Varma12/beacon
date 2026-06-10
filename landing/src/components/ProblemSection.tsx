@@ -239,7 +239,7 @@ export function StickyContentSwitch() {
             {problems.map((problem) => (
               <div
                 key={problem.id}
-                className="problem-card min-h-screen snap-start flex items-center justify-center py-8"
+                className="problem-card min-h-screen flex items-center justify-center py-8"
               >
                 <div className="bg-white/5 border border-white/10 p-8 w-full max-w-lg hover:border-white/30 transition-all relative rounded-none">
                   {/* Technical ID */}

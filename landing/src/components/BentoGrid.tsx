@@ -2,7 +2,7 @@ import { Icon } from '@iconify/react'
 
 export function BentoGrid() {
   return (
-    <section id="features" className="min-h-screen py-24 border-b border-grid/20 snap-start flex flex-col justify-center">
+    <section id="features" className="min-h-screen py-24 border-b border-grid/20 flex flex-col justify-center">
       <div className="max-w-7xl mx-auto px-8">
         <div className="mb-12">
           <span className="typography-technical-label text-grid">02. Core Capabilities</span>

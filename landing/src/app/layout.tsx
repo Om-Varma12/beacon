@@ -2,8 +2,12 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Beacon - Autonomous Hackathon Intelligence',
-  description: 'Secure early access to the future of autonomous hackathon intelligence.',
+  title: 'Beacon',
+  description:
+    'Secure early access to the future of autonomous hackathon intelligence.',
+  icons: {
+    icon: '/logo-opaque.png',
+  },
 };
 
 export default function RootLayout({
@@ -13,9 +17,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

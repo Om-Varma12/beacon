@@ -10,8 +10,8 @@ const ContentSecurityPolicy = [
   "font-src 'self'",
   // Local images, data URIs, blob (Next.js Image Optimization)
   "img-src 'self' data: blob:",
-  // Only talk to same origin (API routes)
-  "connect-src 'self'",
+  // Only talk to same origin (API routes) and Iconify API for dynamic icons
+  "connect-src 'self' https://api.iconify.design https://api.simplesvg.com https://api.unisvg.com",
   // Block this page from being embedded in iframes anywhere
   "frame-ancestors 'none'",
   // No plugins (Flash, etc.)

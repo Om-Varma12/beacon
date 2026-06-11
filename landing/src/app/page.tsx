@@ -60,7 +60,7 @@ export default function Home() {
         className={`fixed bottom-6 right-5 md:bottom-8 md:right-8 z-[70] flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-full bg-forest text-paper shadow-lg hover:bg-forest/90 transition-colors ${showScrollTop ? 'pointer-events-auto' : 'pointer-events-none'}`}
         aria-label="Scroll to top"
       >
-        <Icon icon="lucide:arrow-up" width={20} />
+        <Icon icon="lucide:arrow-up" width={20} color="white"/>
       </motion.button>
 
       <div ref={containerRef} className="alive-scroll-container relative z-10 h-screen overflow-y-auto overflow-x-hidden">

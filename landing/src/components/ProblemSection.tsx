@@ -58,33 +58,56 @@ const problems = [
   }
 ]
 
-const content = [
+// Structured content — no raw HTML, safe for React rendering
+interface ContentItem {
+  /** Text before the coral highlight */
+  before: string
+  /** The highlighted word(s) rendered in coral */
+  highlight: string
+  /** Text after the coral highlight (empty string if none) */
+  after: string
+  description: string
+  badge: string
+  stat: string
+}
+
+const content: ContentItem[] = [
   {
-    heading: 'Hackathons are <span class="text-coral">broken</span> by design.',
+    before: 'Hackathons are ',
+    highlight: 'broken',
+    after: ' by design.',
     description: "The first 12 hours of every build are usually lost to chaos. We're fixing the friction points that kill great projects before they even start.",
     badge: 'The Hard Truth',
     stat: '49% Time Wasted'
   },
   {
-    heading: 'Decision fatigue is a <span class="text-coral">silent killer.</span>',
+    before: 'Decision fatigue is a ',
+    highlight: 'silent killer.',
+    after: '',
     description: "Teams spend 30% of their total hackathon time just deciding what to build. That's time you could be using to iterate on your core product.",
     badge: 'Analysis Paralysis',
     stat: '30% Time Lost'
   },
   {
-    heading: 'Great code <span class="text-coral">isn\'t enough</span> anymore.',
+    before: 'Great code ',
+    highlight: "isn't enough",
+    after: ' anymore.',
     description: "Alignment with track sponsors and problem statements is the difference between a 'cool project' and a winning submission.",
     badge: 'The Alignment Gap',
     stat: '87% Misalignment'
   },
   {
-    heading: 'Design is the <span class="text-coral">final bottleneck.</span>',
+    before: 'Design is the ',
+    highlight: 'final bottleneck.',
+    after: '',
     description: "You can build a rocket, but if the pitch deck looks like a 2005 PowerPoint, the judges won't board it.",
     badge: 'Presentation Debt',
     stat: '4.2 Hours Avg'
   },
   {
-    heading: 'Your time is your <span class="text-coral">leverage.</span>',
+    before: 'Your time is your ',
+    highlight: 'leverage.',
+    after: '',
     description: "Stop bleeding hours on manual processes. Beacon automates the hunt so you can focus on the heart of your project.",
     badge: 'Time Hemorrhage',
     stat: '49% Wasted'
@@ -165,11 +188,14 @@ function MobileProblemCards() {
 // ─── Desktop: Sticky two-column ───────────────────────────────────────────────
 function DesktopStickySwitch() {
   const sectionRef = useRef<HTMLDivElement>(null)
+  // These refs are ONLY used for GSAP opacity/transform animations — never for content mutation
   const headingRef = useRef<HTMLHeadingElement>(null)
   const descriptionRef = useRef<HTMLParagraphElement>(null)
   const badgeRef = useRef<HTMLSpanElement>(null)
   const statRef = useRef<HTMLSpanElement>(null)
   const [activeIndex, setActiveIndex] = useState(0)
+  // Separate state for displayed content so React re-renders after GSAP fades out
+  const [displayedIndex, setDisplayedIndex] = useState(0)
 
   useEffect(() => {
     const section = sectionRef.current
@@ -190,21 +216,23 @@ function DesktopStickySwitch() {
       currentIndex = index
       setActiveIndex(index)
 
+      // Fade out the content elements
       gsap.to([heading, description, badge, stat], {
         opacity: 0,
         y: -10,
         duration: 0.3,
         ease: 'power2.out',
         onComplete: () => {
-          heading.innerHTML = content[index].heading
-          description.textContent = content[index].description
-          badge.textContent = content[index].badge
-          stat.textContent = content[index].stat
+          // Update React state — triggers re-render with new structured content
+          // React updates the text nodes while elements are invisible (opacity: 0)
+          setDisplayedIndex(index)
+          // Reset y and fade back in after React commits the re-render
+          gsap.set([heading, description, badge, stat], { y: 0 })
           gsap.to([heading, description, badge, stat], {
             opacity: 1,
-            y: 0,
             duration: 0.4,
-            ease: 'power2.out'
+            ease: 'power2.out',
+            delay: 0.02, // tiny delay for React to commit
           })
         }
       })
@@ -239,18 +267,21 @@ function DesktopStickySwitch() {
               <div className="inline-flex items-center gap-2 border border-white/20 px-3 py-1.5 bg-white/5">
                 <div className={`w-2 h-2 ${colorMap[currentProblem.color as keyof typeof colorMap]}`} />
                 <span ref={badgeRef} className="typography-technical-sm text-white">
-                  {content[0].badge}
+                  {content[displayedIndex].badge}
                 </span>
               </div>
 
               <h2
                 ref={headingRef}
                 className="typography-display-lg text-white"
-                dangerouslySetInnerHTML={{ __html: content[0].heading }}
-              />
+              >
+                {content[displayedIndex].before}
+                <span className="text-coral">{content[displayedIndex].highlight}</span>
+                {content[displayedIndex].after}
+              </h2>
 
               <p ref={descriptionRef} className="typography-body-lg text-white/70 leading-relaxed max-w-md">
-                {content[0].description}
+                {content[displayedIndex].description}
               </p>
 
               <div className="bg-white/5 border border-white/10 p-6">
@@ -263,7 +294,7 @@ function DesktopStickySwitch() {
                   </div>
                   <div className="text-right">
                     <span ref={statRef} className="space-grotesk text-3xl font-bold text-gold">
-                      {content[0].stat}
+                      {content[displayedIndex].stat}
                     </span>
                   </div>
                 </div>

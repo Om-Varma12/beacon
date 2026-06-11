@@ -71,7 +71,11 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch('/api/stats')
+        const headers: Record<string, string> = {}
+        const statsKey = process.env.NEXT_PUBLIC_STATS_API_KEY
+        if (statsKey) headers['x-stats-key'] = statsKey
+
+        const res = await fetch('/api/stats', { headers })
         if (res.ok) {
           const data = await res.json()
           setStats({

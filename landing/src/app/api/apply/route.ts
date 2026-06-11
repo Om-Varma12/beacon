@@ -36,12 +36,6 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!featureRequest || typeof featureRequest !== 'string' || featureRequest.trim() === '') {
-      return NextResponse.json(
-        { success: false, message: 'Feature request is required and must not be empty' },
-        { status: 400 }
-      );
-    }
 
     const sanitizedEmail = email.trim().toLowerCase();
     const sanitizedFeatureRequest = featureRequest.trim();

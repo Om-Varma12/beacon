@@ -199,9 +199,10 @@ function EvalVisualizer() {
   )
 }
 
+const allLines = ['Initializing monorepo workspace...', 'Installing Tailwind v4.0 design tokens...', 'Scaffolding dynamic React 19 pages...', 'Wiring Agentic Router engine...', 'Building Pitch Deck markdown...', 'Verifying rule compliance check...', 'Submission bundle compiled successfully.']
+
 function ProdVisualizer() {
   const [lines, setLines] = useState<string[]>([])
-  const allLines = ['Initializing monorepo workspace...', 'Installing Tailwind v4.0 design tokens...', 'Scaffolding dynamic React 19 pages...', 'Wiring Agentic Router engine...', 'Building Pitch Deck markdown...', 'Verifying rule compliance check...', 'Submission bundle compiled successfully.']
   useEffect(() => {
     let currentLine = 0
     setLines([allLines[0]])

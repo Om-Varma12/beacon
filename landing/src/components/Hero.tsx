@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, useMotionValue, useSpring } from 'framer-motion'
+import Image from 'next/image'
 
 export function Hero() {
   const [scrollTop, setScrollTop] = useState(0)
@@ -141,10 +142,13 @@ export function Hero() {
                       animate={{ scale: [1, 1.06, 1] }}
                       transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                     >
-                      <img
+                      <Image
                         src="/logo.png"
                         alt="Beacon Logo"
-                        className="w-80 h-80 object-contain select-none pointer-events-none"
+                        width={320}
+                        height={320}
+                        className="object-contain select-none pointer-events-none"
+                        priority
                       />
                     </motion.div>
                   </motion.div>

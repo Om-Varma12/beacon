@@ -133,10 +133,6 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
       return
     }
 
-    if (!message || message.trim() === '') {
-      setError('Feature suggestion is required')
-      return
-    }
 
     setError('')
     setLoading(true)
@@ -245,7 +241,7 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
 
             <div>
               <label htmlFor="message" className="typography-technical-sm text-forest mb-2 block">
-                Feature Suggestions *
+                Feature Suggestions <span className="text-grid/40">(optional)</span>
               </label>
               <textarea
                 id="message"
@@ -281,12 +277,12 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
               {loading ? (
                 <>
                   <Spinner size={20} color="#022617" />
-                  <span>Processing...</span>
+                  <span className="text-white">Processing...</span>
                 </>
               ) : success ? (
-                <span>Registered ✓</span>
+                <span className="text-white">Registered ✓</span>
               ) : cooldownSeconds > 0 ? (
-                <span>Submit Again ({cooldownSeconds}s)</span>
+                <span className="text-white">Submit Again ({cooldownSeconds}s)</span>
               ) : (
                 <>
                   <span>Register Interest</span>

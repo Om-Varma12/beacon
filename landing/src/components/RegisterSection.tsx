@@ -211,7 +211,7 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
         {/* Section Header */}
         <div className="mb-10 md:mb-12 text-center">
           <span className="typography-technical-label text-grid">JOIN THE WAITLIST</span>
-          <h2 className="typography-display-lg text-forest mt-2 text-4xl md:text-[64px]">Secure Early Access</h2>
+          <h2 className="typography-display-lg text-forest mt-2 text-4xl md:text-[64px]">Help Shape Beacon</h2>
         </div>
 
         <div className="relative bg-paper border border-grid/20 p-6 md:p-12">

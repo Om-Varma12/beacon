@@ -23,9 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 .vite
+.next
 
 .claude
 .agents
 .superdesign
 
-reference.html
+mail-reference.md
+db-resources.md
+.env

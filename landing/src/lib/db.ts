@@ -56,7 +56,6 @@ export async function ensureTableExists(): Promise<string> {
     return 'applications';
   } catch (error) {
     console.error('Error in ensureTableExists:', error);
-    // Default fallback to applications
-    return 'applications';
+    throw error;
   }
 }

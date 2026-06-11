@@ -98,9 +98,9 @@ export function Hero() {
             </h1>
 
             <div className="flex items-start gap-3 mb-8 md:mb-12">
-              <div className="w-px h-10 md:h-12 bg-forest flex-shrink-0" />
+              <div className="w-px h-8 md:h-12 bg-forest flex-shrink-0" />
               <p className="typography-technical-label text-grid leading-relaxed max-w-md text-[11px] md:text-[12px]">
-                Multi-agent system for discovery, analysis, and submission generation
+                <br></br>Multi-agent system for discovery, analysis, and submission generation<br></br>
               </p>
             </div>
 

@@ -121,7 +121,7 @@ function MobileProblemCards() {
             className="bg-white/5 border border-white/10 p-6 relative"
           >
             <div className="absolute top-4 right-4 typography-technical-sm text-white/30">
-              ID // 01-0{problem.id}
+              0{problem.id}
             </div>
 
             <div className="flex items-start gap-4">
@@ -289,7 +289,7 @@ function DesktopStickySwitch() {
               >
                 <div className="bg-white/5 border border-white/10 p-8 w-full max-w-lg hover:border-white/30 transition-all relative">
                   <div className="absolute top-4 right-4 typography-technical-sm text-white/40">
-                    ID // 01-0{problem.id}
+                    0{problem.id}
                   </div>
                   <div className="flex flex-col gap-6">
                     <div className="flex items-start gap-4">

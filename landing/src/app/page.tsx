@@ -1,43 +1,44 @@
-import { useRef, useState, useEffect } from 'react'
-import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion'
-import { Icon } from '@iconify/react'
-import './App.css'
-import { Navbar } from './components/Navbar'
-import { Hero } from './components/Hero'
-import { StickyContentSwitch } from './components/ProblemSection'
-import { BehindTheIntelligence } from './components/behind-the-intelligence'
-import { ScrollJourney } from './components/ScrollJourney'
-// import { BentoGrid } from './components/BentoGrid'
-// import { FormCTA } from './components/FormCTA'
-// import { Testimonials } from './components/Testimonials'
-import FAQ from './components/FAQ'
-import { RegisterSection } from './components/RegisterSection'
-import { Footer } from './components/Footer'
+'use client';
 
-function App() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const shouldReduceMotion = useReducedMotion()
-  const { scrollYProgress } = useScroll({ container: containerRef })
+import { useRef, useState, useEffect } from 'react';
+import { motion, useReducedMotion, useScroll, useSpring, useTransform } from 'framer-motion';
+import { Icon } from '@iconify/react';
+import { Navbar } from '../components/Navbar';
+import { Hero } from '../components/Hero';
+import { StickyContentSwitch } from '../components/ProblemSection';
+import { BehindTheIntelligence } from '../components/behind-the-intelligence';
+import { ScrollJourney } from '../components/ScrollJourney';
+// import { BentoGrid } from '../components/BentoGrid';
+// import { FormCTA } from '../components/FormCTA';
+// import { Testimonials } from '../components/Testimonials';
+import FAQ from '../components/FAQ';
+import { RegisterSection } from '../components/RegisterSection';
+import { Footer } from '../components/Footer';
+
+export default function Home() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const shouldReduceMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({ container: containerRef });
   const smoothScrollProgress = useSpring(scrollYProgress, {
     stiffness: 120,
     damping: 26,
     mass: 0.35,
-  })
-  const scannerY = useTransform(smoothScrollProgress, [0, 1], ['12vh', '88vh'])
+  });
+  const scannerY = useTransform(smoothScrollProgress, [0, 1], ['12vh', '88vh']);
 
-  const [showScrollTop, setShowScrollTop] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     return scrollYProgress.onChange((v) => {
-      setShowScrollTop(v > 0.05)
-    })
-  }, [scrollYProgress])
+      setShowScrollTop(v > 0.05);
+    });
+  }, [scrollYProgress]);
 
   const handleScrollToTop = () => {
     if (containerRef.current) {
-      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }
+  };
 
   return (
     <>
@@ -83,7 +84,5 @@ function App() {
         </motion.div>
       </div>
     </>
-  )
+  );
 }
-
-export default App

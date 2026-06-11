@@ -4,10 +4,10 @@ const ContentSecurityPolicy = [
   "default-src 'self'",
   // Next.js requires unsafe-inline for its runtime scripts; unsafe-eval for dev HMR
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  // Tailwind & component inline styles + Google Fonts stylesheets
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  // Google Fonts actual font files
-  "font-src 'self' https://fonts.gstatic.com",
+  // Tailwind & component inline styles
+  "style-src 'self' 'unsafe-inline'",
+  // Local fonts
+  "font-src 'self'",
   // Local images, data URIs, blob (Next.js Image Optimization)
   "img-src 'self' data: blob:",
   // Only talk to same origin (API routes)

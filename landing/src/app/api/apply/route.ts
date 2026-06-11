@@ -15,10 +15,11 @@ const ALLOWED_ORIGINS: string[] = rawAllowedOrigins
   ? rawAllowedOrigins.split(',').map((o) => o.trim()).filter(Boolean)
   : ['http://localhost:3000', 'http://localhost:3001'];
 
-/** RFC 5321 compliant email length + basic format check */
+/** RFC 5321 compliant email length + standard regex check to block injection characters */
 const validateEmail = (email: string): boolean => {
   if (email.length > 254) return false;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
 };
 
 export async function POST(request: Request) {

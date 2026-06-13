@@ -11,9 +11,13 @@ export const dynamic = 'force-dynamic';
 // In development, localhost variants are allowed automatically.
 // ---------------------------------------------------------------------------
 const rawAllowedOrigins = process.env.ALLOWED_ORIGIN ?? '';
-const ALLOWED_ORIGINS: string[] = rawAllowedOrigins
-  ? rawAllowedOrigins.split(',').map((o) => o.trim()).filter(Boolean)
-  : ['http://localhost:3000', 'http://localhost:3001'];
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  ...(process.env.ALLOWED_ORIGIN
+    ? process.env.ALLOWED_ORIGIN.split(',').map(o => o.trim())
+    : []),
+];
 
 /** RFC 5321 compliant email length + standard regex check to block injection characters */
 const validateEmail = (email: string): boolean => {

@@ -258,9 +258,9 @@ function DesktopStickySwitch() {
   return (
     <section ref={sectionRef} data-scroll-corridor="true" className="relative bg-primary-container border-b border-white/10">
       <div className="max-w-7xl mx-auto px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
+        <div className="grid grid-cols-2 gap-16">
           {/* Left Sticky Column */}
-          <div className="lg:sticky lg:top-0 lg:h-screen flex flex-col justify-center py-12 lg:py-0">
+          <div className="sticky top-0 h-screen flex flex-col justify-center">
             <div className="space-y-8">
               <div className="inline-flex items-center gap-2 border border-white/20 px-3 py-1.5 bg-white/5">
                 <div className={`w-2 h-2 ${colorMap[currentProblem.color as keyof typeof colorMap]}`} />
@@ -314,7 +314,7 @@ function DesktopStickySwitch() {
             {problems.map((problem) => (
               <div
                 key={problem.id}
-                className="problem-card min-h-[60vh] lg:min-h-screen flex items-center justify-center py-8"
+                className="problem-card min-h-screen flex items-center justify-center py-8"
               >
                 <div className="bg-white/5 border border-white/10 p-8 w-full max-w-lg hover:border-white/30 transition-all relative">
                   <div className="absolute top-4 right-4 typography-technical-sm text-white/40">

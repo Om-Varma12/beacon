@@ -66,11 +66,11 @@ body {
   color: var(--forest);
   font-family: var(--font-inter), sans-serif;
   position: relative;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 html {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 html.lenis,

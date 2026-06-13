@@ -12,12 +12,8 @@ export function Navbar({ visible = true }: NavbarProps) {
   const lastScrollY = useRef(0)
 
   useEffect(() => {
-    let container: Element | Window = document.querySelector('.alive-scroll-container') || window
-
     const handleScroll = () => {
-      const currentScrollY = container === window 
-        ? window.scrollY 
-        : (container as HTMLElement).scrollTop
+      const currentScrollY = window.scrollY
 
       if (currentScrollY <= 100) {
         setCompressed(false)
@@ -31,27 +27,9 @@ export function Navbar({ visible = true }: NavbarProps) {
       lastScrollY.current = currentScrollY
     }
 
-    if (container === window) {
-      const timer = setTimeout(() => {
-        const found = document.querySelector('.alive-scroll-container')
-        if (found) {
-          container.removeEventListener('scroll', handleScroll)
-          container = found
-          container.addEventListener('scroll', handleScroll, { passive: true })
-          handleScroll()
-        }
-      }, 100)
-
-      container.addEventListener('scroll', handleScroll, { passive: true })
-      return () => {
-        clearTimeout(timer)
-        container.removeEventListener('scroll', handleScroll)
-      }
-    } else {
-      container.addEventListener('scroll', handleScroll, { passive: true })
-      return () => {
-        container.removeEventListener('scroll', handleScroll)
-      }
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
     }
   }, [])
 
@@ -59,9 +37,8 @@ export function Navbar({ visible = true }: NavbarProps) {
   useEffect(() => {
     if (!mobileOpen) return
     const handleScroll = () => setMobileOpen(false)
-    const container = document.querySelector('.alive-scroll-container') || window
-    container.addEventListener('scroll', handleScroll, { passive: true, once: true })
-    return () => container.removeEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true, once: true })
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [mobileOpen])
 
   const springConfig = { type: 'spring' as const, stiffness: 220, damping: 26 }

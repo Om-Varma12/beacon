@@ -16,9 +16,8 @@ import { RegisterSection } from '../components/RegisterSection';
 import { Footer } from '../components/Footer';
 
 export default function Home() {
-  const containerRef = useRef<HTMLDivElement>(null);
   const shouldReduceMotion = useReducedMotion();
-  const { scrollYProgress } = useScroll({ container: containerRef });
+  const { scrollYProgress } = useScroll();
   const smoothScrollProgress = useSpring(scrollYProgress, {
     stiffness: 120,
     damping: 26,
@@ -35,9 +34,7 @@ export default function Home() {
   }, [scrollYProgress]);
 
   const handleScrollToTop = () => {
-    if (containerRef.current) {
-      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -63,7 +60,7 @@ export default function Home() {
         <Icon icon="lucide:arrow-up" width={20} color="white"/>
       </motion.button>
 
-      <div ref={containerRef} className="alive-scroll-container relative z-10 h-screen overflow-y-auto overflow-x-hidden">
+      <div className="alive-scroll-container relative z-10">
         <motion.div
           className="alive-scroll-content"
           initial={shouldReduceMotion ? false : { opacity: 0.96 }}

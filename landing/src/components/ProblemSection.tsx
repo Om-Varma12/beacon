@@ -206,9 +206,6 @@ function DesktopStickySwitch() {
 
     if (!section || !heading || !description || !badge || !stat) return
 
-    const scroller = section.closest('.overflow-y-auto') as HTMLElement
-    if (!scroller) return
-
     let currentIndex = -1
 
     const swapContent = (index: number) => {
@@ -238,20 +235,21 @@ function DesktopStickySwitch() {
       })
     }
 
+    const triggers: ScrollTrigger[] = []
     const cardElements = section.querySelectorAll('.problem-card')
     cardElements.forEach((card, index) => {
-      ScrollTrigger.create({
+      const trigger = ScrollTrigger.create({
         trigger: card as HTMLElement,
-        scroller: scroller,
         start: 'top center',
         end: 'bottom center',
         onEnter: () => swapContent(index),
         onEnterBack: () => swapContent(index)
       })
+      triggers.push(trigger)
     })
 
     return () => {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill())
+      triggers.forEach(t => t.kill())
     }
   }, [])
 

@@ -19,17 +19,13 @@ export function Hero() {
   // Track scroll position for continuous scaling (desktop only)
   useEffect(() => {
     if (isMobile) return
-    const container = document.querySelector('.alive-scroll-container') || window
 
     const handleScroll = () => {
-      const currentScrollTop = container === window
-        ? window.scrollY
-        : (container as HTMLElement).scrollTop
-      setScrollTop(currentScrollTop)
+      setScrollTop(window.scrollY)
     }
 
-    container.addEventListener('scroll', handleScroll, { passive: true })
-    return () => container.removeEventListener('scroll', handleScroll)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [isMobile])
 
   // 0px scroll -> scale 1.00; 800px scroll -> scale 0.92

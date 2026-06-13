@@ -132,9 +132,6 @@ function DesktopJourney() {
 
     if (!section || !svg || !path) return
 
-    const scroller = section.closest('.overflow-y-auto') as HTMLElement
-    if (!scroller) return
-
     let cachedPathLength = 0
     let pathStartTop = 0
     let pathEndBottom = 0
@@ -195,7 +192,7 @@ function DesktopJourney() {
       const containerTop = section.offsetTop
       const pathStartAbsolute = containerTop + pathStartTop
       const pathEndAbsolute = containerTop + pathEndBottom
-      const viewCenter = scroller.scrollTop + scroller.clientHeight * 0.5
+      const viewCenter = window.scrollY + window.innerHeight * 0.5
       const progress = Math.max(0, Math.min(1, (viewCenter - pathStartAbsolute) / (pathEndAbsolute - pathStartAbsolute)))
       path.setAttribute('stroke-dashoffset', (cachedPathLength * (1 - progress)).toString())
     }
@@ -203,7 +200,7 @@ function DesktopJourney() {
     setTimeout(() => { calculatePath(); updatePathProgress() }, 150)
 
     const scrollHandler = () => requestAnimationFrame(updatePathProgress)
-    scroller.addEventListener('scroll', scrollHandler)
+    window.addEventListener('scroll', scrollHandler, { passive: true })
 
     const resizeHandler = () => setTimeout(() => { calculatePath(); updatePathProgress() }, 100)
     window.addEventListener('resize', resizeHandler)
@@ -219,7 +216,6 @@ function DesktopJourney() {
 
       const trigger = ScrollTrigger.create({
         trigger: stepSection,
-        scroller: scroller,
         start: 'top center',
         end: 'bottom center',
         onEnter: () => {
@@ -243,7 +239,7 @@ function DesktopJourney() {
     })
 
     return () => {
-      scroller.removeEventListener('scroll', scrollHandler)
+      window.removeEventListener('scroll', scrollHandler)
       window.removeEventListener('resize', resizeHandler)
       triggers.forEach(t => t.kill())
     }

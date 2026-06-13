@@ -211,7 +211,7 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
         {/* Section Header */}
         <div className="mb-10 md:mb-12 text-center">
           <span className="typography-technical-label text-grid">JOIN THE WAITLIST</span>
-          <h2 className="typography-display-lg text-forest mt-2 text-4xl md:text-[64px]">Help Shape Beacon</h2>
+          <h2 className="typography-display-lg text-forest mt-2">Help Shape Beacon</h2>
         </div>
 
         <div className="relative bg-paper border border-grid/20 p-6 md:p-12">
@@ -222,7 +222,7 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
           <div className="corner-marker corner-br" />
 
           {/* Description */}
-          <p className="typography-body-lg text-grid text-center leading-relaxed max-w-xl mx-auto mb-8 text-base md:text-lg">
+          <p className="typography-body-lg text-grid text-center leading-relaxed max-w-xl mx-auto mb-8">
             Be among the first to experience autonomous hackathon intelligence. Register your interest and help shape the future by suggesting features you&apos;d like to see.
           </p>
 
@@ -298,17 +298,17 @@ export function RegisterSection({ onSubmit }: RegisterSectionProps) {
 
           {/* Stats */}
           <div className="mt-8 pt-6 border-t border-grid/20">
-            <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
               <div>
-                <div className="text-3xl font-bold space-grotesk mb-1 text-forest">{stats.totalApplications}</div>
+                <div className="text-2xl sm:text-3xl font-bold space-grotesk mb-1 text-forest">{stats.totalApplications}</div>
                 <div className="typography-technical-sm text-grid/60 uppercase">Submissions</div>
               </div>
               <div>
-                <div className="text-3xl font-bold space-grotesk mb-1 text-forest">{stats.totalSuggestions}</div>
+                <div className="text-2xl sm:text-3xl font-bold space-grotesk mb-1 text-forest">{stats.totalSuggestions}</div>
                 <div className="typography-technical-sm text-grid/60 uppercase">Suggestions</div>
               </div>
               <div>
-                <div className="text-3xl font-bold space-grotesk mb-1 text-forest">{stats.uniqueApplicants}</div>
+                <div className="text-2xl sm:text-3xl font-bold space-grotesk mb-1 text-forest">{stats.uniqueApplicants}</div>
                 <div className="typography-technical-sm text-grid/60 uppercase">Unique Users</div>
               </div>
             </div>

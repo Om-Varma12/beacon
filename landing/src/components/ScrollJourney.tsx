@@ -68,10 +68,10 @@ const stepDotColorMap = {
 // ─── Mobile: vertical timeline ────────────────────────────────────────────────
 function MobileJourney() {
   return (
-    <section className="bg-paper border-b border-grid/20 py-16 px-6">
+    <section className="bg-paper border-b border-grid/20 py-12 sm:py-16 px-4 sm:px-6">
       {/* Header */}
       <div className="mb-12 text-center">
-        <h2 className="typography-display-lg text-forest text-4xl leading-tight">
+        <h2 className="typography-display-lg text-forest leading-tight">
           One AI Workflow<br />
           <span className="text-coral">From Discovery To Submission</span>
         </h2>
@@ -247,7 +247,7 @@ function DesktopJourney() {
 
   return (
     <section ref={sectionRef} id="journey-container-desktop" data-scroll-corridor="true" className="relative bg-paper border-b border-grid/20">
-      <div id="journey-hero" className="h-screen min-h-[700px] flex items-center justify-center px-8">
+      <div id="journey-hero" className="h-screen min-h-[500px] lg:min-h-[700px] flex items-center justify-center px-4 md:px-8">
         <div className="text-center max-w-4xl">
           <h1 className="typography-display-lg text-forest mb-8">
             One AI Workflow<br />
@@ -276,9 +276,9 @@ function DesktopJourney() {
           <div
             key={step.id}
             id={`step-${step.id}-section`}
-            className={`h-screen min-h-[900px] flex ${step.id === 1 ? 'items-start pt-0' : 'items-center'}`}
+            className={`h-screen min-h-[600px] lg:min-h-[900px] flex ${step.id === 1 ? 'items-start pt-0' : 'items-center'}`}
           >
-            <div className="max-w-7xl mx-auto px-8 w-full">
+            <div className="max-w-7xl mx-auto px-4 md:px-8 w-full">
               <div
                 id={`step-${step.id}`}
                 className={`flex items-center ${
@@ -316,7 +316,7 @@ function DesktopJourney() {
         ))}
       </div>
 
-      <div id="journey-footer" className="h-screen min-h-[700px] flex items-center justify-center relative" style={{ zIndex: 2 }}>
+      <div id="journey-footer" className="h-screen min-h-[500px] lg:min-h-[700px] flex items-center justify-center relative" style={{ zIndex: 2 }}>
         <div className="text-center">
           <h2 className="typography-display-lg text-forest mb-4 tracking-tight">Ready to Start?</h2>
           <p className="typography-body-lg text-grid mb-8">Your AI-powered hackathon journey awaits</p>
@@ -334,7 +334,7 @@ export function ScrollJourney() {
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
+    const check = () => setIsMobile(window.innerWidth < 1024)
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)

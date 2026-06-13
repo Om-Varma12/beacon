@@ -66,6 +66,11 @@ body {
   color: var(--forest);
   font-family: var(--font-inter), sans-serif;
   position: relative;
+  overflow-x: hidden;
+}
+
+html {
+  overflow-x: hidden;
 }
 
 html.lenis,
@@ -118,10 +123,12 @@ html.lenis body {
   font-family: 'Space Grotesk', sans-serif;
 }
 
-/* Typography Utility Classes */
+/* ─── Fluid Typography Utility Classes ─────────────────────────────────────── */
+/* clamp(min, preferred, max) — scales fluidly between 320px and 1440px viewports */
+
 .typography-display-xl {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 96px;
+  font-size: clamp(36px, 8vw, 96px);
   font-weight: 700;
   line-height: 1.0;
   letter-spacing: -0.04em;
@@ -129,7 +136,7 @@ html.lenis body {
 
 .typography-display-lg {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 64px;
+  font-size: clamp(28px, 6vw, 64px);
   font-weight: 700;
   line-height: 1.1;
   letter-spacing: -0.03em;
@@ -137,7 +144,7 @@ html.lenis body {
 
 .typography-headline-md {
   font-family: 'Space Grotesk', sans-serif;
-  font-size: 32px;
+  font-size: clamp(20px, 3.5vw, 32px);
   font-weight: 600;
   line-height: 1.2;
   letter-spacing: -0.02em;
@@ -145,7 +152,7 @@ html.lenis body {
 
 .typography-body-lg {
   font-family: 'Inter', sans-serif;
-  font-size: 18px;
+  font-size: clamp(15px, 1.8vw, 18px);
   font-weight: 400;
   line-height: 1.6;
   letter-spacing: 0;
@@ -153,7 +160,7 @@ html.lenis body {
 
 .typography-body-md {
   font-family: 'Inter', sans-serif;
-  font-size: 16px;
+  font-size: clamp(14px, 1.6vw, 16px);
   font-weight: 400;
   line-height: 1.5;
   letter-spacing: 0;
@@ -161,18 +168,18 @@ html.lenis body {
 
 .typography-technical-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 12px;
+  font-size: clamp(10px, 1.2vw, 12px);
   font-weight: 500;
-  line-height: 1.0;
+  line-height: 1.2;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .typography-technical-sm {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: clamp(9px, 1vw, 10px);
   font-weight: 400;
-  line-height: 1.0;
+  line-height: 1.2;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }

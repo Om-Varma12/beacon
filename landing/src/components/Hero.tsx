@@ -87,7 +87,7 @@ export function Hero() {
         <div className="flex flex-col md:grid md:grid-cols-2 md:gap-16 md:items-center">
           {/* Text column */}
           <div>
-            <h1 className="typography-display-xl text-forest mb-6 md:mb-8 text-5xl md:text-[96px]">
+            <h1 className="typography-display-xl text-forest mb-6 md:mb-8">
               Autonomous<br />
               Hackathon<br />
               Intelligence
@@ -100,16 +100,16 @@ export function Hero() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex flex-wrap items-center gap-3 md:gap-4">
               <a
                 href="#waitlist"
-                className="jetbrains text-[10px] uppercase px-5 md:px-6 py-3 border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-all"
+                className="jetbrains text-[10px] uppercase px-5 md:px-6 py-3 min-h-[44px] flex items-center border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-all"
               >
                 Find Opportunities
               </a>
               <a
                 href="#waitlist"
-                className="jetbrains text-[10px] uppercase px-5 md:px-6 py-3 border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-all"
+                className="jetbrains text-[10px] uppercase px-5 md:px-6 py-3 min-h-[44px] flex items-center border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-all"
               >
                 Explore Beacon
               </a>

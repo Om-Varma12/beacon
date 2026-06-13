@@ -315,10 +315,10 @@ function DesktopBehindTheIntelligence() {
 
   const getGridClasses = (index: number, activeIdx: number) => {
     if (index === activeIdx) {
-      let colStart = 'md:col-start-1'
-      if (activeIdx === 1) colStart = 'md:col-start-2'
-      if (activeIdx === 2 || activeIdx === 4) colStart = 'md:col-start-3'
-      return `md:col-span-2 md:row-span-2 ${colStart} md:row-start-1`
+      let colStart = 'lg:col-start-1'
+      if (activeIdx === 1) colStart = 'lg:col-start-2'
+      if (activeIdx === 2 || activeIdx === 4) colStart = 'lg:col-start-3'
+      return `lg:col-span-2 lg:row-span-2 ${colStart} lg:row-start-1`
     }
     const mapping: Record<number, Record<number, { col: number; row: number }>> = {
       0: { 1: { col: 3, row: 1 }, 2: { col: 4, row: 1 }, 3: { col: 3, row: 2 }, 4: { col: 4, row: 2 } },
@@ -329,14 +329,14 @@ function DesktopBehindTheIntelligence() {
     }
     const pos = mapping[activeIdx]?.[index]
     if (!pos) return ''
-    return `md:col-start-${pos.col} md:row-start-${pos.row} md:col-span-1 md:row-span-1`
+    return `lg:col-start-${pos.col} lg:row-start-${pos.row} lg:col-span-1 lg:row-span-1`
   }
 
   const activeColorMap = { coral: 'border-coral/30', mint: 'border-mint/30', gold: 'border-gold/30' }
   const activeDotColorMap = { coral: 'bg-coral', mint: 'bg-mint', gold: 'bg-gold' }
 
   return (
-    <section className="min-h-screen py-24 px-margin-md border-b border-outline/20 flex items-center bg-transparent relative z-10">
+    <section className="min-h-screen py-16 lg:py-24 px-6 lg:px-8 border-b border-outline/20 flex items-center bg-transparent relative z-10">
       <div className="max-w-7xl mx-auto w-full">
         <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
@@ -344,7 +344,7 @@ function DesktopBehindTheIntelligence() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-none md:grid-rows-2 gap-4 h-auto md:h-[620px] transition-all duration-500 ease-in-out">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 grid-rows-none lg:grid-rows-2 gap-4 h-auto lg:h-[620px] transition-all duration-500 ease-in-out">
           {modules.map((module, index) => {
             const isActive = index === activeIndex
             return (
@@ -420,7 +420,7 @@ export function BehindTheIntelligence() {
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
+    const check = () => setIsMobile(window.innerWidth < 1024)
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)

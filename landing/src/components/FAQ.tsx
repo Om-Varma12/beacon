@@ -57,7 +57,7 @@ export function FAQ() {
         {/* Header */}
         <div className="mb-10 md:mb-14">
           <span className="typography-technical-label text-grid">QUESTIONS &amp; ANSWERS</span>
-          <h2 className="space-grotesk text-3xl md:text-4xl font-bold mt-2 text-primary">
+          <h2 className="space-grotesk text-2xl sm:text-3xl md:text-4xl font-bold mt-2 text-primary">
             Frequently Asked Questions
           </h2>
         </div>

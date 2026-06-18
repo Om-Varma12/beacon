@@ -1,0 +1,102 @@
+{
+  "id": 1667237,
+  "public_url": "hackathons/the-growth-hackathon-shaheed-bhagat-singh-evening-college-sbsec-university-of-delhi-du-new-delhi-1667237",
+  "title": "The Growth Hackathon",
+  "organization_id": 139710,
+  "type": "hackathons",
+  "subtype": "online_coding_challenge",
+  "regn_open": 1,
+  "updated_at": "2026-04-01T15:16:16+05:30",
+  "region": "offline",
+  "visibility": "public",
+  "details": "The Growth Hackathon is not a case study competition. It\"s not a quiz. It\"s not a presentation round. When someone pays ₹10, they\"re saying \"I think this idea should exist.\"",
+  "short_id": "u1B4PqG",
+  "logoUrl2": "https://d8it4huxumps7.cloudfront.net/uploads/images/150x150/uploadedManual-69c928cb2ba5f_growth_hackathon_logo.png",
+  "organisation": {
+    "id": 139710,
+    "name": "Shaheed Bhagat Singh Evening College (SBSEC), University of Delhi (DU), New Delhi",
+    "public_url": "c/shaheed-bhagat-singh-evening-college-sbsec-university-of-delhi-du-new-delhi-placement-interview-competitions-articles-videos-139710",
+    "logoUrl": "",
+    "logoUrl2": "",
+    "show_evaluator_login_link": false,
+    "official_email_domains": null,
+    "tier": null
+  },
+  "seo_url": "https://unstop.com/hackathons/the-growth-hackathon-shaheed-bhagat-singh-evening-college-sbsec-university-of-delhi-du-new-delhi-1667237",
+  "status": "LIVE",
+  "tags": [],
+  "thumb": null,
+  "isPaid": false,
+  "festival": null,
+  "prizes": [],
+  "address_with_country_logo": {
+    "id": 1694395,
+    "address": "Shaheed Bhagat Singh Evening College (University of Delhi) Sheikh Sarai, Phase II, New Delhi 110017.",
+    "city": "New Delhi",
+    "state": "Delhi",
+    "country": {
+      "id": 94,
+      "name": "India",
+      "alpha_2": "in",
+      "alpha_3": "ind",
+      "iso": "IN",
+      "iso3": "IND",
+      "numcode": 356,
+      "phonecode": "+91",
+      "logos": {
+        "very_small": "https://d8it4huxumps7.cloudfront.net/images/flags/16x16/in.png",
+        "small": "https://d8it4huxumps7.cloudfront.net/images/flags/24x24/in.png",
+        "medium": "https://d8it4huxumps7.cloudfront.net/images/flags/32x32/in.png",
+        "large": "https://d8it4huxumps7.cloudfront.net/images/flags/48x48/in.png",
+        "xlarge": "https://d8it4huxumps7.cloudfront.net/images/flags/64x64/in.png",
+        "xxlarge": "https://d8it4huxumps7.cloudfront.net/images/flags/128x128/in.png"
+      }
+    },
+    "zip": null,
+    "lat": null,
+    "lng": null,
+    "addressable_id": 1667237,
+    "addressable_type": "App\\Model\\Opportunity",
+    "created_at": "2026-03-29T18:57:43+05:30",
+    "updated_at": "2026-04-01T15:15:09+05:30",
+    "deleted_at": null,
+    "address_title": "event_location",
+    "city_id": 133210,
+    "sort_order": 1,
+    "state_code": null,
+    "country_code": null
+  },
+  "short_url": "https://unstop.com/o/u1B4PqG",
+  "workfunction": [
+    {
+      "id": 1945,
+      "name": "IT Operations",
+      "description": "",
+      "created_at": "2026-02-06T23:31:46+05:30",
+      "updated_at": "2026-02-06T23:31:46+05:30",
+      "work_function_name": null,
+      "batch_id": 11,
+      "pivot": {
+        "entity_id": 1667237,
+        "subject_id": 1945,
+        "id": 4374074,
+        "ai_generated": false
+      }
+    },
+    {
+      "id": 1982,
+      "name": "Product Management",
+      "description": "",
+      "created_at": "2026-02-06T23:31:46+05:30",
+      "updated_at": "2026-02-06T23:31:46+05:30",
+      "work_function_name": null,
+      "batch_id": 11,
+      "pivot": {
+        "entity_id": 1667237,
+        "subject_id": 1982,
+        "id": 4374115,
+        "ai_generated": true
+      }
+    }
+  ]
+}

@@ -31,7 +31,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange, hasM
       <button
         onClick={() => onPageChange(Math.max(1, currentPage - 1))}
         disabled={currentPage === 1}
-        className="px-6 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase rounded-sm hover:bg-forest hover:text-white transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-6 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase rounded-sm hover:bg-[var(--forest)] hover:text-white transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <Icon icon="lucide:chevron-left" className="text-sm" />
         <span>PREVIOUS</span>
@@ -47,8 +47,8 @@ export default function Pagination({ currentPage, totalPages, onPageChange, hasM
               onClick={() => onPageChange(page as number)}
               className={`w-10 h-10 border font-mono text-xs rounded-sm transition-all ${
                 page === currentPage
-                  ? 'border-forest bg-forest text-white'
-                  : 'border-grid/30 hover:bg-forest hover:text-white'
+                  ? 'border-[var(--forest)] bg-[var(--forest)] text-white'
+                  : 'border-grid/30 text-forest hover:bg-[var(--forest)] hover:text-white'
               }`}
             >
               {page}
@@ -60,7 +60,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange, hasM
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={!(hasMore || currentPage < totalPages)}
-        className="px-6 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase rounded-sm hover:bg-forest hover:text-white transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-6 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase rounded-sm hover:bg-[var(--forest)] hover:text-white transition-all flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <span>NEXT</span>
         <Icon icon="lucide:chevron-right" className="text-sm" />

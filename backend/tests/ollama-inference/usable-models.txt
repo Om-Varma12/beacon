@@ -1,0 +1,5 @@
+gpt-oss-120b
+nemotron-3-ultra:cloud
+gemma4:31b-cloud
+glm-4.7:cloud
+minimax-m3:cloud

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
@@ -441,7 +441,7 @@ export default function HackathonTable() {
             <button
               type="button"
               onClick={() => setSelectedTeammates([])}
-              className="border border-grid/30 px-3 py-2 font-mono text-[10px] tracking-widest uppercase rounded-sm hover:bg-forest hover:text-white transition-all"
+              className="border border-grid/30 px-3 py-2 font-mono text-[10px] tracking-widest uppercase rounded-sm hover:bg-[var(--forest)] hover:text-white transition-all"
             >
               Clear Team Filter
             </button>
@@ -459,7 +459,7 @@ export default function HackathonTable() {
             className={`w-8 h-8 border flex items-center justify-center rounded-sm transition-colors ${
               viewMode === 'list'
                 ? 'border-forest bg-forest text-gold'
-                : 'border-grid/30 hover:bg-forest hover:text-gold hover:border-forest'
+                : 'border-grid/30 hover:bg-[var(--forest)] hover:text-gold hover:border-forest'
             }`}
           >
             <Icon icon="lucide:layout-list" className="text-sm" />
@@ -469,7 +469,7 @@ export default function HackathonTable() {
             className={`w-8 h-8 border flex items-center justify-center rounded-sm transition-colors ${
               viewMode === 'grid'
                 ? 'border-forest bg-forest text-gold'
-                : 'border-grid/30 hover:bg-forest hover:text-gold hover:border-forest'
+                : 'border-grid/30 hover:bg-[var(--forest)] hover:text-gold hover:border-forest'
             }`}
           >
             <Icon icon="lucide:layout-grid" className="text-sm" />

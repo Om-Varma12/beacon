@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+﻿import { useMemo, useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
@@ -1235,7 +1235,7 @@ export default function HackathonDetailApi() {
                 className={`px-6 py-4 font-mono text-[10px] tracking-widest uppercase transition-all relative flex items-center gap-2 border-b-2 ${
                   activeTab === tab.id
                     ? "bg-(--forest) text-(--paper) border-(--forest)"
-                    : "text-grid/60 border-transparent hover:text-forest hover:border-grid/40"
+                    : "text-grid/60 border-transparent hover:text-white hover:border-grid/40"
                 }`}
               >
                 <span className="hidden sm:inline">{tab.label}</span>
@@ -1448,12 +1448,12 @@ export default function HackathonDetailApi() {
                             href={resource.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all"
+                            className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all"
                           >
                             Open
                           </a>
                         ) : (
-                          <button className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all">
+                          <button className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all">
                             Open
                           </button>
                         )}
@@ -1790,7 +1790,7 @@ export default function HackathonDetailApi() {
                             </button>
                             <button
                               onClick={() => setActiveTab("assets")}
-                              className="px-4 py-2 border border-grid/30 text-grid/80 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                              className="px-4 py-2 border border-grid/30 text-grid/80 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                             >
                               View Blueprint <Icon icon="lucide:arrow-right" />
                             </button>
@@ -1891,7 +1891,7 @@ export default function HackathonDetailApi() {
                                       onClick={() => handleCardExpand(roundIndex, agent)}
                                     >
                                       <button
-                                        className="close-btn absolute top-6 right-6 font-mono text-xl text-grid/60 hover:text-forest"
+                                        className="close-btn absolute top-6 right-6 font-mono text-xl text-grid/60 hover:text-white"
                                         onClick={(e) => {
                                           e.stopPropagation();
                                           handleCardExpand(roundIndex, agent);
@@ -2118,7 +2118,7 @@ export default function HackathonDetailApi() {
                               a.click();
                             }
                           }}
-                          className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all flex items-center gap-1.5 cursor-pointer text-grid/80"
+                          className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer text-grid/80"
                         >
                           <Icon icon="lucide:download" /> Proposal (.md)
                         </button>
@@ -2135,14 +2135,14 @@ export default function HackathonDetailApi() {
                               a.click();
                             }
                           }}
-                          className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all flex items-center gap-1.5 cursor-pointer text-grid/80"
+                          className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer text-grid/80"
                         >
                           <Icon icon="lucide:download" /> Slides (.md)
                         </button>
                         <button
                           onClick={handleGenerateAssets}
                           disabled={assetsGenerating}
-                          className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all flex items-center gap-1.5 cursor-pointer text-grid/70"
+                          className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer text-grid/70"
                         >
                           <Icon icon="lucide:refresh-cw" className={assetsGenerating ? "animate-spin" : ""} /> Regenerate
                         </button>
@@ -2204,7 +2204,7 @@ export default function HackathonDetailApi() {
                           className={`px-4 py-2 font-mono text-xs tracking-wider uppercase border-b-2 transition-all mr-2 cursor-pointer ${
                             activeAssetView === "doc"
                               ? "border-forest text-forest font-bold"
-                              : "border-transparent text-grid/40 hover:text-forest"
+                              : "border-transparent text-grid/40 hover:text-white"
                           }`}
                         >
                           <span className="flex items-center gap-1.5">
@@ -2216,7 +2216,7 @@ export default function HackathonDetailApi() {
                           className={`px-4 py-2 font-mono text-xs tracking-wider uppercase border-b-2 transition-all cursor-pointer ${
                             activeAssetView === "ppt"
                               ? "border-forest text-forest font-bold"
-                              : "border-transparent text-grid/40 hover:text-forest"
+                              : "border-transparent text-grid/40 hover:text-white"
                           }`}
                         >
                           <span className="flex items-center gap-1.5">
@@ -2268,7 +2268,7 @@ export default function HackathonDetailApi() {
                                     handleCopyToClipboard(`# ${doc.title}\n\n${doc.why_this_is_best}`);
                                   }
                                 }}
-                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-[var(--forest)] hover:text-white cursor-pointer"
                                 title="Copy section markdown"
                               >
                                 <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
@@ -2291,7 +2291,7 @@ export default function HackathonDetailApi() {
                                     handleCopyToClipboard(`## Problem Statement\n${doc.problem_statement}\n\n## Solution Overview\n${doc.solution_overview}`);
                                   }
                                 }}
-                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-[var(--forest)] hover:text-white cursor-pointer"
                                 title="Copy section markdown"
                               >
                                 <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
@@ -2325,7 +2325,7 @@ export default function HackathonDetailApi() {
                                     handleCopyToClipboard(`## Key Features\n${doc.core_features.map(f => `- ${f}`).join('\n')}\n\n## Target Users\n${doc.target_users.map(u => `- ${u}`).join('\n')}`);
                                   }
                                 }}
-                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-[var(--forest)] hover:text-white cursor-pointer"
                                 title="Copy section markdown"
                               >
                                 <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
@@ -2375,7 +2375,7 @@ export default function HackathonDetailApi() {
                                     handleCopyToClipboard(stackStr);
                                   }
                                 }}
-                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-[var(--forest)] hover:text-white cursor-pointer"
                                 title="Copy section markdown"
                               >
                                 <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
@@ -2421,7 +2421,7 @@ export default function HackathonDetailApi() {
                                     handleCopyToClipboard(roadmapStr);
                                   }
                                 }}
-                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-[var(--forest)] hover:text-white cursor-pointer"
                                 title="Copy section markdown"
                               >
                                 <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
@@ -2458,7 +2458,7 @@ export default function HackathonDetailApi() {
                                     handleCopyToClipboard(`## Team Structure\n${doc.team_structure.map(r => `- ${r}`).join('\n')}`);
                                   }
                                 }}
-                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-[var(--forest)] hover:text-white cursor-pointer"
                                 title="Copy section markdown"
                               >
                                 <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
@@ -2489,7 +2489,7 @@ export default function HackathonDetailApi() {
                                     handleCopyToClipboard(`## Unique Selling Points\n${doc.unique_selling_points.map(u => `- ${u}`).join('\n')}`);
                                   }
                                 }}
-                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-[var(--forest)] hover:text-white cursor-pointer"
                                 title="Copy section markdown"
                               >
                                 <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
@@ -2522,7 +2522,7 @@ export default function HackathonDetailApi() {
                                     handleCopyToClipboard(riskStr);
                                   }
                                 }}
-                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-[var(--forest)] hover:text-white cursor-pointer"
                                 title="Copy section markdown"
                               >
                                 <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
@@ -2559,7 +2559,7 @@ export default function HackathonDetailApi() {
                                     handleCopyToClipboard(`## Judging Criteria Alignment\n${doc.judging_criteria_alignment.map(j => `- ${j}`).join('\n')}`);
                                   }
                                 }}
-                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-forest hover:text-white cursor-pointer"
+                                className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity p-2 border border-grid/20 hover:bg-[var(--forest)] hover:text-white cursor-pointer"
                                 title="Copy section markdown"
                               >
                                 <Icon icon="lucide:copy" className="w-3.5 h-3.5" />
@@ -2661,7 +2661,7 @@ export default function HackathonDetailApi() {
                                 <button
                                   onClick={() => setSelectedSlideIndex(prev => Math.max(0, prev - 1))}
                                   disabled={selectedSlideIndex === 0}
-                                  className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-forest flex items-center gap-1 cursor-pointer"
+                                  className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-white flex items-center gap-1 cursor-pointer"
                                 >
                                   <Icon icon="lucide:arrow-left" /> Previous
                                 </button>
@@ -2671,7 +2671,7 @@ export default function HackathonDetailApi() {
                                 <button
                                   onClick={() => setSelectedSlideIndex(prev => Math.min((pptContent?.slides?.length ?? 1) - 1, prev + 1))}
                                   disabled={selectedSlideIndex === (pptContent?.slides?.length ?? 1) - 1}
-                                  className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-forest flex items-center gap-1 cursor-pointer"
+                                  className="px-3 py-1.5 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-white flex items-center gap-1 cursor-pointer"
                                 >
                                   Next <Icon icon="lucide:arrow-right" />
                                 </button>
@@ -2796,7 +2796,7 @@ export default function HackathonDetailApi() {
                           type="button"
                           onClick={() => handleSuggestionClick(suggestion)}
                           disabled={chatLoading}
-                          className="border border-grid/20 px-3 py-2 font-mono text-[10px] tracking-widest uppercase text-grid/70 transition-all hover:border-forest hover:bg-forest hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                          className="border border-grid/20 px-3 py-2 font-mono text-[10px] tracking-widest uppercase text-grid/70 transition-all hover:border-forest hover:bg-[var(--forest)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {suggestion}
                         </button>
@@ -2910,7 +2910,7 @@ export default function HackathonDetailApi() {
                           key={suggestion}
                           onClick={() => handleSuggestionClick(suggestion)}
                           disabled={chatLoading}
-                          className="w-full text-left px-3 py-2 border border-grid/20 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                          className="w-full text-left px-3 py-2 border border-grid/20 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {suggestion}
                         </button>

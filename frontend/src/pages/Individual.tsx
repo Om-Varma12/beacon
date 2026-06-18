@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Icon } from '@iconify/react';
 import { useNavbar } from '../context/NavbarContext';
 
@@ -427,7 +427,7 @@ export default function Individual() {
                       'Run AI Analysis'
                     )}
                   </button>
-                  <button className="flex-1 border border-grid/30 py-2 px-4 font-mono text-[10px] tracking-widest uppercase hover:bg-forest hover:text-white transition-all">
+                  <button className="flex-1 border border-grid/30 py-2 px-4 font-mono text-[10px] tracking-widest uppercase hover:bg-[var(--forest)] hover:text-white transition-all">
                     Re-run
                   </button>
                 </div>
@@ -446,7 +446,7 @@ export default function Individual() {
                 className={`px-6 py-4 font-mono text-[10px] tracking-widest uppercase transition-all relative flex items-center gap-2 border-b-2 ${
                   activeTab === tab.id
                     ? 'bg-(--forest) text-(--paper) border-(--forest)'
-                    : 'text-grid/60 border-transparent hover:text-forest hover:border-grid/40'
+                    : 'text-grid/60 border-transparent hover:text-white hover:border-grid/40'
                 }`}
               >
                 {tab.label}
@@ -480,7 +480,7 @@ export default function Individual() {
                       {hackathonData.themes.map((theme) => (
                         <span
                           key={theme}
-                          className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all cursor-pointer"
+                          className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all cursor-pointer"
                         >
                           {theme}
                         </span>
@@ -562,7 +562,7 @@ export default function Individual() {
                           </div>
                           <span className="font-mono text-xs text-forest">{resource.name}</span>
                         </div>
-                        <button className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all">
+                        <button className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all">
                           Open
                         </button>
                       </div>
@@ -642,7 +642,7 @@ export default function Individual() {
                             </div>
 
                             <details className="text-xs">
-                              <summary className="font-mono text-[9px] text-grid/60 uppercase cursor-pointer hover:text-forest">
+                              <summary className="font-mono text-[9px] text-grid/60 uppercase cursor-pointer hover:text-white">
                                 View Reasoning
                               </summary>
                               <p className="mt-2 text-grid/70">{agent.reasoning}</p>
@@ -789,10 +789,10 @@ export default function Individual() {
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="font-display text-2xl text-forest">Generated Assets</h2>
                     <div className="flex space-x-2">
-                      <button className="px-4 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase hover:bg-forest hover:text-white transition-all">
+                      <button className="px-4 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase hover:bg-[var(--forest)] hover:text-white transition-all">
                         Generate
                       </button>
-                      <button className="px-4 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase hover:bg-forest hover:text-white transition-all">
+                      <button className="px-4 py-2 border border-grid/30 font-mono text-[10px] tracking-widest uppercase hover:bg-[var(--forest)] hover:text-white transition-all">
                         Download All
                       </button>
                     </div>
@@ -821,10 +821,10 @@ export default function Individual() {
                             </div>
                           </div>
                           <div className="flex space-x-2">
-                            <button className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all">
+                            <button className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all">
                               Copy
                             </button>
-                            <button className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all">
+                            <button className="px-3 py-1 border border-grid/30 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all">
                               Regenerate
                             </button>
                           </div>
@@ -906,7 +906,7 @@ export default function Individual() {
                     <button
                       key={suggestion}
                       onClick={() => handleSuggestionClick(suggestion)}
-                      className="w-full text-left px-3 py-2 border border-grid/20 font-mono text-[10px] tracking-wider uppercase hover:bg-forest hover:text-white transition-all"
+                      className="w-full text-left px-3 py-2 border border-grid/20 font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all"
                     >
                       {suggestion}
                     </button>

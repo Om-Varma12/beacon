@@ -1,4 +1,4 @@
-from agents.llm import LLM
+from agents.ollama_llm import OllamaLLM
 from orchestrator.pipeline import DebatePipeline
 
 
@@ -36,7 +36,7 @@ class AnalysisService:
 
 
         # Run Debate Pipeline
-        llm = LLM()
+        llm = OllamaLLM()
 
         pipeline = DebatePipeline(
             llm=llm,

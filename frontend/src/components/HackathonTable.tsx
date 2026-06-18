@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { Icon } from '@iconify/react';
@@ -24,7 +24,7 @@ interface BackendHackathon {
   id?: number | string;
   external_id?: number | string | null;
   title?: string;
-  description?: string;
+  description?: string;  // plain-text preview — HTML stripped & truncated by backend
   college_name?: string;
   team_size?: unknown;
   mode?: string;

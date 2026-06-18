@@ -1,5 +1,6 @@
 from .database import Database
 import json
+import re
 from datetime import datetime
 
 def parse_date(value):
@@ -90,7 +91,16 @@ class HackathonRepository:
             order = "ASC" if order.lower() == "asc" else "DESC"
 
             query = f"""
-                SELECT *
+                SELECT
+                id,
+                external_id,
+                title,
+                description,
+                college_name,
+                team_size,
+                mode,
+                is_paid,
+                deadline
                 FROM hackathons
                 WHERE deadline IS NULL OR deadline >= CURRENT_DATE
                 ORDER BY {sort_by} {order}

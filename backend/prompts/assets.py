@@ -48,4 +48,5 @@ Rules:
 - No markdown/code fences
 - Be highly specific, professional, and practical. Choose appropriate modern technologies (e.g. React/NextJS, FastAPI/NodeJS, Supabase/PostgreSQL, TailwindCSS, etc.) that suit the project's actual features and requirements. Do not just output placeholders.
 - The presentation slides should cover: Title Slide, Problem Statement, Solution, Key Features, Architecture & Tech Stack, Roadmap & Execution, Business Value & USPs, Risks & Conclusion.
+- For the `presentation_slides`, each bullet in the `bullets` array must be highly informative, professional, and descriptive (typically 12 to 25 words). They must represent complete, meaningful thoughts or specific technical/business details instead of short 3-5 word fragments. Each slide should convey a medium, substantial amount of text suitable for a high-quality, professional hackathon pitch deck.
 '''

@@ -1,4 +1,4 @@
-﻿import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Icon } from "@iconify/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
@@ -1072,8 +1072,7 @@ export default function HackathonDetailApi() {
   };
 
   const handleRunAnalysis = () => {
-    // If analysis already exists, do not trigger another run here.
-    if (hasAnalysis) return;
+    if (isAnalysisRunning) return;
 
     // Delegate to callAnalyze which performs the backend request.
     callAnalyze();
@@ -1198,8 +1197,8 @@ export default function HackathonDetailApi() {
                 <div className="flex space-x-2">
                   <button
                     onClick={handleRunAnalysis}
-                    disabled={isAnalysisRunning}
-                    className="flex-1 border border-forest text-forest hover:bg-[var(--forest)] hover:text-white py-2 px-4 font-mono text-[10px] tracking-widest uppercase transition-all disabled:opacity-50"
+                    disabled={isAnalysisRunning || hasAnalysis}
+                    className="flex-1 border border-forest text-forest enabled:hover:bg-[var(--forest)] enabled:hover:text-white py-2 px-4 font-mono text-[10px] tracking-widest uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isAnalysisRunning ? (
                       <span className="flex items-center justify-center space-x-2">
@@ -1212,8 +1211,8 @@ export default function HackathonDetailApi() {
                   </button>
                   <button
                     onClick={handleRunAnalysis}
-                    disabled={isAnalysisRunning || hasAnalysis}
-                    className={`flex-1 border border-forest bg-white py-2 px-4 font-mono text-[10px] tracking-widest uppercase text-forest transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:bg-(--forest) hover:text-(--paper) hover:border-(--forest)`}
+                    disabled={isAnalysisRunning || !hasAnalysis}
+                    className="flex-1 border border-forest bg-white py-2 px-4 font-mono text-[10px] tracking-widest uppercase text-forest transition-all enabled:hover:bg-(--forest) enabled:hover:text-(--paper) enabled:hover:border-(--forest) disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Re-run
                   </button>
@@ -1232,16 +1231,16 @@ export default function HackathonDetailApi() {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 aria-current={activeTab === tab.id ? "true" : "false"}
-                className={`px-6 py-4 font-mono text-[10px] tracking-widest uppercase transition-all relative flex items-center gap-2 border-b-2 ${
+                className={`px-6 py-4 font-mono text-[10px] tracking-widest uppercase transition-all relative flex items-center gap-2 border-b-2 cursor-pointer ${
                   activeTab === tab.id
                     ? "bg-(--forest) text-(--paper) border-(--forest)"
-                    : "text-grid/60 border-transparent hover:text-white hover:border-grid/40"
+                    : "text-grid/60 border-transparent hover:text-forest hover:border-forest/40"
                 }`}
               >
                 <span className="hidden sm:inline">{tab.label}</span>
                 <span className="inline sm:hidden">{tab.label}</span>
                 {activeTab === tab.id && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-forest" />
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--forest)]" />
                 )}
               </button>
             ))}
@@ -1587,7 +1586,7 @@ export default function HackathonDetailApi() {
                           </h3>
                           <div className="flex items-end justify-between">
                             <span className="font-display text-2xl font-bold text-gold">
-                              {analysisLeaderboard[1] ? "2.0" : "-"}
+                              {analysisLeaderboard[1] ? "2" : "-"}
                             </span>
                             <Icon
                               icon="lucide:award"
@@ -1598,7 +1597,7 @@ export default function HackathonDetailApi() {
 
                         <div className="order-1 w-full flex-1 bg-white border border-grid/20 p-6 premium-card relative md:order-2 md:w-auto md:-translate-y-2 md:pb-8">
                           <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-mint" />
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-forest px-2 py-0.5">
+                          <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--forest)] px-2 py-0.5">
                             <p className="font-mono text-[8px] font-bold uppercase tracking-widest text-white">
                               Champion
                             </p>
@@ -1611,7 +1610,7 @@ export default function HackathonDetailApi() {
                           </h3>
                           <div className="flex items-end justify-between">
                             <span className="font-display text-3xl font-bold text-mint">
-                              {analysisLeaderboard[0] ? "1.0" : "-"}
+                              {analysisLeaderboard[0] ? "1" : "-"}
                             </span>
                             <Icon
                               icon="lucide:trophy"
@@ -1630,7 +1629,7 @@ export default function HackathonDetailApi() {
                           </h3>
                           <div className="flex items-end justify-between">
                             <span className="font-display text-2xl font-bold text-coral">
-                              {analysisLeaderboard[2] ? "3.0" : "-"}
+                              {analysisLeaderboard[2] ? "3" : "-"}
                             </span>
                             <Icon
                               icon="lucide:award"
@@ -1651,7 +1650,7 @@ export default function HackathonDetailApi() {
                           {Object.entries(analysisFinalScores)
                             .sort(([, leftScore], [, rightScore]) => rightScore - leftScore)
                             .map(([name, score], index) => {
-                              const colors = ["bg-mint", "bg-gold", "bg-coral"];
+                              const colors = ["bg-(--mint)", "bg-(--gold)", "bg-(--coral)"];
 
                               // Scores from backend are expected in 0-10 range.
                               // Scale to 0-100 for display and progress width.
@@ -1668,9 +1667,9 @@ export default function HackathonDetailApi() {
                                       {name}
                                     </p>
                                   </div>
-                                  <div className="relative h-2.5 flex-1 score-bar-bg">
+                                  <div className="relative h-2.5 w-full md:w-auto md:flex-1 score-bar-bg">
                                     <div
-                                      className={`absolute inset-y-0 left-0 ${colors[index] ?? "bg-forest"}`}
+                                      className={`absolute inset-y-0 left-0 ${colors[index] ?? "bg-(--forest)"}`}
                                       style={{ width: `${scaled}%` }}
                                     />
                                   </div>
@@ -1743,7 +1742,7 @@ export default function HackathonDetailApi() {
 
                     {/* Solution Blueprint & Slide Deck Action Banner */}
                     <div className="mt-8 bg-paper border border-grid/20 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden premium-card">
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-forest" />
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--forest)]" />
                       <div className="space-y-2">
                         <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-forest bg-forest/5 border border-forest/10 px-2 py-0.5">
                           Action Center
@@ -1845,7 +1844,7 @@ export default function HackathonDetailApi() {
 
                               <div className="flex justify-between items-center mb-8">
                                 <div>
-                                  <span className="font-mono text-[10px] text-white bg-forest px-2 py-0.5 uppercase mb-2 inline-block">
+                                  <span className="font-mono text-[10px] text-white bg-[var(--forest)] px-2 py-0.5 uppercase mb-2 inline-block">
                                     Phase {String(roundNumber).padStart(2, "0")}
                                   </span>
                                   <h2 className="font-display text-4xl">{phaseLabel}</h2>
@@ -1956,7 +1955,7 @@ export default function HackathonDetailApi() {
                                                 <ul className="text-[13px] mt-2 space-y-2">
                                                   {(idea?.core_features ?? debate?.improved_idea?.core_features ?? []).map((feature) => (
                                                     <li key={feature} className="flex items-center gap-2">
-                                                      <span className="w-1.5 h-1.5 bg-forest" />
+                                                      <span className="w-1.5 h-1.5 bg-[var(--forest)]" />
                                                       {feature}
                                                     </li>
                                                   ))}
@@ -2079,7 +2078,8 @@ export default function HackathonDetailApi() {
                             AI-Generated Solution Blueprint and Slide Outline based on the Winning Idea
                           </p>
                         </div>
-                    {assetsQuery.data?.data?.generated && (
+
+                    {assetsQuery.data?.data?.generated && (
                       <div className="flex flex-wrap gap-2">
                         <button
                           onClick={() => {
@@ -2204,7 +2204,7 @@ export default function HackathonDetailApi() {
                           className={`px-4 py-2 font-mono text-xs tracking-wider uppercase border-b-2 transition-all mr-2 cursor-pointer ${
                             activeAssetView === "doc"
                               ? "border-forest text-forest font-bold"
-                              : "border-transparent text-grid/40 hover:text-white"
+                              : "border-transparent text-grid/40 hover:text-forest hover:border-forest/40"
                           }`}
                         >
                           <span className="flex items-center gap-1.5">
@@ -2216,7 +2216,7 @@ export default function HackathonDetailApi() {
                           className={`px-4 py-2 font-mono text-xs tracking-wider uppercase border-b-2 transition-all cursor-pointer ${
                             activeAssetView === "ppt"
                               ? "border-forest text-forest font-bold"
-                              : "border-transparent text-grid/40 hover:text-white"
+                              : "border-transparent text-grid/40 hover:text-forest hover:border-forest/40"
                           }`}
                         >
                           <span className="flex items-center gap-1.5">
@@ -2276,7 +2276,7 @@ export default function HackathonDetailApi() {
                               <h3 className="font-display text-2xl text-forest mb-2">
                                 {assetsQuery.data.data.doc_content.title}
                               </h3>
-                              <div className="w-12 h-1 bg-forest mb-6"></div>
+                              <div className="w-12 h-1 bg-[var(--forest)] mb-6"></div>
                               <p className="text-sm leading-relaxed text-grid/80 italic">
                                 {assetsQuery.data.data.doc_content.why_this_is_best}
                               </p>
@@ -2338,7 +2338,7 @@ export default function HackathonDetailApi() {
                                   <ul className="space-y-3">
                                     {(assetsQuery.data.data.doc_content.core_features ?? []).map((feat, idx) => (
                                       <li key={idx} className="flex gap-2 text-xs text-grid/80 items-start">
-                                        <div className="w-1.5 h-1.5 bg-forest rounded-full mt-1.5 flex-shrink-0" />
+                                        <div className="w-1.5 h-1.5 bg-[var(--forest)] rounded-full mt-1.5 flex-shrink-0" />
                                         <span>{feat}</span>
                                       </li>
                                     ))}
@@ -2432,7 +2432,7 @@ export default function HackathonDetailApi() {
                               <div className="space-y-6">
                                 {(assetsQuery.data.data.doc_content.implementation_phases ?? []).map((phase, pIdx) => (
                                   <div key={pIdx} className="relative pl-6 border-l-2 border-forest/15 last:border-l-0 pb-2">
-                                    <div className="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-forest border-2 border-white" />
+                                    <div className="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-[var(--forest)] border-2 border-white" />
                                     <h5 className="font-display text-sm text-forest font-bold mb-3">
                                       {phase.phase}
                                     </h5>
@@ -2596,7 +2596,7 @@ export default function HackathonDetailApi() {
                                 onClick={() => setSelectedSlideIndex(idx)}
                                 className={`w-full text-left px-4 py-3 border font-mono transition-all text-xs flex items-center gap-3 cursor-pointer ${
                                   selectedSlideIndex === idx
-                                    ? "bg-forest text-white border-forest"
+                                    ? "bg-[var(--forest)] text-white border-[var(--forest)]"
                                     : "bg-white text-forest border-grid/20 hover:border-forest/50"
                                 }`}
                               >
@@ -2632,7 +2632,7 @@ export default function HackathonDetailApi() {
                                       {pptContent.slides[selectedSlideIndex].title}
                                     </h4>
                                   </div>
-                                  <div className="font-mono text-[10px] font-bold text-white bg-forest px-2 py-1 select-none">
+                                  <div className="font-mono text-[10px] font-bold text-white bg-[var(--forest)] px-2 py-1 select-none">
                                     SLIDE {pptContent.slides[selectedSlideIndex].slide_number}
                                   </div>
                                 </div>
@@ -2874,7 +2874,7 @@ export default function HackathonDetailApi() {
                         <div
                           className={`max-w-[90%] border p-3 text-sm ${
                             message.role === "user"
-                              ? "border-forest bg-forest text-white"
+                              ? "border-[var(--forest)] bg-[var(--forest)] text-white"
                               : "border-grid/20 bg-white text-forest"
                           }`}
                         >

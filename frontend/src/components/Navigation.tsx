@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { useNavbar } from '../context/NavbarContext';
@@ -71,7 +71,7 @@ export default function Navigation() {
         isNavbarVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
     >
-      <div className="max-w-[93rem] mx-auto px-6 md:px-8 h-full flex items-center justify-between">
+      <div className="px-6 lg:px-16 h-full flex items-center justify-between">
         {/* Logo and Wordmark */}
         <a href="#" className="flex items-center h-full">
           <div className="flex items-center origin-left">

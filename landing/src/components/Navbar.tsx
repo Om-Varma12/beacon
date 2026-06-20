@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Icon } from '@iconify/react'
+import { SignupPopup } from './SignupPopup'
 
 interface NavbarProps {
   visible?: boolean
@@ -9,6 +10,7 @@ interface NavbarProps {
 export function Navbar({ visible = true }: NavbarProps) {
   const [compressed, setCompressed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [signupOpen, setSignupOpen] = useState(false)
   const lastScrollY = useRef(0)
 
   useEffect(() => {
@@ -73,6 +75,12 @@ export function Navbar({ visible = true }: NavbarProps) {
     compressed: { gap: '8px', transition: springConfig }
   }
 
+  const handleSignInClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    setMobileOpen(false)
+    setSignupOpen(true)
+  }
+
   return (
     <>
       <motion.nav
@@ -109,12 +117,12 @@ export function Navbar({ visible = true }: NavbarProps) {
             variants={navLinksContainerVariants}
             className="hidden md:flex items-center"
           >
-            <a
-              href="#waitlist"
-              className="jetbrains text-[10px] uppercase px-4 py-2 border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-all select-none"
+            <button
+              onClick={handleSignInClick}
+              className="jetbrains text-[10px] uppercase px-4 py-2 border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-all select-none cursor-pointer"
             >
               Sign In
-            </a>
+            </button>
             <a
               href="#waitlist"
               className="jetbrains text-[10px] uppercase px-4 py-2 border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-all select-none"
@@ -144,13 +152,12 @@ export function Navbar({ visible = true }: NavbarProps) {
             transition={{ duration: 0.2, ease: 'easeOut' }}
             className="fixed top-[64px] left-0 right-0 z-40 bg-paper/95 backdrop-blur-md border-b border-grid/20 flex flex-col px-6 py-8 gap-4 md:hidden"
           >
-            <a
-              href="#waitlist"
-              onClick={() => setMobileOpen(false)}
-              className="jetbrains text-[11px] uppercase px-6 py-4 border border-forest text-forest bg-transparent text-center hover:bg-forest hover:text-white transition-all"
+            <button
+              onClick={handleSignInClick}
+              className="jetbrains text-[11px] uppercase px-6 py-4 border border-forest text-forest bg-transparent text-center hover:bg-forest hover:text-white transition-all cursor-pointer w-full"
             >
               Sign In
-            </a>
+            </button>
             <a
               href="#waitlist"
               onClick={() => setMobileOpen(false)}
@@ -161,6 +168,9 @@ export function Navbar({ visible = true }: NavbarProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Signup Popup */}
+      <SignupPopup isOpen={signupOpen} onClose={() => setSignupOpen(false)} />
     </>
   )
 }

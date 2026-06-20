@@ -1,0 +1,252 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Icon } from '@iconify/react';
+
+interface SignupPopupProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const bars = [
+  { animationDelay: '-1.2s', transform: 'rotate(.0001deg) translate(146%)' },
+  { animationDelay: '-1.1s', transform: 'rotate(30deg) translate(146%)' },
+  { animationDelay: '-1.0s', transform: 'rotate(60deg) translate(146%)' },
+  { animationDelay: '-0.9s', transform: 'rotate(90deg) translate(146%)' },
+  { animationDelay: '-0.8s', transform: 'rotate(120deg) translate(146%)' },
+  { animationDelay: '-0.7s', transform: 'rotate(150deg) translate(146%)' },
+  { animationDelay: '-0.6s', transform: 'rotate(180deg) translate(146%)' },
+  { animationDelay: '-0.5s', transform: 'rotate(210deg) translate(146%)' },
+  { animationDelay: '-0.4s', transform: 'rotate(240deg) translate(146%)' },
+  { animationDelay: '-0.3s', transform: 'rotate(270deg) translate(146%)' },
+  { animationDelay: '-0.2s', transform: 'rotate(300deg) translate(146%)' },
+  { animationDelay: '-0.1s', transform: 'rotate(330deg) translate(146%)' }
+];
+
+const Spinner = ({ size = 20, color = '#fcf9f6' }: { size?: number; color?: string }) => {
+  return (
+    <div style={{ width: size, height: size }}>
+      <style>
+        {`
+          @keyframes spin {
+              0% { opacity: 0.15; }
+              100% { opacity: 1; }
+          }
+        `}
+      </style>
+      <div className="relative top-1/2 left-1/2" style={{ width: size, height: size }}>
+        {bars.map((item) => (
+          <div
+            key={item.transform}
+            className="absolute h-[8%] w-[24%] -left-[10%] -top-[3.9%]"
+            style={{ backgroundColor: color, animation: 'spin 1.2s linear infinite', ...item }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export function SignupPopup({ isOpen, onClose }: SignupPopupProps) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  // Reset form states on close/open
+  useEffect(() => {
+    if (isOpen) {
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
+      setError('');
+      setSuccess(false);
+      setLoading(false);
+      // Disable background scrolling when modal is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const validateEmail = (email: string) => {
+    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!email || !password || !confirmPassword) {
+      setError('All fields are required');
+      return;
+    }
+
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+
+    // Mock API call
+    setTimeout(() => {
+      setLoading(false);
+      setSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+    }, 1500);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="fixed inset-0 bg-forest/40 backdrop-blur-sm"
+      />
+
+      {/* Modal Container */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        className="relative bg-paper border border-grid/20 p-8 md:p-10 w-full max-w-md z-10 shadow-2xl animate-fade-in"
+      >
+        {/* Corner Markers */}
+        <div className="corner-marker corner-tl" />
+        <div className="corner-marker corner-tr" />
+        <div className="corner-marker corner-bl" />
+        <div className="corner-marker corner-br" />
+
+        {/* Close Button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center border border-grid/20 hover:bg-forest hover:text-white transition-all rounded-sm cursor-pointer"
+          aria-label="Close modal"
+        >
+          <Icon icon="lucide:x" width={16} />
+        </button>
+
+        {/* Title */}
+        <div className="mb-8 text-center">
+          <span className="typography-technical-label text-grid">CREATE ACCOUNT</span>
+          <h2 className="space-grotesk text-3xl font-bold mt-2 text-forest">Join Beacon</h2>
+        </div>
+
+        {success ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-6 bg-mint/10 border border-mint text-forest text-center jetbrains text-sm"
+          >
+            <div className="flex justify-center mb-3">
+              <Icon icon="lucide:check-circle" className="text-mint" width={32} />
+            </div>
+            <p className="font-bold mb-1">Registration Complete!</p>
+            <p className="text-xs opacity-80">Welcome to Beacon.</p>
+          </motion.div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label htmlFor="signup-email" className="typography-technical-sm text-forest mb-2 block">
+                Email Address *
+              </label>
+              <input
+                id="signup-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your.email@example.com"
+                className="w-full bg-transparent border-b border-grid/20 px-0 py-2.5 jetbrains text-sm focus:outline-none focus:border-forest transition-colors disabled:opacity-50"
+                disabled={loading}
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label htmlFor="signup-password" className="typography-technical-sm text-forest mb-2 block">
+                Password *
+              </label>
+              <input
+                id="signup-password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-transparent border-b border-grid/20 px-0 py-2.5 jetbrains text-sm focus:outline-none focus:border-forest transition-colors disabled:opacity-50"
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="signup-confirm-password" className="typography-technical-sm text-forest mb-2 block">
+                Confirm Password *
+              </label>
+              <input
+                id="signup-confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full bg-transparent border-b border-grid/20 px-0 py-2.5 jetbrains text-sm focus:outline-none focus:border-forest transition-colors disabled:opacity-50"
+                disabled={loading}
+              />
+            </div>
+
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 bg-coral/5 text-coral border border-coral/30 jetbrains text-[11px] leading-relaxed"
+              >
+                ⚠ {error}
+              </motion.div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full cursor-pointer jetbrains text-[10px] uppercase px-6 py-4 border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            >
+              {loading ? (
+                <>
+                  <Spinner size={16} color="#022617" />
+                  <span>Processing...</span>
+                </>
+              ) : (
+                <>
+                  <span>Create Account</span>
+                  <Icon icon="lucide:user-plus" width={14} />
+                </>
+              )}
+            </button>
+          </form>
+        )}
+      </motion.div>
+    </div>
+  );
+}

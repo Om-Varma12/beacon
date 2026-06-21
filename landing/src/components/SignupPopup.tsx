@@ -3,6 +3,21 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
+import { Amplify } from 'aws-amplify';
+import { signUp, confirmSignUp } from 'aws-amplify/auth';
+
+try {
+  Amplify.configure({
+    Auth: {
+      Cognito: {
+        userPoolId: process.env.NEXT_PUBLIC_COGNITO_USER_POOL_ID || process.env.VITE_COGNITO_USER_POOL_ID || 'ap-south-1_NTT4B3WFb',
+        userPoolClientId: process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID || process.env.VITE_COGNITO_CLIENT_ID || '4hg51l3srlfeq4kes57ruq5e6h',
+      },
+    },
+  });
+} catch (e) {
+  console.error('Amplify configure error:', e);
+}
 
 interface SignupPopupProps {
   isOpen: boolean;
@@ -49,9 +64,12 @@ const Spinner = ({ size = 20, color = '#fcf9f6' }: { size?: number; color?: stri
 };
 
 export function SignupPopup({ isOpen, onClose }: SignupPopupProps) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [otp, setOtp] = useState('');
+  const [step, setStep] = useState<'details' | 'otp'>('details');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -59,9 +77,12 @@ export function SignupPopup({ isOpen, onClose }: SignupPopupProps) {
   // Reset form states on close/open
   useEffect(() => {
     if (isOpen) {
+      setName('');
       setEmail('');
       setPassword('');
       setConfirmPassword('');
+      setOtp('');
+      setStep('details');
       setError('');
       setSuccess(false);
       setLoading(false);
@@ -81,40 +102,76 @@ export function SignupPopup({ isOpen, onClose }: SignupPopupProps) {
     return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!email || !password || !confirmPassword) {
-      setError('All fields are required');
-      return;
+    if (step === 'details') {
+      if (!name || !email || !password || !confirmPassword) {
+        setError('All fields are required');
+        return;
+      }
+
+      if (!validateEmail(email)) {
+        setError('Please enter a valid email address');
+        return;
+      }
+
+      if (password.length < 8) {
+        setError('Password must be at least 8 characters long');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setError('Passwords do not match');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const result = await signUp({
+          username: email,
+          password,
+          options: {
+            userAttributes: {
+              email,
+              name,
+            },
+          },
+        });
+        console.log('Cognito SignUp Success - Result Details:', result);
+        setStep('otp');
+      } catch (err: any) {
+        console.error('Cognito SignUp Error:', err);
+        setError(err.message || String(err));
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      if (!otp) {
+        setError('Verification code is required');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const result = await confirmSignUp({
+          username: email,
+          confirmationCode: otp,
+        });
+        console.log('Cognito OTP Verification Success - Result Details:', result);
+        console.log('User Account Confirmed Details:', { name, email });
+        setSuccess(true);
+        setTimeout(() => {
+          onClose();
+        }, 2000);
+      } catch (err: any) {
+        console.error('Cognito Verification Error:', err);
+        setError(err.message || String(err));
+      } finally {
+        setLoading(false);
+      }
     }
-
-    if (!validateEmail(email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    setLoading(true);
-
-    // Mock API call
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess(true);
-      setTimeout(() => {
-        onClose();
-      }, 2000);
-    }, 1500);
   };
 
   return (
@@ -171,51 +228,97 @@ export function SignupPopup({ isOpen, onClose }: SignupPopupProps) {
           </motion.div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label htmlFor="signup-email" className="typography-technical-sm text-forest mb-2 block">
-                Email Address *
-              </label>
-              <input
-                id="signup-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@example.com"
-                className="w-full bg-transparent border-b border-grid/20 px-0 py-2.5 jetbrains text-sm focus:outline-none focus:border-forest transition-colors disabled:opacity-50"
-                disabled={loading}
-                autoFocus
-              />
-            </div>
+            {step === 'details' ? (
+              <>
+                <div>
+                  <label htmlFor="signup-name" className="typography-technical-sm text-forest mb-2 block">
+                    Name *
+                  </label>
+                  <input
+                    id="signup-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="John Doe"
+                    className="w-full bg-transparent border-b border-grid/20 px-0 py-2.5 jetbrains text-sm focus:outline-none focus:border-forest transition-colors disabled:opacity-50"
+                    disabled={loading}
+                    autoFocus
+                  />
+                </div>
 
-            <div>
-              <label htmlFor="signup-password" className="typography-technical-sm text-forest mb-2 block">
-                Password *
-              </label>
-              <input
-                id="signup-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-transparent border-b border-grid/20 px-0 py-2.5 jetbrains text-sm focus:outline-none focus:border-forest transition-colors disabled:opacity-50"
-                disabled={loading}
-              />
-            </div>
+                <div>
+                  <label htmlFor="signup-email" className="typography-technical-sm text-forest mb-2 block">
+                    Email Address *
+                  </label>
+                  <input
+                    id="signup-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="your.email@example.com"
+                    className="w-full bg-transparent border-b border-grid/20 px-0 py-2.5 jetbrains text-sm focus:outline-none focus:border-forest transition-colors disabled:opacity-50"
+                    disabled={loading}
+                  />
+                </div>
 
-            <div>
-              <label htmlFor="signup-confirm-password" className="typography-technical-sm text-forest mb-2 block">
-                Confirm Password *
-              </label>
-              <input
-                id="signup-confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-transparent border-b border-grid/20 px-0 py-2.5 jetbrains text-sm focus:outline-none focus:border-forest transition-colors disabled:opacity-50"
-                disabled={loading}
-              />
-            </div>
+                <div>
+                  <label htmlFor="signup-password" className="typography-technical-sm text-forest mb-2 block">
+                    Password *
+                  </label>
+                  <input
+                    id="signup-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-transparent border-b border-grid/20 px-0 py-2.5 jetbrains text-sm focus:outline-none focus:border-forest transition-colors disabled:opacity-50"
+                    disabled={loading}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="signup-confirm-password" className="typography-technical-sm text-forest mb-2 block">
+                    Confirm Password *
+                  </label>
+                  <input
+                    id="signup-confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full bg-transparent border-b border-grid/20 px-0 py-2.5 jetbrains text-sm focus:outline-none focus:border-forest transition-colors disabled:opacity-50"
+                    disabled={loading}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-center py-2">
+                  <p className="jetbrains text-xs text-grid">
+                    We&apos;ve sent a verification code to
+                  </p>
+                  <p className="jetbrains text-xs font-bold text-forest mt-1 truncate">
+                    {email}
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="signup-otp" className="typography-technical-sm text-forest mb-2 block">
+                    Verification Code (OTP) *
+                  </label>
+                  <input
+                    id="signup-otp"
+                    type="text"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    placeholder="123456"
+                    className="w-full bg-transparent border-b border-grid/20 px-0 py-2.5 jetbrains text-sm focus:outline-none focus:border-forest transition-colors disabled:opacity-50 text-center tracking-[0.2em] font-bold"
+                    disabled={loading}
+                    autoFocus
+                  />
+                </div>
+              </>
+            )}
 
             {error && (
               <motion.div
@@ -227,23 +330,44 @@ export function SignupPopup({ isOpen, onClose }: SignupPopupProps) {
               </motion.div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full cursor-pointer jetbrains text-[10px] uppercase px-6 py-4 border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-            >
-              {loading ? (
-                <>
-                  <Spinner size={16} color="#022617" />
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <span>Create Account</span>
-                  <Icon icon="lucide:user-plus" width={14} />
-                </>
+            <div className="flex flex-col gap-3">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full cursor-pointer jetbrains text-[10px] uppercase px-6 py-4 border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+              >
+                {loading ? (
+                  <>
+                    <Spinner size={16} color="#022617" />
+                    <span>Processing...</span>
+                  </>
+                ) : step === 'details' ? (
+                  <>
+                    <span>Create Account</span>
+                    <Icon icon="lucide:user-plus" width={14} />
+                  </>
+                ) : (
+                  <>
+                    <span>Confirm Code</span>
+                    <Icon icon="lucide:check" width={14} />
+                  </>
+                )}
+              </button>
+
+              {step === 'otp' && (
+                <button
+                  type="button"
+                  disabled={loading}
+                  onClick={() => {
+                    setStep('details');
+                    setError('');
+                  }}
+                  className="w-full text-center jetbrains text-[9px] uppercase text-grid hover:text-forest transition-colors cursor-pointer py-2"
+                >
+                  ← Edit Account Details
+                </button>
               )}
-            </button>
+            </div>
           </form>
         )}
       </motion.div>

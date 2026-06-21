@@ -1,9 +1,7 @@
-more textual generation for assets
-
 ai analysis spinner animation during analysing idea
-
-4 tabs hover effect turns text-color to white
 
 put logs to keep track of analysis, use langsmith
 
 more robust prompt for llm to extract problem stmts correctly
+
+add name in input in landing and connect to AWS cognito

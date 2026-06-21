@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { Amplify } from 'aws-amplify';
-import { signUp, confirmSignUp, signIn } from 'aws-amplify/auth';
+import { signUp, confirmSignUp, signIn, fetchAuthSession } from 'aws-amplify/auth';
 
 try {
   Amplify.configure({
@@ -159,18 +159,45 @@ export function SignupPopup({ isOpen, onClose, initialMode = 'signup' }: SignupP
 
         setLoading(true);
         try {
-          const result = await confirmSignUp({
+          const confirmResult = await confirmSignUp({
             username: email,
             confirmationCode: otp,
           });
-          console.log('Cognito OTP Verification Success - Result Details:', result);
-          console.log('User Account Confirmed Details:', { name, email });
+          console.log('✅ Cognito OTP Verification Success:', confirmResult);
+          console.log('📋 User Account Confirmed:', { name, email });
+
+          // Auto sign-in with the same credentials right after confirmation
+          console.log('🔐 Auto signing in after signup confirmation...');
+          const signInResult = await signIn({
+            username: email,
+            password,
+          });
+          console.log('✅ Auto Sign-In Success:', signInResult);
+
+          // Retrieve and log all tokens
+          const session = await fetchAuthSession();
+          const accessToken = session.tokens?.accessToken;
+          const idToken = session.tokens?.idToken;
+
+          console.group('🎟️ User Session Tokens');
+          console.log('Access Token (JWT):', accessToken?.toString());
+          console.log('ID Token (JWT):    ', idToken?.toString());
+          console.log('Access Token Payload:', accessToken?.payload);
+          console.log('ID Token Payload:   ', idToken?.payload);
+          console.log('Full Session:', session);
+          console.groupEnd();
+
+          console.group('👤 Signed-Up User Details');
+          console.log('Name:  ', name);
+          console.log('Email: ', email);
+          console.groupEnd();
+
           setSuccess(true);
           setTimeout(() => {
             onClose();
           }, 2000);
         } catch (err: any) {
-          console.error('Cognito Verification Error:', err);
+          console.error('❌ Cognito Error:', err);
           setError(err.message || String(err));
         } finally {
           setLoading(false);
@@ -190,17 +217,35 @@ export function SignupPopup({ isOpen, onClose, initialMode = 'signup' }: SignupP
 
       setLoading(true);
       try {
-        const result = await signIn({
+        const signInResult = await signIn({
           username: email,
           password,
         });
-        console.log('Cognito SignIn Success - Result Details:', result);
+        console.log('✅ Cognito SignIn Success:', signInResult);
+
+        // Retrieve and log all tokens
+        const session = await fetchAuthSession();
+        const accessToken = session.tokens?.accessToken;
+        const idToken = session.tokens?.idToken;
+
+        console.group('🎟️ User Session Tokens');
+        console.log('Access Token (JWT):', accessToken?.toString());
+        console.log('ID Token (JWT):    ', idToken?.toString());
+        console.log('Access Token Payload:', accessToken?.payload);
+        console.log('ID Token Payload:   ', idToken?.payload);
+        console.log('Full Session:', session);
+        console.groupEnd();
+
+        console.group('👤 Signed-In User Details');
+        console.log('Email: ', email);
+        console.groupEnd();
+
         setSuccess(true);
         setTimeout(() => {
           onClose();
         }, 2000);
       } catch (err: any) {
-        console.error('Cognito SignIn Error:', err);
+        console.error('❌ Cognito SignIn Error:', err);
         setError(err.message || String(err));
       } finally {
         setLoading(false);

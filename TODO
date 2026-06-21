@@ -4,4 +4,4 @@ put logs to keep track of analysis, use langsmith
 
 more robust prompt for llm to extract problem stmts correctly
 
-add name in input in landing and connect to AWS cognito
+landing and frontend connection + bearer sent with each api request

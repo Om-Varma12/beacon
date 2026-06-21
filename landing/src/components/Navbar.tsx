@@ -84,6 +84,17 @@ export function Navbar({ visible = true }: NavbarProps) {
     setSignupOpen(true)
   }
 
+  const handleSignOut = async () => {
+    try {
+      await signOut({ global: true });
+    } catch (e) {
+      console.warn('Amplify signOut error:', e);
+    }
+    localStorage.removeItem('beacon_user');
+    sessionStorage.clear();
+    console.log('Signed out — all traces cleared.');
+  }
+
   return (
     <>
       <motion.nav
@@ -127,10 +138,7 @@ export function Navbar({ visible = true }: NavbarProps) {
               Sign In
             </button>
             <button
-              onClick={async () => {
-                await signOut();
-                console.log('Signed out');
-              }}
+              onClick={handleSignOut}
               className="jetbrains text-[10px] uppercase px-4 py-2 border border-coral text-coral bg-transparent hover:bg-coral hover:text-white transition-all select-none cursor-pointer"
             >
               Sign Out Test
@@ -172,8 +180,7 @@ export function Navbar({ visible = true }: NavbarProps) {
             </button>
             <button
               onClick={async () => {
-                await signOut();
-                console.log('Signed out');
+                await handleSignOut();
                 setMobileOpen(false);
               }}
               className="jetbrains text-[11px] uppercase px-6 py-4 border border-coral text-coral bg-transparent text-center hover:bg-coral hover:text-white transition-all cursor-pointer w-full"

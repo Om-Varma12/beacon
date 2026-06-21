@@ -2,6 +2,22 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { useNavbar } from '../context/NavbarContext';
+import { SignupPopup } from './SignupPopup';
+import { Amplify } from 'aws-amplify';
+import { signOut } from 'aws-amplify/auth';
+
+try {
+  Amplify.configure({
+    Auth: {
+      Cognito: {
+        userPoolId: import.meta.env?.VITE_COGNITO_USER_POOL_ID || 'ap-south-1_NTT4B3WFb',
+        userPoolClientId: import.meta.env?.VITE_COGNITO_CLIENT_ID || '4hg51l3srlfeq4kes57ruq5e6h',
+      },
+    },
+  });
+} catch (e) {
+  console.error('Amplify configure error:', e);
+}
 
 export default function Navigation() {
   const { isNavbarVisible } = useNavbar();
@@ -9,6 +25,39 @@ export default function Navigation() {
   const lastScrollY = useRef(0);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [isAuthPopupOpen, setIsAuthPopupOpen] = useState(false);
+
+  // Read user data stored by the landing app after signup/login
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const userParam = params.get('user');
+
+      if (userParam) {
+        const decoded = decodeURIComponent(userParam);
+        const userData = JSON.parse(decoded);
+        localStorage.setItem('beacon_user', JSON.stringify(userData));
+        setUser(userData);
+
+        // Clean the query parameters from the URL
+        const url = new URL(window.location.href);
+        url.searchParams.delete('user');
+        window.history.replaceState({}, document.title, url.pathname + url.search);
+      } else {
+        const stored = localStorage.getItem('beacon_user');
+        if (stored) setUser(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error('Failed to parse user session from URL/localStorage:', e);
+      try {
+        const stored = localStorage.getItem('beacon_user');
+        if (stored) setUser(JSON.parse(stored));
+      } catch {
+        // ignore parse errors
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -79,7 +128,8 @@ export default function Navigation() {
   };
 
   return (
-    <motion.nav
+    <>
+      <motion.nav
       initial="expanded"
       animate={compressed ? 'compressed' : 'expanded'}
       variants={navVariants}
@@ -139,36 +189,65 @@ export default function Navigation() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-display text-sm font-bold text-forest truncate">
-                        Om Varma
+                        {user?.name ?? 'Guest'}
                       </p>
                       <p className="font-mono text-[10px] text-grid/50 truncate tracking-wide">
-                        om.varma@example.com
+                        {user?.email ?? 'Not signed in'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="border-t border-grid/10 pt-4 space-y-1">
-                    <div className="flex items-center gap-2 py-1.5 px-2 text-grid/60 hover:text-forest hover:bg-forest/5 transition-all cursor-pointer">
-                      <Icon icon="lucide:settings" className="text-xs flex-shrink-0" />
-                      <span className="font-mono text-[10px] uppercase tracking-widest">Settings</span>
-                    </div>
-                    <div className="flex items-center gap-2 py-1.5 px-2 text-coral/70 hover:text-coral hover:bg-coral/5 transition-all cursor-pointer">
-                      <Icon icon="lucide:log-out" className="text-xs flex-shrink-0" />
-                      <span className="font-mono text-[10px] uppercase tracking-widest">Sign out</span>
-                    </div>
+                  <div className="border-t border-grid/10 pt-4 space-y-1 flex flex-col">
+                    {user ? (
+                      <>
+                        <button className="flex items-center gap-2 py-1.5 px-2 text-grid/60 hover:text-white hover:bg-[var(--forest)] transition-all cursor-pointer w-full text-left">
+                          <Icon icon="lucide:settings" className="text-xs flex-shrink-0" />
+                          <span className="font-mono text-[10px] uppercase tracking-widest">Settings</span>
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              await signOut({ global: true });
+                            } catch (e) {
+                              console.warn('Amplify signOut error:', e);
+                            }
+                            localStorage.removeItem('beacon_user');
+                            sessionStorage.clear();
+                            setUser(null);
+                            setIsProfileOpen(false);
+                          }}
+                          className="flex items-center gap-2 py-1.5 px-2 text-[var(--forest)] hover:opacity-100 hover:text-white hover:bg-[var(--forest)] transition-all cursor-pointer w-full text-left"
+                        >
+                          <Icon icon="lucide:log-out" className="text-xs flex-shrink-0" />
+                          <span className="font-mono text-[10px] uppercase tracking-widest">Sign out</span>
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setIsAuthPopupOpen(true);
+                          setIsProfileOpen(false);
+                        }}
+                        className="flex items-center justify-center gap-2 py-2 px-3 bg-[var(--forest)] text-white hover:bg-forest/90 transition-all cursor-pointer w-full text-center rounded-sm font-mono text-[10px] uppercase tracking-widest font-bold"
+                      >
+                        <Icon icon="lucide:log-in" className="text-xs flex-shrink-0" />
+                        <span>Sign In</span>
+                      </button>
+                    )}
                   </div>
-                </div>
-
-                {/* Bottom status bar */}
-                <div className="border-t border-grid/10 px-5 py-2.5 flex items-center gap-2">
-                  <span className="h-1.5 w-1.5 rounded-full bg-mint animate-pulse" />
-                  <span className="font-mono text-[9px] uppercase tracking-widest text-grid/40">Active session</span>
                 </div>
               </div>
             )}
           </div>
         </motion.div>
       </div>
-    </motion.nav>
+      </motion.nav>
+      <SignupPopup
+        isOpen={isAuthPopupOpen}
+        onClose={() => setIsAuthPopupOpen(false)}
+        onAuthSuccess={(userData) => setUser(userData)}
+        initialMode="login"
+      />
+    </>
   );
 }

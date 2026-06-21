@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Icon } from '@iconify/react';
 import { useNavbar } from '../context/NavbarContext';
@@ -7,6 +7,22 @@ export default function Navigation() {
   const { isNavbarVisible } = useNavbar();
   const [compressed, setCompressed] = useState(false);
   const lastScrollY = useRef(0);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+    if (isProfileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProfileOpen]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -71,7 +87,7 @@ export default function Navigation() {
         isNavbarVisible ? 'translate-y-0' : '-translate-y-full'
       }`}
     >
-      <div className="max-w-[93rem] mx-auto px-6 md:px-8 h-full flex items-center justify-between">
+      <div className="px-6 lg:px-16 h-full flex items-center justify-between">
         {/* Logo and Wordmark */}
         <a href="#" className="flex items-center h-full">
           <div className="flex items-center origin-left">
@@ -92,18 +108,65 @@ export default function Navigation() {
           </div>
         </a>
 
-        {/* User Account Icon at Outlined Bell Style Position */}
+        {/* User Account Icon with Profile Popup */}
         <motion.div
           variants={rightContainerVariants}
           className="flex items-center"
         >
-          <a
-            href="#profile"
-            className="w-9 h-9 border border-grid/30 flex items-center justify-center rounded-sm hover:bg-[var(--forest)] hover:text-white transition-all"
-            aria-label="User Profile"
-          >
-            <Icon icon="lucide:user" className="text-base text-forest hover:text-inherit" />
-          </a>
+          <div ref={dropdownRef} className="relative">
+            <button
+              onClick={() => setIsProfileOpen((prev) => !prev)}
+              className="w-9 h-9 border border-grid/30 flex items-center justify-center rounded-sm hover:bg-[var(--forest)] hover:text-white transition-all group"
+              aria-label="User Profile"
+              aria-expanded={isProfileOpen}
+            >
+              <Icon
+                icon="lucide:user"
+                className="text-base text-forest group-hover:text-white transition-colors"
+              />
+            </button>
+
+            {isProfileOpen && (
+              <div className="absolute right-0 top-[calc(100%+10px)] w-64 bg-[var(--paper)] border border-grid/20 shadow-lg z-[100]">
+                {/* Top accent line */}
+                <div className="h-0.5 w-full bg-[var(--forest)]" />
+
+                {/* Avatar + Info */}
+                <div className="p-5">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 bg-[var(--forest)] flex items-center justify-center flex-shrink-0">
+                      <Icon icon="lucide:user" className="text-[var(--paper)] text-lg" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-display text-sm font-bold text-forest truncate">
+                        Om Varma
+                      </p>
+                      <p className="font-mono text-[10px] text-grid/50 truncate tracking-wide">
+                        om.varma@example.com
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-grid/10 pt-4 space-y-1">
+                    <div className="flex items-center gap-2 py-1.5 px-2 text-grid/60 hover:text-forest hover:bg-forest/5 transition-all cursor-pointer">
+                      <Icon icon="lucide:settings" className="text-xs flex-shrink-0" />
+                      <span className="font-mono text-[10px] uppercase tracking-widest">Settings</span>
+                    </div>
+                    <div className="flex items-center gap-2 py-1.5 px-2 text-coral/70 hover:text-coral hover:bg-coral/5 transition-all cursor-pointer">
+                      <Icon icon="lucide:log-out" className="text-xs flex-shrink-0" />
+                      <span className="font-mono text-[10px] uppercase tracking-widest">Sign out</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom status bar */}
+                <div className="border-t border-grid/10 px-5 py-2.5 flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-mint animate-pulse" />
+                  <span className="font-mono text-[9px] uppercase tracking-widest text-grid/40">Active session</span>
+                </div>
+              </div>
+            )}
+          </div>
         </motion.div>
       </div>
     </motion.nav>

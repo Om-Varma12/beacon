@@ -24,6 +24,7 @@ dist-ssr
 *.sw?
 .vite
 .next
+.env
 
 .claude
 .agents
@@ -31,4 +32,4 @@ dist-ssr
 
 mail-reference.md
 db-resources.md
-.env
+cognito-reference.txt

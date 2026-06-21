@@ -11,6 +11,7 @@ export function Navbar({ visible = true }: NavbarProps) {
   const [compressed, setCompressed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [signupOpen, setSignupOpen] = useState(false)
+  const [signupMode, setSignupMode] = useState<'signup' | 'login'>('login')
   const lastScrollY = useRef(0)
 
   useEffect(() => {
@@ -78,6 +79,7 @@ export function Navbar({ visible = true }: NavbarProps) {
   const handleSignInClick = (e: React.MouseEvent) => {
     e.preventDefault()
     setMobileOpen(false)
+    setSignupMode('login')
     setSignupOpen(true)
   }
 
@@ -170,7 +172,7 @@ export function Navbar({ visible = true }: NavbarProps) {
       </AnimatePresence>
 
       {/* Signup Popup */}
-      <SignupPopup isOpen={signupOpen} onClose={() => setSignupOpen(false)} />
+      <SignupPopup isOpen={signupOpen} onClose={() => setSignupOpen(false)} initialMode={signupMode} />
     </>
   )
 }

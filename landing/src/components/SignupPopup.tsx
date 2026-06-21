@@ -76,10 +76,27 @@ export function SignupPopup({ isOpen, onClose, initialMode = 'signup' }: SignupP
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
+  const [alreadyLoggedIn, setAlreadyLoggedIn] = useState(false);
+  const [alreadyLoggedInCountdown, setAlreadyLoggedInCountdown] = useState<number | null>(null);
 
   // Reset form states on close/open
   useEffect(() => {
     if (isOpen) {
+      // Check if user is already logged in
+      try {
+        const storedUser = localStorage.getItem('beacon_user');
+        if (storedUser && initialMode === 'login') {
+          setAlreadyLoggedIn(true);
+          setAlreadyLoggedInCountdown(3);
+          document.body.style.overflow = 'hidden';
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+
+      setAlreadyLoggedIn(false);
+      setAlreadyLoggedInCountdown(null);
       setName('');
       setEmail('');
       setPassword('');
@@ -100,6 +117,26 @@ export function SignupPopup({ isOpen, onClose, initialMode = 'signup' }: SignupP
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, initialMode]);
+
+  // Already-logged-in redirect countdown
+  useEffect(() => {
+    if (alreadyLoggedInCountdown !== null && alreadyLoggedInCountdown > 0) {
+      const timer = setTimeout(() => setAlreadyLoggedInCountdown(alreadyLoggedInCountdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (alreadyLoggedInCountdown === 0) {
+      onClose();
+      try {
+        const storedUser = localStorage.getItem('beacon_user');
+        if (storedUser) {
+          window.location.href = `http://localhost:5173/?user=${encodeURIComponent(storedUser)}`;
+        } else {
+          window.location.href = 'http://localhost:5173/';
+        }
+      } catch (e) {
+        window.location.href = 'http://localhost:5173/';
+      }
+    }
+  }, [alreadyLoggedInCountdown, onClose]);
 
   useEffect(() => {
     if (countdown !== null && countdown > 0) {
@@ -341,7 +378,26 @@ export function SignupPopup({ isOpen, onClose, initialMode = 'signup' }: SignupP
           </h2>
         </div>
 
-        {success ? (
+        {alreadyLoggedIn ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="p-6 bg-forest/5 border border-forest/20 text-forest text-center jetbrains text-sm"
+          >
+            <div className="flex justify-center mb-3">
+              <Icon icon="lucide:user-check" className="text-forest" width={32} />
+            </div>
+            <p className="font-bold mb-1">Already Signed In</p>
+            <p className="text-xs opacity-70 mb-4">
+              You&apos;re already logged in. Taking you to the app.
+            </p>
+            {alreadyLoggedInCountdown !== null && (
+              <p className="text-xs text-forest/70 font-mono bg-forest/5 py-1 px-2 rounded inline-block">
+                Redirecting in {alreadyLoggedInCountdown}...
+              </p>
+            )}
+          </motion.div>
+        ) : success ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}

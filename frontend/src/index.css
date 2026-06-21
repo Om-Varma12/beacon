@@ -12,6 +12,15 @@
   --gold: #F4D35E;
 }
 
+@theme {
+  --color-paper: #F7F7F5;
+  --color-forest: #1A3C2B;
+  --color-grid: #3A3A38;
+  --color-coral: #FF8C69;
+  --color-mint: #9EFFBF;
+  --color-gold: #F4D35E;
+}
+
 body {
   font-family: 'General Sans', sans-serif;
   background-color: var(--paper);
@@ -29,31 +38,12 @@ button:disabled, button[disabled], [role="button"]:disabled, [role="button"][dis
 }
 
 * {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(26, 60, 43, 0.7) rgba(58, 58, 56, 0.08);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 *::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-*::-webkit-scrollbar-track {
-  background: rgba(58, 58, 56, 0.08);
-}
-
-*::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(26, 60, 43, 0.75), rgba(26, 60, 43, 0.55));
-  border: 2px solid rgba(247, 247, 245, 0.9);
-  border-radius: 999px;
-}
-
-*::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(26, 60, 43, 0.9), rgba(26, 60, 43, 0.75));
-}
-
-*::-webkit-scrollbar-corner {
-  background: rgba(58, 58, 56, 0.08);
+  display: none;
 }
 
 .font-mono {
@@ -72,6 +62,53 @@ button:disabled, button[disabled], [role="button"]:disabled, [role="button"][dis
   background-color: var(--paper);
   background-image: url("data:image/svg+xml,%3Csvg width='400' height='400' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='200' height='200' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect x='200' width='200' height='100' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect x='200' y='100' width='100' height='100' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect x='300' y='100' width='100' height='300' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3Crect y='200' width='300' height='200' fill='%23F7F7F5' stroke='%233A3A38' stroke-width='0.5' stroke-opacity='0.15'/%3E%3C/svg%3E");
   background-attachment: fixed;
+  background-repeat: repeat;
+  background-size: auto;
+}
+
+/* Card background used by SignupPopup modal */
+.popup-card-bg {
+  background-color: var(--paper);
+}
+
+/* Corner markers — exact copy from landing/src/app/globals.css */
+.corner-marker {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+}
+
+.corner-tl {
+  top: -1px;
+  left: -1px;
+  border-top: 1.5px solid var(--forest);
+  border-left: 1.5px solid var(--forest);
+}
+
+.corner-tr {
+  top: -1px;
+  right: -1px;
+  border-top: 1.5px solid var(--forest);
+  border-right: 1.5px solid var(--forest);
+}
+
+.corner-bl {
+  bottom: -1px;
+  left: -1px;
+  border-bottom: 1.5px solid var(--forest);
+  border-left: 1.5px solid var(--forest);
+}
+
+.corner-br {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1.5px solid var(--forest);
+  border-right: 1.5px solid var(--forest);
+}
+
+/* Mosaic pattern for popup backdrop — matches landing page SignupPopup */
+.popup-mosaic-bg {
+  background-image: url("data:image/svg+xml,%3Csvg width='1440' height='900' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='mosaic' x='0' y='0' width='480' height='300' patternUnits='userSpaceOnUse'%3E%3Crect x='0' y='0' width='240' height='150' fill='%23fcf9f6' stroke='%233a3a38' stroke-width='0.5' stroke-opacity='0.2'/%3E%3Crect x='240' y='0' width='120' height='150' fill='%23fcf9f6' stroke='%233a3a38' stroke-width='0.5' stroke-opacity='0.2'/%3E%3Crect x='360' y='0' width='120' height='75' fill='%23fcf9f6' stroke='%233a3a38' stroke-width='0.5' stroke-opacity='0.2'/%3E%3Crect x='360' y='75' width='120' height='75' fill='%23fcf9f6' stroke='%233a3a38' stroke-width='0.5' stroke-opacity='0.2'/%3E%3Crect x='0' y='150' width='160' height='150' fill='%23fcf9f6' stroke='%233a3a38' stroke-width='0.5' stroke-opacity='0.2'/%3E%3Crect x='160' y='150' width='80' height='75' fill='%23fcf9f6' stroke='%233a3a38' stroke-width='0.5' stroke-opacity='0.2'/%3E%3Crect x='160' y='225' width='80' height='75' fill='%23fcf9f6' stroke='%233a3a38' stroke-width='0.5' stroke-opacity='0.2'/%3E%3Crect x='240' y='150' width='240' height='150' fill='%23fcf9f6' stroke='%233a3a38' stroke-width='0.5' stroke-opacity='0.2'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23mosaic)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: auto;
 }
@@ -307,4 +344,74 @@ button:disabled, button[disabled], [role="button"]:disabled, [role="button"][dis
 .markdown-body td {
   border: 1px solid rgba(58,58,56,0.08);
   padding: 0.5rem;
+}
+
+/* Auth Popup Styles */
+.corner-marker {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+}
+
+.corner-tl {
+  top: -1px;
+  left: -1px;
+  border-top: 1.5px solid var(--forest);
+  border-left: 1.5px solid var(--forest);
+}
+
+.corner-tr {
+  top: -1px;
+  right: -1px;
+  border-top: 1.5px solid var(--forest);
+  border-right: 1.5px solid var(--forest);
+}
+
+.corner-bl {
+  bottom: -1px;
+  left: -1px;
+  border-bottom: 1.5px solid var(--forest);
+  border-left: 1.5px solid var(--forest);
+}
+
+.corner-br {
+  bottom: -1px;
+  right: -1px;
+  border-bottom: 1.5px solid var(--forest);
+  border-right: 1.5px solid var(--forest);
+}
+
+.jetbrains {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.space-grotesk {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.typography-technical-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(10px, 1.2vw, 12px);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.typography-technical-sm {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(9px, 1vw, 10px);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

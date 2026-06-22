@@ -1,0 +1,38 @@
+from fastapi import APIRouter, Depends, HTTPException
+from db.database import Database
+from db.UserRepository import UserRepository
+from utils.auth import get_current_user_claims
+
+router = APIRouter()
+db = Database()
+
+def get_user_repo():
+    return UserRepository(db)
+
+@router.get("/me")
+def get_or_create_me(
+    claims: dict = Depends(get_current_user_claims),
+    repo: UserRepository = Depends(get_user_repo)
+):
+    if claims.get("token_use") != "id":
+        raise HTTPException(status_code=400, detail="Only ID tokens are accepted on this endpoint")
+        
+    cognito_sub = claims.get("sub")
+    email = claims.get("email")
+    name = claims.get("name")
+    
+    if not cognito_sub or not email:
+        raise HTTPException(status_code=400, detail="Missing required claims (sub, email) in token")
+        
+    if not name:
+        name = email.split("@")[0]
+        
+    user = repo.get_or_create_user(cognito_sub=cognito_sub, email=email, name=name)
+    if not user:
+        raise HTTPException(status_code=500, detail="Failed to fetch or create user in database")
+        
+    return {
+        "success": True,
+        "name": user["name"],
+        "email": user["email"]
+    }

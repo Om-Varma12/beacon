@@ -21,6 +21,23 @@ try {
   console.error('Amplify configure error:', e);
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+
+async function syncUserWithBackend(idToken: string) {
+  const response = await fetch(`${API_BASE_URL}/me`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${idToken}`,
+      'Content-Type': 'application/json'
+    }
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to sync user: ${response.statusText}`);
+  }
+  return response.json();
+}
+
+
 interface SignupPopupProps {
   isOpen: boolean;
   onClose: () => void;
@@ -187,8 +204,23 @@ export function SignupPopup({ isOpen, onClose, initialMode = 'signup', onAuthSuc
           console.log('ID Token (JWT):    ', idToken?.toString());
           console.groupEnd();
 
+          // Sync user with backend db
+          let dbName = name;
+          let dbEmail = email;
+          try {
+            if (idToken) {
+              const dbUser = await syncUserWithBackend(idToken.toString());
+              if (dbUser && dbUser.name) {
+                dbName = dbUser.name;
+                dbEmail = dbUser.email;
+              }
+            }
+          } catch (e) {
+            console.error('Failed to sync user with backend:', e);
+          }
+
           // Persist user data
-          const userData = { name, email, accessToken: accessToken?.toString(), idToken: idToken?.toString() };
+          const userData = { name: dbName, email: dbEmail, accessToken: accessToken?.toString(), idToken: idToken?.toString() };
           localStorage.setItem('beacon_user', JSON.stringify(userData));
 
           setSuccess(true);
@@ -246,7 +278,22 @@ export function SignupPopup({ isOpen, onClose, initialMode = 'signup', onAuthSuc
           displayName = email.split('@')[0];
         }
 
-        const userData = { name: displayName, email, accessToken: accessToken?.toString(), idToken: idToken?.toString() };
+        // Sync user with backend db
+        let dbName = displayName;
+        let dbEmail = email;
+        try {
+          if (idToken) {
+            const dbUser = await syncUserWithBackend(idToken.toString());
+            if (dbUser && dbUser.name) {
+              dbName = dbUser.name;
+              dbEmail = dbUser.email;
+            }
+          }
+        } catch (e) {
+          console.error('Failed to sync user with backend:', e);
+        }
+
+        const userData = { name: dbName, email: dbEmail, accessToken: accessToken?.toString(), idToken: idToken?.toString() };
         localStorage.setItem('beacon_user', JSON.stringify(userData));
 
         setSuccess(true);

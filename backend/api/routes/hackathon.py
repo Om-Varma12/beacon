@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query, BackgroundTasks, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from typing import Optional
 
 from db.database import Database
 from db.HackathonRepository import HackathonRepository
@@ -10,6 +11,7 @@ from db.AgentAnalysisRepository import AgentAnalysisRepository
 from db.AgentRoundsRepository import AgentRoundsRepository
 from db.ChatMessageRepository import ChatMessageRepository
 from db.AssetsRepository import AssetsRepository
+from db.UserRepository import UserRepository
 
 from services.HackathonService import HackathonService
 from services.AnalysisService import AnalysisService
@@ -17,6 +19,7 @@ from services.ChatService import ChatService
 from services.AssetsService import AssetsService
 
 from scraper.main_scraper import scraperHackathons
+from utils.auth import get_current_user_claims
 
 router = APIRouter()
 
@@ -87,6 +90,26 @@ def get_assets_service():
         analysis_repo,
         assets_repo
     )
+
+
+def get_user_repo():
+    return UserRepository(db)
+
+
+def resolve_user_id(claims: dict, user_repo: UserRepository) -> Optional[int]:
+    """Look up (or create) the user in the DB and return their integer id."""
+    cognito_sub = claims.get("sub")
+    email = claims.get("email")
+    name = claims.get("name") or (email.split("@")[0] if email else None)
+
+    if not cognito_sub or not email:
+        return None
+
+    user = user_repo.get_or_create_user(cognito_sub=cognito_sub, email=email, name=name)
+    if not user:
+        return None
+
+    return user.get("id")
     
     
 #                                 Routes                                       #    
@@ -155,10 +178,15 @@ def get_hackathon(
 @router.post("/{hackathon_id}/analyze")
 async def analyze_hackathon(
     hackathon_id: int,
-    service: AnalysisService = Depends(get_analysis_service)
+    claims: dict = Depends(get_current_user_claims),
+    service: AnalysisService = Depends(get_analysis_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
+    user_id = resolve_user_id(claims, user_repo)
+
     data = await service.analyze_hackathon(
-        hackathon_id
+        hackathon_id,
+        user_id=user_id
     )
 
     if data is None:
@@ -233,10 +261,14 @@ async def get_assets(
 @router.post("/{hackathon_id}/assets/generate")
 async def generate_assets(
     hackathon_id: int,
-    service: AssetsService = Depends(get_assets_service)
+    claims: dict = Depends(get_current_user_claims),
+    service: AssetsService = Depends(get_assets_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
     try:
-        data = await service.generate_assets(hackathon_id)
+        user_id = resolve_user_id(claims, user_repo)
+
+        data = await service.generate_assets(hackathon_id, user_id=user_id)
         if data is None:
             raise HTTPException(status_code=404, detail="Hackathon not found")
 

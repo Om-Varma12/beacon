@@ -739,7 +739,10 @@ export default function HackathonDetailApi() {
         setAssetsGeneratingText("Running AI Agent Debate to select winning idea...");
         const analyzeResp = await fetch(`${API_BASE_URL}/hackathons/${id}/analyze`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(localStorage.getItem("idToken") ? { Authorization: `Bearer ${localStorage.getItem("idToken")}` } : {}),
+          },
         });
         if (!analyzeResp.ok) {
           throw new Error("Failed to run AI Analysis prior to asset generation.");
@@ -754,6 +757,9 @@ export default function HackathonDetailApi() {
       setAssetsGeneratingText("Structuring Solution Blueprint & Slide Deck...");
       const response = await fetch(`${API_BASE_URL}/hackathons/${id}/assets/generate`, {
         method: "POST",
+        headers: {
+          ...(localStorage.getItem("idToken") ? { Authorization: `Bearer ${localStorage.getItem("idToken")}` } : {}),
+        },
       });
       if (!response.ok) {
         const errResult = await response.json().catch(() => ({}));
@@ -1087,7 +1093,10 @@ export default function HackathonDetailApi() {
 
       const resp = await fetch(`${API_BASE_URL}/hackathons/${id}/analyze`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(localStorage.getItem("idToken") ? { Authorization: `Bearer ${localStorage.getItem("idToken")}` } : {}),
+        },
       });
 
       if (!resp.ok) {

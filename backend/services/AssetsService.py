@@ -37,7 +37,7 @@ class AssetsService:
             "ppt_content": assets.get("ppt_content")
         }
 
-    async def generate_assets(self, hackathon_id: int):
+    async def generate_assets(self, hackathon_id: int, user_id: int = None):
         # Fetch hackathon
         hackathon = self.hackathon_repo.get_by_id(hackathon_id)
         if not hackathon:
@@ -126,7 +126,8 @@ class AssetsService:
         asset_id = self.assets_repo.create(
             hackathon_id=hackathon["id"],
             doc_content=doc_content,
-            ppt_content=ppt_content
+            ppt_content=ppt_content,
+            user_id=user_id
         )
 
         return {

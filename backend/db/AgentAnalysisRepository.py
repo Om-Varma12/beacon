@@ -8,21 +8,23 @@ class AgentAnalysisRepository:
         self.db = db
 
 
-    def create(self, hackathon_id: int, result: dict):
+    def create(self, hackathon_id: int, result: dict, user_id: int = None):
         query = """
             INSERT INTO agent_analysis (
                 hackathon_id,
+                user_id,
                 winner,
                 leaderboard,
                 final_scores,
                 winning_idea,
                 synthesized
             )
-            VALUES (%s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """
         values = (
             hackathon_id,
+            user_id,
             result.get("winner"),
             json.dumps(
                 result.get("leaderboard", [])

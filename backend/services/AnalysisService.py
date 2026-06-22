@@ -10,7 +10,7 @@ class AnalysisService:
         self.rounds_repo = rounds_repo
 
 
-    async def analyze_hackathon(self, hackathon_id: int):
+    async def analyze_hackathon(self, hackathon_id: int, user_id: int = None):
         # Fetch Hackathon
         hackathon = self.hackathon_repo.get_by_id(hackathon_id)
 
@@ -50,7 +50,8 @@ class AnalysisService:
         # Save Main Analysis
         analysis_id = self.analysis_repo.create(
             internal_hackathon_id,
-            result
+            result,
+            user_id=user_id
         )
 
         if not analysis_id:
@@ -67,7 +68,8 @@ class AnalysisService:
             self.rounds_repo.create(
                 analysis_id=analysis_id,
                 round_number=idx + 1,
-                data=round_data
+                data=round_data,
+                user_id=user_id
             )
 
 

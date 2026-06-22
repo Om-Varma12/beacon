@@ -8,21 +8,23 @@ class AgentRoundsRepository:
         self.db = db
 
 
-    def create(self, analysis_id: int, round_number: int, data: dict):
+    def create(self, analysis_id: int, round_number: int, data: dict, user_id: int = None):
         query = """
             INSERT INTO agent_rounds (
                 analysis_id,
+                user_id,
                 round_number,
                 phase,
                 ideas,
                 debates,
                 judge
             )
-            VALUES (%s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
             RETURNING id
         """
         values = (
             analysis_id,
+            user_id,
             round_number,
             data.get("phase"),
             json.dumps(

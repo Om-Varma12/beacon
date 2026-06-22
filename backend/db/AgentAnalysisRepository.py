@@ -63,19 +63,29 @@ class AgentAnalysisRepository:
         finally:
             self.db.release_conn(conn)
             
-    def get_by_hackathon_id(self, hackathon_id: int):
-        query = """
-            SELECT *
-            FROM agent_analysis
-            WHERE hackathon_id = %s
-            LIMIT 1
-        """
+    def get_by_hackathon_id(self, hackathon_id: int, user_id: int = None):
+        if user_id is not None:
+            query = """
+                SELECT *
+                FROM agent_analysis
+                WHERE hackathon_id = %s AND user_id = %s
+                LIMIT 1
+            """
+            params = (hackathon_id, user_id)
+        else:
+            query = """
+                SELECT *
+                FROM agent_analysis
+                WHERE hackathon_id = %s AND user_id IS NULL
+                LIMIT 1
+            """
+            params = (hackathon_id,)
 
         conn = self.db.get_conn()
 
         try:
             with conn.cursor() as cur:
-                cur.execute(query, (hackathon_id,))
+                cur.execute(query, params)
                 row = cur.fetchone()
                 if not row:
                     return None

@@ -204,9 +204,12 @@ async def analyze_hackathon(
 @router.get("/{hackathon_id}/analysis")
 def get_analysis(
     hackathon_id: int,
-    service: AnalysisService = Depends(get_analysis_service)
+    claims: dict = Depends(get_current_user_claims),
+    service: AnalysisService = Depends(get_analysis_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
-    data = service.get_analysis(hackathon_id)
+    user_id = resolve_user_id(claims, user_repo)
+    data = service.get_analysis(hackathon_id, user_id=user_id)
 
     if data is None:
         raise HTTPException(
@@ -246,9 +249,12 @@ async def chat_with_hackathon(
 @router.get("/{hackathon_id}/assets")
 async def get_assets(
     hackathon_id: int,
-    service: AssetsService = Depends(get_assets_service)
+    claims: dict = Depends(get_current_user_claims),
+    service: AssetsService = Depends(get_assets_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
-    data = await service.get_assets(hackathon_id)
+    user_id = resolve_user_id(claims, user_repo)
+    data = await service.get_assets(hackathon_id, user_id=user_id)
     if data is None:
         raise HTTPException(status_code=404, detail="Hackathon not found")
 
@@ -285,10 +291,13 @@ async def generate_assets(
 @router.get("/{hackathon_id}/assets/download/docx")
 async def download_assets_docx(
     hackathon_id: int,
-    service: AssetsService = Depends(get_assets_service)
+    claims: dict = Depends(get_current_user_claims),
+    service: AssetsService = Depends(get_assets_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
+    user_id = resolve_user_id(claims, user_repo)
     from utils.asset_generator import generate_docx_proposal
-    data = await service.get_assets(hackathon_id)
+    data = await service.get_assets(hackathon_id, user_id=user_id)
     if data is None or not data.get("generated") or not data.get("doc_content"):
         raise HTTPException(status_code=404, detail="Assets not generated yet")
     
@@ -308,10 +317,13 @@ async def download_assets_docx(
 @router.get("/{hackathon_id}/assets/download/pptx")
 async def download_assets_pptx(
     hackathon_id: int,
-    service: AssetsService = Depends(get_assets_service)
+    claims: dict = Depends(get_current_user_claims),
+    service: AssetsService = Depends(get_assets_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
+    user_id = resolve_user_id(claims, user_repo)
     from utils.asset_generator import generate_pptx_slides
-    data = await service.get_assets(hackathon_id)
+    data = await service.get_assets(hackathon_id, user_id=user_id)
     if data is None or not data.get("generated") or not data.get("ppt_content"):
         raise HTTPException(status_code=404, detail="Assets not generated yet")
         

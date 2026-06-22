@@ -78,14 +78,15 @@ class AnalysisService:
             "result": result
         }
         
-    def get_analysis(self, hackathon_id: int):
+    def get_analysis(self, hackathon_id: int, user_id: int = None):
         hackathon = self.hackathon_repo.get_by_id(hackathon_id)
 
         if not hackathon:
             return None
 
         analysis = self.analysis_repo.get_by_hackathon_id(
-            hackathon["id"]
+            hackathon["id"],
+            user_id=user_id
         )
 
         if not analysis:

@@ -4,4 +4,5 @@ put logs to keep track of analysis, use langsmith
 
 more robust prompt for llm to extract problem stmts correctly
 
-landing and frontend connection + bearer sent with each api request
+make users table, user id would be needed in ai-analysis table, chat table, chat session
+when user is logged in, show everthing, and when not, only show table and hackathon info, and no ai data

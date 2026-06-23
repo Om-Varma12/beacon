@@ -1,5 +1,6 @@
 import asyncio
 from typing import Any
+from langsmith import traceable
 
 from agents.business_idea_agent import BusinessIdeaAgent
 from agents.innovation_idea_agent import InnovationIdeaAgent
@@ -23,6 +24,7 @@ class DebatePipeline:
 		self.synthesizer = SynthesizerAgent(llm) if use_synthesizer else None
 		self.debate_rounds = max(1, debate_rounds)
 
+	@traceable
 	async def run(self, theme: Any, on_progress = None) -> dict:
 		history: list[dict] = []
 		
@@ -106,6 +108,7 @@ class DebatePipeline:
 
 		return result
 
+	@traceable
 	async def _run_generation_round(self, theme: Any) -> dict[str, dict]:
 		payload = {
 			"round": 1,
@@ -127,6 +130,7 @@ class DebatePipeline:
 
 		return ideas
 
+	@traceable
 	async def _run_debate_round(
 		self,
 		round_number: int,
@@ -167,6 +171,7 @@ class DebatePipeline:
 
 		return debates
 
+	@traceable
 	async def _run_judge(
 		self,
 		round_number: int,

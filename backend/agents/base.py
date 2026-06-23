@@ -1,10 +1,12 @@
 import json
+from langsmith import traceable
 
 class Agent:
     def __init__(self, llm, name="agent"):
         self.llm = llm
         self.name = name
 
+    @traceable
     async def run(self, task: str) -> dict:
         response = await self.llm.generate(
             self.get_system_prompt(),

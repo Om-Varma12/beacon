@@ -1,4 +1,5 @@
 import json
+from langsmith import traceable
 from agents.llm import LLM
 from agents.assets_agent import AssetsAgent
 from db.HackathonRepository import HackathonRepository
@@ -37,6 +38,7 @@ class AssetsService:
             "ppt_content": assets.get("ppt_content")
         }
 
+    @traceable
     async def generate_assets(self, hackathon_id: int, user_id: int = None):
         # Fetch hackathon
         hackathon = self.hackathon_repo.get_by_id(hackathon_id)

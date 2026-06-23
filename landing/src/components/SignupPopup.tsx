@@ -35,6 +35,23 @@ async function syncUserWithBackend(idToken: string) {
   return response.json();
 }
 
+function parseJwt(token: string) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      window
+        .atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
+
 
 interface SignupPopupProps {
   isOpen: boolean;
@@ -98,38 +115,78 @@ export function SignupPopup({ isOpen, onClose, initialMode = 'signup' }: SignupP
 
   // Reset form states on close/open
   useEffect(() => {
-    if (isOpen) {
-      // Check if user is already logged in
-      try {
-        const storedUser = localStorage.getItem('beacon_user');
-        if (storedUser && initialMode === 'login') {
-          setAlreadyLoggedIn(true);
-          setAlreadyLoggedInCountdown(3);
-          document.body.style.overflow = 'hidden';
-          return;
-        }
-      } catch (e) {
-        // ignore
-      }
+    const checkLoginState = async () => {
+      if (isOpen) {
+        // Check if user is already logged in
+        try {
+          const storedUser = localStorage.getItem('beacon_user');
+          if (storedUser && initialMode === 'login') {
+            const parsedUser = JSON.parse(storedUser);
+            if (parsedUser && parsedUser.idToken) {
+              const decoded = parseJwt(parsedUser.idToken);
+              const isExpired = decoded && decoded.exp ? (decoded.exp * 1000 - 60000) < Date.now() : true;
 
-      setAlreadyLoggedIn(false);
-      setAlreadyLoggedInCountdown(null);
-      setName('');
-      setEmail('');
-      setPassword('');
-      setConfirmPassword('');
-      setOtp('');
-      setStep('details');
-      setMode(initialMode);
-      setError('');
-      setSuccess(false);
-      setLoading(false);
-      setCountdown(null);
-      // Disable background scrolling when modal is open
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+              if (!isExpired) {
+                setAlreadyLoggedIn(true);
+                setAlreadyLoggedInCountdown(3);
+                document.body.style.overflow = 'hidden';
+                return;
+              } else {
+                // Token is expired! Let's try to refresh using fetchAuthSession.
+                console.log('🔄 Token is expired in landing page. Fetching fresh session...');
+                try {
+                  const session = await fetchAuthSession();
+                  const freshIdToken = session.tokens?.idToken;
+                  const freshAccessToken = session.tokens?.accessToken;
+
+                  if (freshIdToken) {
+                    const updatedUser = {
+                      ...parsedUser,
+                      idToken: freshIdToken.toString(),
+                      accessToken: freshAccessToken?.toString()
+                    };
+                    localStorage.setItem('beacon_user', JSON.stringify(updatedUser));
+                    console.log('✅ Token successfully refreshed via Cognito in landing page.');
+                    setAlreadyLoggedIn(true);
+                    setAlreadyLoggedInCountdown(3);
+                    document.body.style.overflow = 'hidden';
+                    return;
+                  }
+                } catch (refreshErr) {
+                  console.error('Failed to refresh Cognito session on landing page:', refreshErr);
+                }
+                
+                // If we couldn't refresh, clear it
+                localStorage.removeItem('beacon_user');
+              }
+            }
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        setAlreadyLoggedIn(false);
+        setAlreadyLoggedInCountdown(null);
+        setName('');
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setOtp('');
+        setStep('details');
+        setMode(initialMode);
+        setError('');
+        setSuccess(false);
+        setLoading(false);
+        setCountdown(null);
+        // Disable background scrolling when modal is open
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'unset';
+      }
+    };
+
+    checkLoginState();
+
     return () => {
       document.body.style.overflow = 'unset';
     };

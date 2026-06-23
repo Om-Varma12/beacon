@@ -11,3 +11,4 @@ python-pptx
 beautifulsoup4
 uvicorn
 ollama
+langsmith

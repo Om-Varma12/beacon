@@ -4,7 +4,24 @@ import { Icon } from '@iconify/react';
 import { useNavbar } from '../context/NavbarContext';
 import { SignupPopup } from './SignupPopup';
 import { Amplify } from 'aws-amplify';
-import { signOut } from 'aws-amplify/auth';
+import { signOut, fetchAuthSession, fetchUserAttributes } from 'aws-amplify/auth';
+
+function parseJwt(token: string) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      window
+        .atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
+}
 
 try {
   Amplify.configure({
@@ -25,38 +42,124 @@ export default function Navigation() {
   const lastScrollY = useRef(0);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [user, setUser] = useState<{ name: string; email: string } | null>(null);
+  const [user, setUser] = useState<{ name: string; email: string; idToken?: string; accessToken?: string } | null>(null);
   const [isAuthPopupOpen, setIsAuthPopupOpen] = useState(false);
 
-  // Read user data stored by the landing app after signup/login
+  // Read user data stored by the landing app after signup/login and verify session
   useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const userParam = params.get('user');
-
-      if (userParam) {
-        const decoded = decodeURIComponent(userParam);
-        const userData = JSON.parse(decoded);
-        localStorage.setItem('beacon_user', JSON.stringify(userData));
-        setUser(userData);
-
-        // Clean the query parameters from the URL
-        const url = new URL(window.location.href);
-        url.searchParams.delete('user');
-        window.history.replaceState({}, document.title, url.pathname + url.search);
-      } else {
-        const stored = localStorage.getItem('beacon_user');
-        if (stored) setUser(JSON.parse(stored));
-      }
-    } catch (e) {
-      console.error('Failed to parse user session from URL/localStorage:', e);
+    const initAuth = async () => {
+      let initialUser: { name: string; email: string; idToken?: string; accessToken?: string } | null = null;
+      
       try {
-        const stored = localStorage.getItem('beacon_user');
-        if (stored) setUser(JSON.parse(stored));
-      } catch {
-        // ignore parse errors
+        const params = new URLSearchParams(window.location.search);
+        const userParam = params.get('user');
+
+        if (userParam) {
+          const decoded = decodeURIComponent(userParam);
+          initialUser = JSON.parse(decoded);
+          localStorage.setItem('beacon_user', JSON.stringify(initialUser));
+          setUser(initialUser);
+
+          // Clean the query parameters from the URL
+          const url = new URL(window.location.href);
+          url.searchParams.delete('user');
+          window.history.replaceState({}, document.title, url.pathname + url.search);
+        } else {
+          const stored = localStorage.getItem('beacon_user');
+          if (stored) {
+            initialUser = JSON.parse(stored);
+            setUser(initialUser);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse user session from URL/localStorage:', e);
+        try {
+          const stored = localStorage.getItem('beacon_user');
+          if (stored) {
+            initialUser = JSON.parse(stored);
+            setUser(initialUser);
+          }
+        } catch {
+          // ignore parse errors
+        }
       }
-    }
+
+      // Check Cognito session to refresh the idToken if expired or near expiry
+      try {
+        if (initialUser && initialUser.idToken) {
+          const decoded = parseJwt(initialUser.idToken);
+          const isExpired = decoded && decoded.exp ? (decoded.exp * 1000 - 60000) < Date.now() : true;
+
+          if (isExpired) {
+            console.log('🔄 Token is expired or near expiry. Fetching fresh session...');
+            const session = await fetchAuthSession();
+            const freshIdToken = session.tokens?.idToken;
+            const freshAccessToken = session.tokens?.accessToken;
+
+            if (freshIdToken) {
+              const updatedUser = {
+                ...initialUser,
+                idToken: freshIdToken.toString(),
+                accessToken: freshAccessToken?.toString()
+              };
+              localStorage.setItem('beacon_user', JSON.stringify(updatedUser));
+              setUser(updatedUser);
+              console.log('✅ Token successfully refreshed via Cognito.');
+            } else {
+              // Cognito session has expired completely (refresh token invalid)
+              console.warn('⚠️ Cognito session has expired. Logging out...');
+              localStorage.removeItem('beacon_user');
+              setUser(null);
+            }
+          }
+        } else {
+          // If no beacon_user in localStorage, but Amplify session is active, auto-login
+          const session = await fetchAuthSession();
+          const idToken = session.tokens?.idToken;
+          const accessToken = session.tokens?.accessToken;
+
+          if (idToken) {
+            console.log('🔄 Found active Cognito session without beacon_user. Auto logging in...');
+            let name = '';
+            let email = '';
+            try {
+              const attributes = await fetchUserAttributes();
+              name = attributes.name || '';
+              email = attributes.email || '';
+            } catch (e) {
+              console.error('Failed to fetch Cognito user attributes:', e);
+            }
+
+            if (!email) {
+              const payload = idToken.payload;
+              email = payload.email as string || '';
+              name = payload.name as string || '';
+            }
+
+            if (!name && email) {
+              name = email.split('@')[0];
+            }
+
+            const updatedUser = {
+              name,
+              email,
+              idToken: idToken.toString(),
+              accessToken: accessToken?.toString()
+            };
+            localStorage.setItem('beacon_user', JSON.stringify(updatedUser));
+            setUser(updatedUser);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to verify Cognito session:', e);
+        if (initialUser) {
+          localStorage.removeItem('beacon_user');
+          setUser(null);
+        }
+      }
+    };
+
+    initAuth();
   }, []);
 
   useEffect(() => {

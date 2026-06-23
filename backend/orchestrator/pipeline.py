@@ -23,9 +23,15 @@ class DebatePipeline:
 		self.synthesizer = SynthesizerAgent(llm) if use_synthesizer else None
 		self.debate_rounds = max(1, debate_rounds)
 
-	async def run(self, theme: Any) -> dict:
+	async def run(self, theme: Any, on_progress = None) -> dict:
 		history: list[dict] = []
+		
+		if on_progress:
+			await on_progress("Generating initial project ideas (Persona Agents drafting proposals)...")
 		ideas = await self._run_generation_round(theme)
+		
+		if on_progress:
+			await on_progress("Evaluating initial project ideas (Judge Agent scoring proposals)...")
 		judge_result = await self._run_judge(
 			round_number=1,
 			ideas=ideas,
@@ -45,6 +51,9 @@ class DebatePipeline:
 		current_ideas = ideas
 
 		for round_number in range(2, 2 + self.debate_rounds):
+			debate_idx = round_number - 1
+			if on_progress:
+				await on_progress(f"Running Debate Round {debate_idx}: Rebuttals & Refinements...")
 			debates = await self._run_debate_round(
 				round_number=round_number,
 				theme=theme,
@@ -54,6 +63,9 @@ class DebatePipeline:
 			)
 			critiques_received = self._collect_targeted_critiques(debates)
 			current_ideas = self._extract_improved_ideas(debates, current_ideas)
+			
+			if on_progress:
+				await on_progress(f"Evaluating Debate Round {debate_idx}: Judge scoring...")
 			judge_result = await self._run_judge(
 				round_number=round_number,
 				ideas=current_ideas,
@@ -81,6 +93,8 @@ class DebatePipeline:
 		}
 
 		if self.synthesizer:
+			if on_progress:
+				await on_progress("Synthesizing debate history and drafting final solution blueprint...")
 			synthesis_payload = {
 				"winner": winner,
 				"leaderboard": judge_result.get("leaderboard", []),

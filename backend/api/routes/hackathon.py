@@ -175,29 +175,46 @@ def get_hackathon(
     }
     
     
-@router.post("/{hackathon_id}/analyze")
+@router.post("/{hackathon_id}/analyze", status_code=202)
 async def analyze_hackathon(
     hackathon_id: int,
+    background_tasks: BackgroundTasks,
     claims: dict = Depends(get_current_user_claims),
     service: AnalysisService = Depends(get_analysis_service),
     user_repo: UserRepository = Depends(get_user_repo)
 ):
     user_id = resolve_user_id(claims, user_repo)
 
-    data = await service.analyze_hackathon(
+    analysis_data = service.get_or_create_pending_analysis(
         hackathon_id,
         user_id=user_id
     )
 
-    if data is None:
+    if analysis_data is None:
         raise HTTPException(
             status_code=404,
             detail="Hackathon not found"
         )
 
+    analysis_id = analysis_data["analysis_id"]
+    status = analysis_data["status"]
+    status_message = analysis_data.get("status_message", "")
+
+    if analysis_data.get("should_start"):
+        background_tasks.add_task(
+            service.run_async_analysis_pipeline,
+            analysis_id,
+            hackathon_id,
+            user_id
+        )
+
     return {
         "success": True,
-        "data": data
+        "data": {
+            "analysis_id": analysis_id,
+            "status": status,
+            "status_message": status_message
+        }
     }
     
     

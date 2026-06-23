@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS agent_analysis (
     final_scores JSONB,
     winning_idea JSONB,
     synthesized JSONB,
+    status VARCHAR(50) DEFAULT 'COMPLETED',
+    status_message TEXT DEFAULT '',
     created_at TIMESTAMP DEFAULT NOW(),
     CONSTRAINT fk_agent_analysis_hackathon
         FOREIGN KEY(hackathon_id)

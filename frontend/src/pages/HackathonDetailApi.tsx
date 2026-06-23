@@ -787,6 +787,14 @@ export default function HackathonDetailApi() {
   const analysisQuery = useQuery<AnalysisResponse, Error>({
     queryKey: ["hackathon-analysis", id, user?.idToken],
     enabled: Boolean(id) && Boolean(user?.idToken),
+    refetchInterval: (query) => {
+      const data = query.state.data as AnalysisResponse | undefined;
+      const status = data?.data?.status;
+      if (status === "PENDING" || status === "RUNNING") {
+        return 3000;
+      }
+      return false;
+    },
     queryFn: async () => {
       const headers: Record<string, string> = {};
       if (user?.idToken) {
@@ -851,11 +859,9 @@ export default function HackathonDetailApi() {
     setAssetsGenerating(true);
     setAssetsError(null);
     try {
-      let currentHasAnalysis = hasAnalysis;
-      
-      // If we don't have analysis, run it first!
-      if (!currentHasAnalysis) {
-        setAssetsGeneratingText("Running AI Agent Debate to select winning idea...");
+      // If we don't have analysis, trigger it!
+      if (!hasAnalysis) {
+        setAssetsGeneratingText("Triggering AI Agent Debate to select winning idea...");
         const analyzeResp = await fetch(`${API_BASE_URL}/hackathons/${id}/analyze`, {
           method: "POST",
           headers: {
@@ -870,7 +876,46 @@ export default function HackathonDetailApi() {
         // Update query client cache for analysis
         queryClient.setQueryData(["hackathon-analysis", id, user?.idToken], analyzeResult);
         queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id, user?.idToken] });
-        currentHasAnalysis = true;
+      }
+
+      // Now poll until the analysis is COMPLETED
+      let analysisFinished = false;
+      const maxRetries = 150; // 150 * 4 seconds = 10 minutes max
+      for (let i = 0; i < maxRetries; i++) {
+        // Fetch fresh analysis status
+        const headers: Record<string, string> = {};
+        if (user?.idToken) {
+          headers["Authorization"] = `Bearer ${user.idToken}`;
+        }
+        const statusResp = await fetch(`${API_BASE_URL}/hackathons/${id}/analysis`, { headers });
+        if (!statusResp.ok) {
+          throw new Error("Failed to check AI analysis status prior to asset generation.");
+        }
+        const statusData = await statusResp.json();
+        const currentStatus = statusData?.data?.status;
+        const currentMsg = statusData?.data?.status_message || "Analyzing...";
+
+        if (currentStatus === "COMPLETED" || (!currentStatus && statusData?.data?.analysis_id)) {
+          // Update analysis cache for UI consistency
+          queryClient.setQueryData(["hackathon-analysis", id, user?.idToken], statusData);
+          queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id, user?.idToken] });
+          analysisFinished = true;
+          break;
+        }
+        
+        if (currentStatus === "FAILED") {
+          throw new Error(currentMsg || "AI Analysis failed prior to asset generation.");
+        }
+
+        // Update progress text in the loading screen!
+        setAssetsGeneratingText(`[AI Debate] ${currentMsg}`);
+        
+        // Wait 4 seconds
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+      }
+
+      if (!analysisFinished) {
+        throw new Error("AI Analysis timed out. Please try again.");
       }
 
       setAssetsGeneratingText("Structuring Solution Blueprint & Slide Deck...");
@@ -1089,6 +1134,8 @@ export default function HackathonDetailApi() {
   const analysisData = analysisQuery.data?.data ?? null;
   const analysisResult = analysisData?.result ?? null;
   const hasAnalysis = Boolean(analysisData?.analysis_id);
+  const isBackendAnalysisRunning = analysisData?.status === "PENDING" || analysisData?.status === "RUNNING";
+  const isRunning = isAnalysisRunning || isBackendAnalysisRunning;
   const analysisLeaderboard = analysisResult?.leaderboard ?? [];
   const analysisFinalScores = analysisResult?.final_scores ?? {};
   const analysisRounds = analysisResult?.rounds ?? [];
@@ -1325,10 +1372,10 @@ export default function HackathonDetailApi() {
                 <div className="flex space-x-2">
                   <button
                     onClick={handleRunAnalysis}
-                    disabled={isAnalysisRunning || hasAnalysis}
+                    disabled={isRunning || (hasAnalysis && analysisData?.status !== "FAILED")}
                     className="flex-1 border border-forest text-forest enabled:hover:bg-[var(--forest)] enabled:hover:text-white py-2 px-4 font-mono text-[10px] tracking-widest uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isAnalysisRunning ? (
+                    {isRunning ? (
                       <span className="flex items-center justify-center space-x-2">
                         <Icon icon="lucide:loader-2" className="animate-spin" />
                         <span>Analyzing...</span>
@@ -1339,7 +1386,7 @@ export default function HackathonDetailApi() {
                   </button>
                   <button
                     onClick={handleRunAnalysis}
-                    disabled={isAnalysisRunning || !hasAnalysis}
+                    disabled={isRunning || !hasAnalysis}
                     className="flex-1 border border-forest bg-white py-2 px-4 font-mono text-[10px] tracking-widest uppercase text-forest transition-all enabled:hover:bg-(--forest) enabled:hover:text-(--paper) enabled:hover:border-(--forest) disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Re-run
@@ -1624,10 +1671,45 @@ export default function HackathonDetailApi() {
                     <p className="mx-auto max-w-xl text-sm leading-relaxed text-grid/70">
                       Run the analysis pipeline to generate a winner, rankings, score breakdowns, and debate rounds for this hackathon.
                     </p>
+                    <p className="mx-auto max-w-xl mt-3 text-xs leading-relaxed text-grid/50 italic">
+                      Note: This pipeline takes about 5-10 minutes to complete as multiple AI agents research, draft powerful ideas, score them, run debates, and finalize the execution details.
+                    </p>
                   </div>
                 )}
 
-                {!analysisQuery.isPending && !analysisQuery.error && hasAnalysis && analysisResult && (
+                {!analysisQuery.isPending && !analysisQuery.error && hasAnalysis && (analysisData?.status === "PENDING" || analysisData?.status === "RUNNING") && (
+                  <div className="bg-white border border-grid/20 p-10 text-center flex flex-col items-center justify-center min-h-[350px]">
+                    <Icon icon="lucide:loader-2" className="animate-spin text-forest text-5xl mb-6" />
+                    <h3 className="font-display text-2xl text-forest mb-2">AI Analysis in Progress</h3>
+                    <p className="font-mono text-xs text-forest uppercase tracking-widest bg-forest/10 px-3 py-1 mb-6 rounded">
+                      {analysisData?.status_message || "Initializing debate pipeline..."}
+                    </p>
+                    <div className="w-64 bg-grid/10 h-1 rounded-full overflow-hidden mb-6 relative">
+                      <div className="bg-forest h-full animate-pulse w-2/3"></div>
+                    </div>
+                    <p className="max-w-md text-xs text-grid/50 leading-relaxed">
+                      This process takes about 5-10 minutes. You can safely close this page or check other hackathons; the AI agents will complete their debate in the background and save the results when finished.
+                    </p>
+                  </div>
+                )}
+
+                {!analysisQuery.isPending && !analysisQuery.error && hasAnalysis && analysisData?.status === "FAILED" && (
+                  <div className="bg-white border border-grid/20 p-10 text-center flex flex-col items-center justify-center min-h-[350px]">
+                    <Icon icon="lucide:alert-triangle" className="text-coral text-5xl mb-6" />
+                    <h3 className="font-display text-2xl text-forest mb-2">AI Analysis Failed</h3>
+                    <p className="font-mono text-xs text-coral uppercase tracking-widest bg-coral/10 px-3 py-1 mb-6 rounded font-bold">
+                      {analysisData?.status_message || "An error occurred during the analysis."}
+                    </p>
+                    <button
+                      onClick={handleRunAnalysis}
+                      className="border border-forest text-forest hover:bg-[var(--forest)] hover:text-white py-2 px-6 font-mono text-[10px] tracking-widest uppercase transition-all cursor-pointer"
+                    >
+                      Retry AI Analysis
+                    </button>
+                  </div>
+                )}
+
+                {!analysisQuery.isPending && !analysisQuery.error && hasAnalysis && (!analysisData?.status || analysisData?.status === "COMPLETED") && analysisResult && (
                   <>
                     {analysisRounds.length === 0 && (
                       <div className="bg-white border border-grid/20 p-6">

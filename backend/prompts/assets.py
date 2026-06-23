@@ -37,7 +37,13 @@ Return ONLY valid JSON in this exact schema:
     {
       "slide_number": 1,
       "title": "...",
-      "bullets": ["...", "..."],
+      "bullets": [
+        "First highly detailed and informative bullet point that contains comprehensive business context, specific technical architecture decisions, and explains the primary objective clearly.",
+        "Second highly detailed bullet point detailing structural design decisions, database layout choices, and why this particular approach is selected for the hackathon project.",
+        "Third detailed bullet point detailing backend or frontend framework choice, API communication protocol, and third-party integrations with explicit tool names.",
+        "Fourth detailed bullet point detailing deployment architecture, hosting platforms, devops pipelines, and concrete mitigation steps for high traffic or performance bottlenecks.",
+        "Fifth detailed bullet point explaining execution timeline, key deliverables for the hackathon MVP, and how user feedback is gathered and integrated in subsequent phases."
+      ],
       "speaker_notes": "..."
     }
   ]
@@ -48,5 +54,6 @@ Rules:
 - No markdown/code fences
 - Be highly specific, professional, and practical. Choose appropriate modern technologies (e.g. React/NextJS, FastAPI/NodeJS, Supabase/PostgreSQL, TailwindCSS, etc.) that suit the project's actual features and requirements. Do not just output placeholders.
 - The presentation slides should cover: Title Slide, Problem Statement, Solution, Key Features, Architecture & Tech Stack, Roadmap & Execution, Business Value & USPs, Risks & Conclusion.
-- For the `presentation_slides`, each bullet in the `bullets` array must be highly informative, professional, and descriptive (typically 12 to 25 words). They must represent complete, meaningful thoughts or specific technical/business details instead of short 3-5 word fragments. Each slide should convey a medium, substantial amount of text suitable for a high-quality, professional hackathon pitch deck.
+- For the `presentation_slides`, you must generate a comprehensive and highly detailed deck. Each slide must contain at least 4 to 6 bullet points. Each bullet point in the `bullets` array must be a fully formed, detailed, and grammatically complete sentence (typically 20 to 35 words). Do not use short fragments, generic phrases, or 3-5 word placeholder items. Each bullet point must convey concrete technical details, structural architectural decisions, specific business metrics, or execution methodologies to ensure the deck has a high-density, professional text layout.
 '''
+

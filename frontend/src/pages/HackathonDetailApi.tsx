@@ -13,6 +13,7 @@ function normalizeMarkdownSpacing(input?: string) {
 }
 
 import { useNavbar } from "../context/NavbarContext";
+import { SignupPopup } from "../components/SignupPopup";
 
 interface ProblemStatement {
   id?: number;
@@ -625,12 +626,73 @@ function getRoundAgentOrder(round: AnalysisRound): string[] {
   return Array.from(new Set([...leaderboard, ...ideaKeys, ...debateKeys]));
 }
 
+interface UnauthenticatedStateProps {
+  onSignIn: () => void;
+}
+
+const UnauthenticatedState = ({ onSignIn }: UnauthenticatedStateProps) => {
+  return (
+    <div className="flex flex-col items-center justify-center border border-grid/20 bg-white p-12 text-center shadow-sm min-h-[50vh] relative overflow-hidden">
+      {/* Background soft glowing orb */}
+      <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-mint/10 blur-3xl pointer-events-none" />
+      <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-forest/5 blur-3xl pointer-events-none" />
+
+      <div className="relative z-10 max-w-md mx-auto space-y-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-forest/5 border border-forest/10 mb-2 mx-auto">
+          <Icon icon="lucide:lock" className="w-6 h-6 text-forest" />
+        </div>
+        
+        <h3 className="space-grotesk text-2xl font-bold text-forest">
+          Unlock AI-Powered Insights
+        </h3>
+        
+        <p className="typography-body-md text-grid/80 leading-relaxed">
+          Sign in to generate full agent-debate analyses, access downloadable pitch decks & technical proposals, and chat directly with our AI agent about this hackathon.
+        </p>
+
+        <button
+          onClick={onSignIn}
+          className="inline-flex items-center gap-2 border border-forest bg-forest hover:bg-transparent text-white hover:text-forest px-8 py-3.5 font-mono text-[10px] tracking-widest uppercase transition-all shadow-sm cursor-pointer hover:shadow-md mx-auto"
+        >
+          <Icon icon="lucide:log-in" className="w-4 h-4" />
+          Sign In to Access
+        </button>
+      </div>
+    </div>
+  );
+};
+
 export default function HackathonDetailApi() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { isNavbarVisible } = useNavbar();
   const [activeTab, setActiveTab] = useState<TabType>("overview");
   const [isChatExpanded, setIsChatExpanded] = useState(false);
+  const [user, setUser] = useState<{ name: string; email: string; idToken?: string } | null>(null);
+  const [isAuthPopupOpen, setIsAuthPopupOpen] = useState(false);
+
+  useEffect(() => {
+    const checkUser = () => {
+      try {
+        const stored = localStorage.getItem("beacon_user");
+        if (stored) {
+          setUser(JSON.parse(stored));
+        } else {
+          setUser(null);
+        }
+      } catch (e) {
+        setUser(null);
+      }
+    };
+    checkUser();
+    window.addEventListener("storage", checkUser);
+    const interval = setInterval(checkUser, 1000);
+    return () => {
+      window.removeEventListener("storage", checkUser);
+      clearInterval(interval);
+    };
+  }, []);
+
   const [chatMessages, setChatMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -651,6 +713,51 @@ export default function HackathonDetailApi() {
     navigator.clipboard.writeText(text).then(() => {
       console.log("Copied to clipboard!");
     }).catch(err => console.error("Copy failed", err));
+  };
+
+  const handleDownloadAsset = async (format: "docx" | "pptx") => {
+    try {
+      const token = user?.idToken;
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/hackathons/${id}/assets/download/${format}`, {
+        headers
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to download: ${response.statusText}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      
+      const contentDisposition = response.headers.get("content-disposition");
+      let filename = `proposal.${format}`;
+      if (contentDisposition) {
+        const matches = /filename="?([^"]+)"?/.exec(contentDisposition);
+        if (matches && matches[1]) {
+          filename = matches[1];
+        }
+      } else {
+        const safeTitle = viewModel?.title ? viewModel.title.toLowerCase().replace(/[^a-z0-9]+/g, "_") : "project";
+        filename = `${safeTitle}_${format === "docx" ? "technical_proposal.docx" : "pitch_deck.pptx"}`;
+      }
+
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(`Error downloading ${format} asset:`, err);
+      alert(`Failed to download ${format.toUpperCase()} file. Please try again.`);
+    }
   };
 
   const hackathonQuery = useQuery<HackathonQueryResult, Error>({
@@ -678,10 +785,24 @@ export default function HackathonDetailApi() {
   });
 
   const analysisQuery = useQuery<AnalysisResponse, Error>({
-    queryKey: ["hackathon-analysis", id],
-    enabled: Boolean(id),
+    queryKey: ["hackathon-analysis", id, user?.idToken],
+    enabled: Boolean(id) && Boolean(user?.idToken),
+    refetchInterval: (query) => {
+      const data = query.state.data as AnalysisResponse | undefined;
+      const status = data?.data?.status;
+      if (status === "PENDING" || status === "RUNNING") {
+        return 3000;
+      }
+      return false;
+    },
     queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/hackathons/${id}/analysis`);
+      const headers: Record<string, string> = {};
+      if (user?.idToken) {
+        headers["Authorization"] = `Bearer ${user.idToken}`;
+      }
+      const response = await fetch(`${API_BASE_URL}/hackathons/${id}/analysis`, {
+        headers
+      });
 
       if (response.status === 404) {
         throw new Error("Analysis not found.");
@@ -710,10 +831,16 @@ export default function HackathonDetailApi() {
   const [collapsedSpeakerNotes, setCollapsedSpeakerNotes] = useState<Record<number, boolean>>({});
 
   const assetsQuery = useQuery<AssetsResponse, Error>({
-    queryKey: ["hackathon-assets", id],
-    enabled: Boolean(id),
+    queryKey: ["hackathon-assets", id, user?.idToken],
+    enabled: Boolean(id) && Boolean(user?.idToken),
     queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/hackathons/${id}/assets`);
+      const headers: Record<string, string> = {};
+      if (user?.idToken) {
+        headers["Authorization"] = `Bearer ${user.idToken}`;
+      }
+      const response = await fetch(`${API_BASE_URL}/hackathons/${id}/assets`, {
+        headers
+      });
       if (!response.ok) {
         throw new Error(`Failed to fetch assets: ${response.status}`);
       }
@@ -732,28 +859,71 @@ export default function HackathonDetailApi() {
     setAssetsGenerating(true);
     setAssetsError(null);
     try {
-      let currentHasAnalysis = hasAnalysis;
-      
-      // If we don't have analysis, run it first!
-      if (!currentHasAnalysis) {
-        setAssetsGeneratingText("Running AI Agent Debate to select winning idea...");
+      // If we don't have analysis, trigger it!
+      if (!hasAnalysis) {
+        setAssetsGeneratingText("Triggering AI Agent Debate to select winning idea...");
         const analyzeResp = await fetch(`${API_BASE_URL}/hackathons/${id}/analyze`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(user?.idToken ? { Authorization: `Bearer ${user.idToken}` } : {}),
+          },
         });
         if (!analyzeResp.ok) {
           throw new Error("Failed to run AI Analysis prior to asset generation.");
         }
         const analyzeResult = await analyzeResp.json();
         // Update query client cache for analysis
-        queryClient.setQueryData(["hackathon-analysis", id], analyzeResult);
-        queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id] });
-        currentHasAnalysis = true;
+        queryClient.setQueryData(["hackathon-analysis", id, user?.idToken], analyzeResult);
+        queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id, user?.idToken] });
+      }
+
+      // Now poll until the analysis is COMPLETED
+      let analysisFinished = false;
+      const maxRetries = 150; // 150 * 4 seconds = 10 minutes max
+      for (let i = 0; i < maxRetries; i++) {
+        // Fetch fresh analysis status
+        const headers: Record<string, string> = {};
+        if (user?.idToken) {
+          headers["Authorization"] = `Bearer ${user.idToken}`;
+        }
+        const statusResp = await fetch(`${API_BASE_URL}/hackathons/${id}/analysis`, { headers });
+        if (!statusResp.ok) {
+          throw new Error("Failed to check AI analysis status prior to asset generation.");
+        }
+        const statusData = await statusResp.json();
+        const currentStatus = statusData?.data?.status;
+        const currentMsg = statusData?.data?.status_message || "Analyzing...";
+
+        if (currentStatus === "COMPLETED" || (!currentStatus && statusData?.data?.analysis_id)) {
+          // Update analysis cache for UI consistency
+          queryClient.setQueryData(["hackathon-analysis", id, user?.idToken], statusData);
+          queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id, user?.idToken] });
+          analysisFinished = true;
+          break;
+        }
+        
+        if (currentStatus === "FAILED") {
+          throw new Error(currentMsg || "AI Analysis failed prior to asset generation.");
+        }
+
+        // Update progress text in the loading screen!
+        setAssetsGeneratingText(`[AI Debate] ${currentMsg}`);
+        
+        // Wait 4 seconds
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+      }
+
+      if (!analysisFinished) {
+        throw new Error("AI Analysis timed out. Please try again.");
       }
 
       setAssetsGeneratingText("Structuring Solution Blueprint & Slide Deck...");
       const response = await fetch(`${API_BASE_URL}/hackathons/${id}/assets/generate`, {
         method: "POST",
+        headers: {
+          ...(user?.idToken ? { Authorization: `Bearer ${user.idToken}` } : {}),
+        },
       });
       if (!response.ok) {
         const errResult = await response.json().catch(() => ({}));
@@ -763,8 +933,8 @@ export default function HackathonDetailApi() {
       if (!result.success || !result.data) {
         throw new Error(result.error ?? "Failed to generate assets.");
       }
-      queryClient.setQueryData(["hackathon-assets", id], result);
-      queryClient.invalidateQueries({ queryKey: ["hackathon-assets", id] });
+      queryClient.setQueryData(["hackathon-assets", id, user?.idToken], result);
+      queryClient.invalidateQueries({ queryKey: ["hackathon-assets", id, user?.idToken] });
       setActiveAssetView("doc");
     } catch (err) {
       setAssetsError(err instanceof Error ? err.message : "An error occurred during generation.");
@@ -964,6 +1134,8 @@ export default function HackathonDetailApi() {
   const analysisData = analysisQuery.data?.data ?? null;
   const analysisResult = analysisData?.result ?? null;
   const hasAnalysis = Boolean(analysisData?.analysis_id);
+  const isBackendAnalysisRunning = analysisData?.status === "PENDING" || analysisData?.status === "RUNNING";
+  const isRunning = isAnalysisRunning || isBackendAnalysisRunning;
   const analysisLeaderboard = analysisResult?.leaderboard ?? [];
   const analysisFinalScores = analysisResult?.final_scores ?? {};
   const analysisRounds = analysisResult?.rounds ?? [];
@@ -1087,7 +1259,10 @@ export default function HackathonDetailApi() {
 
       const resp = await fetch(`${API_BASE_URL}/hackathons/${id}/analyze`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(user?.idToken ? { Authorization: `Bearer ${user.idToken}` } : {}),
+        },
       });
 
       if (!resp.ok) {
@@ -1100,9 +1275,9 @@ export default function HackathonDetailApi() {
       const result = (await resp.json()) as AnalysisResponse;
 
       // Update react-query cache for analysis so the UI reflects the new data
-      queryClient.setQueryData(["hackathon-analysis", id], result);
+      queryClient.setQueryData(["hackathon-analysis", id, user?.idToken], result);
       // Optionally refetch the query
-      queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id] });
+      queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id, user?.idToken] });
     } catch (err) {
       console.error("Error running analysis", err);
     } finally {
@@ -1197,10 +1372,10 @@ export default function HackathonDetailApi() {
                 <div className="flex space-x-2">
                   <button
                     onClick={handleRunAnalysis}
-                    disabled={isAnalysisRunning || hasAnalysis}
+                    disabled={isRunning || (hasAnalysis && analysisData?.status !== "FAILED")}
                     className="flex-1 border border-forest text-forest enabled:hover:bg-[var(--forest)] enabled:hover:text-white py-2 px-4 font-mono text-[10px] tracking-widest uppercase transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isAnalysisRunning ? (
+                    {isRunning ? (
                       <span className="flex items-center justify-center space-x-2">
                         <Icon icon="lucide:loader-2" className="animate-spin" />
                         <span>Analyzing...</span>
@@ -1211,7 +1386,7 @@ export default function HackathonDetailApi() {
                   </button>
                   <button
                     onClick={handleRunAnalysis}
-                    disabled={isAnalysisRunning || !hasAnalysis}
+                    disabled={isRunning || !hasAnalysis}
                     className="flex-1 border border-forest bg-white py-2 px-4 font-mono text-[10px] tracking-widest uppercase text-forest transition-all enabled:hover:bg-(--forest) enabled:hover:text-(--paper) enabled:hover:border-(--forest) disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Re-run
@@ -1464,7 +1639,10 @@ export default function HackathonDetailApi() {
             )}
 
             {!loading && !error && activeTab === "analysis" && (
-              <div className="space-y-4">
+              !user?.idToken ? (
+                <UnauthenticatedState onSignIn={() => setIsAuthPopupOpen(true)} />
+              ) : (
+                <div className="space-y-4">
                 {analysisQuery.isPending && (
                   <div className="bg-white border border-grid/20 p-6 text-center font-mono text-xs tracking-widest uppercase text-grid/60">
                     Loading AI analysis...
@@ -1493,10 +1671,45 @@ export default function HackathonDetailApi() {
                     <p className="mx-auto max-w-xl text-sm leading-relaxed text-grid/70">
                       Run the analysis pipeline to generate a winner, rankings, score breakdowns, and debate rounds for this hackathon.
                     </p>
+                    <p className="mx-auto max-w-xl mt-3 text-xs leading-relaxed text-grid/50 italic">
+                      Note: This pipeline takes about 5-10 minutes to complete as multiple AI agents research, draft powerful ideas, score them, run debates, and finalize the execution details.
+                    </p>
                   </div>
                 )}
 
-                {!analysisQuery.isPending && !analysisQuery.error && hasAnalysis && analysisResult && (
+                {!analysisQuery.isPending && !analysisQuery.error && hasAnalysis && (analysisData?.status === "PENDING" || analysisData?.status === "RUNNING") && (
+                  <div className="bg-white border border-grid/20 p-10 text-center flex flex-col items-center justify-center min-h-[350px]">
+                    <Icon icon="lucide:loader-2" className="animate-spin text-forest text-5xl mb-6" />
+                    <h3 className="font-display text-2xl text-forest mb-2">AI Analysis in Progress</h3>
+                    <p className="font-mono text-xs text-forest uppercase tracking-widest bg-forest/10 px-3 py-1 mb-6 rounded">
+                      {analysisData?.status_message || "Initializing debate pipeline..."}
+                    </p>
+                    <div className="w-64 bg-grid/10 h-1 rounded-full overflow-hidden mb-6 relative">
+                      <div className="bg-forest h-full animate-pulse w-2/3"></div>
+                    </div>
+                    <p className="max-w-md text-xs text-grid/50 leading-relaxed">
+                      This process takes about 5-10 minutes. You can safely close this page or check other hackathons; the AI agents will complete their debate in the background and save the results when finished.
+                    </p>
+                  </div>
+                )}
+
+                {!analysisQuery.isPending && !analysisQuery.error && hasAnalysis && analysisData?.status === "FAILED" && (
+                  <div className="bg-white border border-grid/20 p-10 text-center flex flex-col items-center justify-center min-h-[350px]">
+                    <Icon icon="lucide:alert-triangle" className="text-coral text-5xl mb-6" />
+                    <h3 className="font-display text-2xl text-forest mb-2">AI Analysis Failed</h3>
+                    <p className="font-mono text-xs text-coral uppercase tracking-widest bg-coral/10 px-3 py-1 mb-6 rounded font-bold">
+                      {analysisData?.status_message || "An error occurred during the analysis."}
+                    </p>
+                    <button
+                      onClick={handleRunAnalysis}
+                      className="border border-forest text-forest hover:bg-[var(--forest)] hover:text-white py-2 px-6 font-mono text-[10px] tracking-widest uppercase transition-all cursor-pointer"
+                    >
+                      Retry AI Analysis
+                    </button>
+                  </div>
+                )}
+
+                {!analysisQuery.isPending && !analysisQuery.error && hasAnalysis && (!analysisData?.status || analysisData?.status === "COMPLETED") && analysisResult && (
                   <>
                     {analysisRounds.length === 0 && (
                       <div className="bg-white border border-grid/20 p-6">
@@ -1523,25 +1736,13 @@ export default function HackathonDetailApi() {
                       {assetsQuery.data?.data?.generated ? (
                         <div className="flex flex-wrap justify-center gap-2.5 mt-5">
                           <button
-                            onClick={() => {
-                              const link = document.createElement("a");
-                              link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/docx`;
-                              document.body.appendChild(link);
-                              link.click();
-                              link.remove();
-                            }}
+                            onClick={() => handleDownloadAsset("docx")}
                             className="px-3.5 py-1.5 border border-forest text-forest font-mono text-[9px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
                           >
                             <Icon icon="lucide:file-text" /> Doc (.docx)
                           </button>
                           <button
-                            onClick={() => {
-                              const link = document.createElement("a");
-                              link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/pptx`;
-                              document.body.appendChild(link);
-                              link.click();
-                              link.remove();
-                            }}
+                            onClick={() => handleDownloadAsset("pptx")}
                             className="px-3.5 py-1.5 border border-forest text-forest font-mono text-[9px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
                           >
                             <Icon icon="lucide:presentation" /> Slides (.pptx)
@@ -1764,25 +1965,13 @@ export default function HackathonDetailApi() {
                         {assetsQuery.data?.data?.generated ? (
                           <>
                             <button
-                              onClick={() => {
-                                const link = document.createElement("a");
-                                link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/docx`;
-                                document.body.appendChild(link);
-                                link.click();
-                                link.remove();
-                              }}
+                              onClick={() => handleDownloadAsset("docx")}
                               className="px-4 py-2 border border-forest text-forest font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
                               <Icon icon="lucide:download" /> Docx Proposal
                             </button>
                             <button
-                              onClick={() => {
-                                const link = document.createElement("a");
-                                link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/pptx`;
-                                document.body.appendChild(link);
-                                link.click();
-                                link.remove();
-                              }}
+                              onClick={() => handleDownloadAsset("pptx")}
                               className="px-4 py-2 border border-forest text-forest font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer"
                             >
                               <Icon icon="lucide:presentation" /> PPTX Slides
@@ -2029,10 +2218,13 @@ export default function HackathonDetailApi() {
                   </>
                 )}
               </div>
-            )}
+            ))}
 
             {!loading && !error && activeTab === "assets" && (
-              <div className="space-y-6 relative">
+              !user?.idToken ? (
+                <UnauthenticatedState onSignIn={() => setIsAuthPopupOpen(true)} />
+              ) : (
+                <div className="space-y-6 relative">
                 {assetsGenerating && (
                   <div className="absolute inset-0 bg-paper/60 backdrop-blur-[2px] z-50 flex flex-col items-center justify-center min-h-[400px]">
                     <div className="w-16 h-16 border-4 border-forest border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -2082,25 +2274,13 @@ export default function HackathonDetailApi() {
                     {assetsQuery.data?.data?.generated && (
                       <div className="flex flex-wrap gap-2">
                         <button
-                          onClick={() => {
-                            const link = document.createElement("a");
-                            link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/docx`;
-                            document.body.appendChild(link);
-                            link.click();
-                            link.remove();
-                          }}
+                          onClick={() => handleDownloadAsset("docx")}
                           className="px-3 py-1.5 border border-forest text-forest font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                           <Icon icon="lucide:file-text" /> Doc (.docx)
                         </button>
                         <button
-                          onClick={() => {
-                            const link = document.createElement("a");
-                            link.href = `${API_BASE_URL}/hackathons/${id}/assets/download/pptx`;
-                            document.body.appendChild(link);
-                            link.click();
-                            link.remove();
-                          }}
+                          onClick={() => handleDownloadAsset("pptx")}
                           className="px-3 py-1.5 border border-forest text-forest font-mono text-[10px] tracking-wider uppercase hover:bg-[var(--forest)] hover:text-white transition-all flex items-center gap-1.5 cursor-pointer"
                         >
                           <Icon icon="lucide:presentation" /> Slides (.pptx)
@@ -2710,10 +2890,13 @@ export default function HackathonDetailApi() {
               </>
             )}
           </div>
-        )}
+        ))}
 
             {!loading && !error && activeTab === "chat" && (
-              <div className="bg-white border border-grid/20 overflow-hidden flex min-h-[72vh] flex-col">
+              !user?.idToken ? (
+                <UnauthenticatedState onSignIn={() => setIsAuthPopupOpen(true)} />
+              ) : (
+                <div className="bg-white border border-grid/20 overflow-hidden flex min-h-[72vh] flex-col">
                 <div className="border-b border-grid/20 p-6">
                   <div className="flex items-center justify-between gap-4 mb-2">
                     <div>
@@ -2839,10 +3022,10 @@ export default function HackathonDetailApi() {
                   </div>
                 </div>
               </div>
-            )}
+            ))}
           </div>
 
-          {activeTab === "analysis" && !isChatExpanded && (
+          {user?.idToken && activeTab === "analysis" && !isChatExpanded && (
               <div className="w-[30%]">
                 <div className="bg-white border border-grid/20 p-4 sticky top-32">
                   <div className="flex items-center justify-between mb-4">
@@ -2969,6 +3152,16 @@ export default function HackathonDetailApi() {
           </button>
         </div>
       </div>
+      <SignupPopup
+        isOpen={isAuthPopupOpen}
+        onClose={() => setIsAuthPopupOpen(false)}
+        initialMode="login"
+        onAuthSuccess={(userData) => {
+          localStorage.setItem("beacon_user", JSON.stringify(userData));
+          setUser(userData);
+          setIsAuthPopupOpen(false);
+        }}
+      />
     </div>
   );
 }

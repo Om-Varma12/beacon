@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, Query, BackgroundTasks, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
+from typing import Optional
 
 from db.database import Database
 from db.HackathonRepository import HackathonRepository
@@ -10,6 +11,7 @@ from db.AgentAnalysisRepository import AgentAnalysisRepository
 from db.AgentRoundsRepository import AgentRoundsRepository
 from db.ChatMessageRepository import ChatMessageRepository
 from db.AssetsRepository import AssetsRepository
+from db.UserRepository import UserRepository
 
 from services.HackathonService import HackathonService
 from services.AnalysisService import AnalysisService
@@ -17,6 +19,7 @@ from services.ChatService import ChatService
 from services.AssetsService import AssetsService
 
 from scraper.main_scraper import scraperHackathons
+from utils.auth import get_current_user_claims
 
 router = APIRouter()
 
@@ -87,6 +90,26 @@ def get_assets_service():
         analysis_repo,
         assets_repo
     )
+
+
+def get_user_repo():
+    return UserRepository(db)
+
+
+def resolve_user_id(claims: dict, user_repo: UserRepository) -> Optional[int]:
+    """Look up (or create) the user in the DB and return their integer id."""
+    cognito_sub = claims.get("sub")
+    email = claims.get("email")
+    name = claims.get("name") or (email.split("@")[0] if email else None)
+
+    if not cognito_sub or not email:
+        return None
+
+    user = user_repo.get_or_create_user(cognito_sub=cognito_sub, email=email, name=name)
+    if not user:
+        return None
+
+    return user.get("id")
     
     
 #                                 Routes                                       #    
@@ -152,33 +175,58 @@ def get_hackathon(
     }
     
     
-@router.post("/{hackathon_id}/analyze")
+@router.post("/{hackathon_id}/analyze", status_code=202)
 async def analyze_hackathon(
     hackathon_id: int,
-    service: AnalysisService = Depends(get_analysis_service)
+    background_tasks: BackgroundTasks,
+    claims: dict = Depends(get_current_user_claims),
+    service: AnalysisService = Depends(get_analysis_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
-    data = await service.analyze_hackathon(
-        hackathon_id
+    user_id = resolve_user_id(claims, user_repo)
+
+    analysis_data = service.get_or_create_pending_analysis(
+        hackathon_id,
+        user_id=user_id
     )
 
-    if data is None:
+    if analysis_data is None:
         raise HTTPException(
             status_code=404,
             detail="Hackathon not found"
         )
 
+    analysis_id = analysis_data["analysis_id"]
+    status = analysis_data["status"]
+    status_message = analysis_data.get("status_message", "")
+
+    if analysis_data.get("should_start"):
+        background_tasks.add_task(
+            service.run_async_analysis_pipeline,
+            analysis_id,
+            hackathon_id,
+            user_id
+        )
+
     return {
         "success": True,
-        "data": data
+        "data": {
+            "analysis_id": analysis_id,
+            "status": status,
+            "status_message": status_message
+        }
     }
     
     
 @router.get("/{hackathon_id}/analysis")
 def get_analysis(
     hackathon_id: int,
-    service: AnalysisService = Depends(get_analysis_service)
+    claims: dict = Depends(get_current_user_claims),
+    service: AnalysisService = Depends(get_analysis_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
-    data = service.get_analysis(hackathon_id)
+    user_id = resolve_user_id(claims, user_repo)
+    data = service.get_analysis(hackathon_id, user_id=user_id)
 
     if data is None:
         raise HTTPException(
@@ -218,9 +266,12 @@ async def chat_with_hackathon(
 @router.get("/{hackathon_id}/assets")
 async def get_assets(
     hackathon_id: int,
-    service: AssetsService = Depends(get_assets_service)
+    claims: dict = Depends(get_current_user_claims),
+    service: AssetsService = Depends(get_assets_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
-    data = await service.get_assets(hackathon_id)
+    user_id = resolve_user_id(claims, user_repo)
+    data = await service.get_assets(hackathon_id, user_id=user_id)
     if data is None:
         raise HTTPException(status_code=404, detail="Hackathon not found")
 
@@ -233,10 +284,14 @@ async def get_assets(
 @router.post("/{hackathon_id}/assets/generate")
 async def generate_assets(
     hackathon_id: int,
-    service: AssetsService = Depends(get_assets_service)
+    claims: dict = Depends(get_current_user_claims),
+    service: AssetsService = Depends(get_assets_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
     try:
-        data = await service.generate_assets(hackathon_id)
+        user_id = resolve_user_id(claims, user_repo)
+
+        data = await service.generate_assets(hackathon_id, user_id=user_id)
         if data is None:
             raise HTTPException(status_code=404, detail="Hackathon not found")
 
@@ -253,10 +308,13 @@ async def generate_assets(
 @router.get("/{hackathon_id}/assets/download/docx")
 async def download_assets_docx(
     hackathon_id: int,
-    service: AssetsService = Depends(get_assets_service)
+    claims: dict = Depends(get_current_user_claims),
+    service: AssetsService = Depends(get_assets_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
+    user_id = resolve_user_id(claims, user_repo)
     from utils.asset_generator import generate_docx_proposal
-    data = await service.get_assets(hackathon_id)
+    data = await service.get_assets(hackathon_id, user_id=user_id)
     if data is None or not data.get("generated") or not data.get("doc_content"):
         raise HTTPException(status_code=404, detail="Assets not generated yet")
     
@@ -276,10 +334,13 @@ async def download_assets_docx(
 @router.get("/{hackathon_id}/assets/download/pptx")
 async def download_assets_pptx(
     hackathon_id: int,
-    service: AssetsService = Depends(get_assets_service)
+    claims: dict = Depends(get_current_user_claims),
+    service: AssetsService = Depends(get_assets_service),
+    user_repo: UserRepository = Depends(get_user_repo)
 ):
+    user_id = resolve_user_id(claims, user_repo)
     from utils.asset_generator import generate_pptx_slides
-    data = await service.get_assets(hackathon_id)
+    data = await service.get_assets(hackathon_id, user_id=user_id)
     if data is None or not data.get("generated") or not data.get("ppt_content"):
         raise HTTPException(status_code=404, detail="Assets not generated yet")
         

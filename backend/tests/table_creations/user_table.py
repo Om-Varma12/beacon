@@ -21,8 +21,6 @@ CREATE TABLE IF NOT EXISTS users (
 
     name VARCHAR(255),
 
-    onboarding_completed BOOLEAN DEFAULT FALSE,
-
     created_at TIMESTAMP DEFAULT NOW(),
 
     updated_at TIMESTAMP DEFAULT NOW(),

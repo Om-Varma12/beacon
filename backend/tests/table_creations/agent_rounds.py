@@ -15,6 +15,7 @@ cur.execute("""
 CREATE TABLE IF NOT EXISTS agent_rounds (
     id SERIAL PRIMARY KEY,
     analysis_id INTEGER NOT NULL,
+    user_id INTEGER,
     round_number INTEGER NOT NULL,
     phase TEXT,
     ideas JSONB,
@@ -24,7 +25,11 @@ CREATE TABLE IF NOT EXISTS agent_rounds (
     CONSTRAINT fk_agent_round_analysis
         FOREIGN KEY(analysis_id)
         REFERENCES agent_analysis(id)
-        ON DELETE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT fk_agent_rounds_user
+        FOREIGN KEY(user_id)
+        REFERENCES users(id)
+        ON DELETE SET NULL
 );
 """)
 

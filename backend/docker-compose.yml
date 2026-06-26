@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: beacon-api
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://host.docker.internal:6379/0}
+      - REDIS_QUEUE_NAME=${REDIS_QUEUE_NAME:-beacon:jobs}
+      - REDIS_PUBSUB_CHANNEL=${REDIS_PUBSUB_CHANNEL:-beacon:progress}
+      - WORKER_MAX_RETRIES=${WORKER_MAX_RETRIES:-3}
+      - WORKER_RETRY_BACKOFF_BASE=${WORKER_RETRY_BACKOFF_BASE:-2}
+      - WORKER_QUEUE_TIMEOUT=${WORKER_QUEUE_TIMEOUT:-5}
+      - GROQ_API_KEY_1=${GROQ_API_KEY_1}
+      - GROQ_API_KEY_2=${GROQ_API_KEY_2}
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY}
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING}
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT}
+    volumes:
+      - .:/app
+      - /app/.venv
+    networks:
+      - beacon-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  worker:
+    build: .
+    command: python worker.py
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL:-redis://host.docker.internal:6379/0}
+      - REDIS_QUEUE_NAME=${REDIS_QUEUE_NAME:-beacon:jobs}
+      - REDIS_PUBSUB_CHANNEL=${REDIS_PUBSUB_CHANNEL:-beacon:progress}
+      - WORKER_MAX_RETRIES=${WORKER_MAX_RETRIES:-3}
+      - WORKER_RETRY_BACKOFF_BASE=${WORKER_RETRY_BACKOFF_BASE:-2}
+      - WORKER_QUEUE_TIMEOUT=${WORKER_QUEUE_TIMEOUT:-5}
+      - GROQ_API_KEY_1=${GROQ_API_KEY_1}
+      - GROQ_API_KEY_2=${GROQ_API_KEY_2}
+      - OLLAMA_API_KEY=${OLLAMA_API_KEY}
+      - LANGSMITH_TRACING=${LANGSMITH_TRACING}
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT}
+    volumes:
+      - .:/app
+      - /app/.venv
+    networks:
+      - beacon-network
+    deploy:
+      replicas: 1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+networks:
+  beacon-network:
+    driver: bridge

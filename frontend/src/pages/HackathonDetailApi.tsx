@@ -4,6 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { parse } from "marked";
 import DOMPurify from "dompurify";
+import { useAnalysisSSE } from "../hooks/useAnalysisSSE";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
 
 function normalizeMarkdownSpacing(input?: string) {
   if (!input) return "";
@@ -221,6 +223,8 @@ interface AnalysisResult {
 interface AnalysisPayload {
   analysis_id?: number | null;
   result?: AnalysisResult | null;
+  status?: string | null;
+  status_message?: string | null;
 }
 
 interface AnalysisResponse {
@@ -790,6 +794,7 @@ export default function HackathonDetailApi() {
     refetchInterval: (query) => {
       const data = query.state.data as AnalysisResponse | undefined;
       const status = data?.data?.status;
+      // Fallback to polling if SSE is not enabled or status is running
       if (status === "PENDING" || status === "RUNNING") {
         return 3000;
       }
@@ -819,6 +824,20 @@ export default function HackathonDetailApi() {
       }
 
       return result;
+    },
+  });
+
+  // Use SSE for real-time updates when analysis is running
+  const analysisStatus = analysisQuery.data?.data?.status;
+  const [sseEnabled, setSseEnabled] = useState(true);
+  useAnalysisSSE({
+    hackathonId: id || "",
+    token: user?.idToken || null,
+    enabled: sseEnabled && Boolean(id) && Boolean(user?.idToken) && (analysisStatus === "PENDING" || analysisStatus === "RUNNING"),
+    onError: (error) => {
+      console.error("SSE error, disabling SSE and falling back to polling:", error);
+      setSseEnabled(false);
+      // Polling fallback is handled by refetchInterval above
     },
   });
 
@@ -878,44 +897,122 @@ export default function HackathonDetailApi() {
         queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id, user?.idToken] });
       }
 
-      // Now poll until the analysis is COMPLETED
-      let analysisFinished = false;
-      const maxRetries = 150; // 150 * 4 seconds = 10 minutes max
-      for (let i = 0; i < maxRetries; i++) {
-        // Fetch fresh analysis status
-        const headers: Record<string, string> = {};
-        if (user?.idToken) {
-          headers["Authorization"] = `Bearer ${user.idToken}`;
-        }
-        const statusResp = await fetch(`${API_BASE_URL}/hackathons/${id}/analysis`, { headers });
-        if (!statusResp.ok) {
-          throw new Error("Failed to check AI analysis status prior to asset generation.");
-        }
-        const statusData = await statusResp.json();
-        const currentStatus = statusData?.data?.status;
-        const currentMsg = statusData?.data?.status_message || "Analyzing...";
+      // Wait for analysis completion using SSE
+      const waitForAnalysisCompletion = (): Promise<void> => {
+        return new Promise((resolve, reject) => {
+          if (!user?.idToken) {
+            reject(new Error("User not authenticated"));
+            return;
+          }
 
-        if (currentStatus === "COMPLETED" || (!currentStatus && statusData?.data?.analysis_id)) {
-          // Update analysis cache for UI consistency
-          queryClient.setQueryData(["hackathon-analysis", id, user?.idToken], statusData);
-          queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id, user?.idToken] });
-          analysisFinished = true;
-          break;
-        }
-        
-        if (currentStatus === "FAILED") {
-          throw new Error(currentMsg || "AI Analysis failed prior to asset generation.");
+          const url = `${API_BASE_URL}/hackathons/${id}/analysis/stream?token=${encodeURIComponent(user.idToken)}`;
+          const timeout = 10 * 60 * 1000; // 10 minutes timeout
+          let timeoutId: number;
+
+          const cleanup = () => {
+            if (timeoutId) clearTimeout(timeoutId);
+          };
+
+          timeoutId = setTimeout(() => {
+            cleanup();
+            reject(new Error("AI Analysis timed out. Please try again."));
+          }, timeout);
+
+          fetchEventSource(url, {
+            method: 'GET',
+            headers: {
+              'Accept': 'text/event-stream',
+            },
+
+            onmessage: (event) => {
+              try {
+                const data = JSON.parse(event.data);
+                const currentStatus = data.status;
+                const currentMsg = data.status_message || "Analyzing...";
+
+                // Update progress text
+                setAssetsGeneratingText(`[AI Debate] ${currentMsg}`);
+
+                // Update cache
+                queryClient.setQueryData(
+                  ["hackathon-analysis", id, user?.idToken],
+                  (oldData: any) => ({
+                    ...oldData,
+                    data: {
+                      ...oldData?.data,
+                      status: currentStatus,
+                      status_message: currentMsg,
+                    }
+                  })
+                );
+
+                // Check if completed
+                if (currentStatus === "COMPLETED") {
+                  cleanup();
+                  queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id, user?.idToken] });
+                  resolve();
+                } else if (currentStatus === "FAILED") {
+                  cleanup();
+                  reject(new Error(currentMsg || "AI Analysis failed prior to asset generation."));
+                }
+              } catch (error) {
+                console.error("Error parsing SSE message:", error);
+              }
+            },
+
+            onerror: (error) => {
+              cleanup();
+              console.error("SSE error in asset generation, falling back to polling:", error);
+              // Fallback to polling if SSE fails
+              reject(error);
+            },
+
+            onclose: () => {
+              cleanup();
+            },
+          });
+        });
+      };
+
+      try {
+        await waitForAnalysisCompletion();
+      } catch (sseError) {
+        // Fallback to polling if SSE fails
+        console.log("SSE failed, falling back to polling for asset generation");
+        let analysisFinished = false;
+        const maxRetries = 150;
+        for (let i = 0; i < maxRetries; i++) {
+          const headers: Record<string, string> = {};
+          if (user?.idToken) {
+            headers["Authorization"] = `Bearer ${user.idToken}`;
+          }
+          const statusResp = await fetch(`${API_BASE_URL}/hackathons/${id}/analysis`, { headers });
+          if (!statusResp.ok) {
+            throw new Error("Failed to check AI analysis status prior to asset generation.");
+          }
+          const statusData = await statusResp.json();
+          const currentStatus = statusData?.data?.status;
+          const currentMsg = statusData?.data?.status_message || "Analyzing...";
+
+          setAssetsGeneratingText(`[AI Debate] ${currentMsg}`);
+
+          if (currentStatus === "COMPLETED" || (!currentStatus && statusData?.data?.analysis_id)) {
+            queryClient.setQueryData(["hackathon-analysis", id, user?.idToken], statusData);
+            queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id, user?.idToken] });
+            analysisFinished = true;
+            break;
+          }
+
+          if (currentStatus === "FAILED") {
+            throw new Error(currentMsg || "AI Analysis failed prior to asset generation.");
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 4000));
         }
 
-        // Update progress text in the loading screen!
-        setAssetsGeneratingText(`[AI Debate] ${currentMsg}`);
-        
-        // Wait 4 seconds
-        await new Promise((resolve) => setTimeout(resolve, 4000));
-      }
-
-      if (!analysisFinished) {
-        throw new Error("AI Analysis timed out. Please try again.");
+        if (!analysisFinished) {
+          throw new Error("AI Analysis timed out. Please try again.");
+        }
       }
 
       setAssetsGeneratingText("Structuring Solution Blueprint & Slide Deck...");

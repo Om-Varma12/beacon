@@ -1,5 +1,6 @@
 from agents.ollama_llm import OllamaLLM
 from orchestrator.pipeline import DebatePipeline
+from utils.sse_queue import get_sse_queue
 
 
 class AnalysisService:
@@ -123,13 +124,17 @@ class AnalysisService:
             }
 
     async def run_async_analysis_pipeline(self, analysis_id: int, hackathon_id: int, user_id: int = None):
+        sse_queue = get_sse_queue()
         try:
             # 1. Update status to RUNNING
+            status_message = "Preparing and loading hackathon problem statements..."
             self.analysis_repo.update_status(
                 analysis_id,
                 "RUNNING",
-                "Preparing and loading hackathon problem statements..."
+                status_message
             )
+            # Publish to SSE queue
+            await sse_queue.publish(analysis_id, "RUNNING", status_message)
 
             # Fetch Hackathon
             hackathon = self.hackathon_repo.get_by_id(hackathon_id)
@@ -165,24 +170,27 @@ class AnalysisService:
                 use_synthesizer=True
             )
 
-            # Callback to update progress in DB
+            # Callback to update progress in DB and publish to SSE
             async def on_progress(message: str):
                 self.analysis_repo.update_status(
                     analysis_id,
                     "RUNNING",
                     message
                 )
+                await sse_queue.publish(analysis_id, "RUNNING", message)
 
             # Run the pipeline
             result = await pipeline.run(theme=themes, on_progress=on_progress)
 
             # 2. Save Main Analysis
+            status_message = "Analysis completed successfully."
             self.analysis_repo.update_results(
                 analysis_id,
                 result,
                 status="COMPLETED",
-                status_message="Analysis completed successfully."
+                status_message=status_message
             )
+            await sse_queue.publish(analysis_id, "COMPLETED", status_message)
 
             # 3. Save Rounds
             rounds = result.get("rounds", [])
@@ -203,6 +211,7 @@ class AnalysisService:
                 "FAILED",
                 error_msg
             )
+            await sse_queue.publish(analysis_id, "FAILED", error_msg)
 
     def get_analysis(self, hackathon_id: int, user_id: int = None):
         hackathon = self.hackathon_repo.get_by_id(hackathon_id)

@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
 
-from db.database import Database
+from db.db_instance import db
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
 from db.ResourceRepository import ResourceRepository
@@ -12,6 +12,7 @@ from db.AgentRoundsRepository import AgentRoundsRepository
 from db.ChatMessageRepository import ChatMessageRepository
 from db.AssetsRepository import AssetsRepository
 from db.UserRepository import UserRepository
+from db.JobRepository import JobRepository
 
 from services.HackathonService import HackathonService
 from services.AnalysisService import AnalysisService
@@ -20,12 +21,9 @@ from services.AssetsService import AssetsService
 
 from scraper.main_scraper import scraperHackathons
 from utils.auth import get_current_user_claims
+from utils.redis_manager import get_redis_manager
 
 router = APIRouter()
-
-
-# Create one DB instance
-db = Database()
 
 
 class ChatModel(BaseModel):
@@ -94,6 +92,10 @@ def get_assets_service():
 
 def get_user_repo():
     return UserRepository(db)
+
+
+def get_job_repo():
+    return JobRepository(db)
 
 
 def resolve_user_id(claims: dict, user_repo: UserRepository) -> Optional[int]:
@@ -178,42 +180,39 @@ def get_hackathon(
 @router.post("/{hackathon_id}/analyze", status_code=202)
 async def analyze_hackathon(
     hackathon_id: int,
-    background_tasks: BackgroundTasks,
     claims: dict = Depends(get_current_user_claims),
-    service: AnalysisService = Depends(get_analysis_service),
-    user_repo: UserRepository = Depends(get_user_repo)
+    user_repo: UserRepository = Depends(get_user_repo),
+    job_repo: JobRepository = Depends(get_job_repo)
 ):
     user_id = resolve_user_id(claims, user_repo)
+    redis = get_redis_manager()
 
-    analysis_data = service.get_or_create_pending_analysis(
-        hackathon_id,
-        user_id=user_id
-    )
+    # Create job record
+    payload = {
+        "hackathon_id": hackathon_id,
+        "user_id": user_id
+    }
+    job_id = job_repo.create("analysis", payload)
 
-    if analysis_data is None:
+    if job_id is None:
         raise HTTPException(
-            status_code=404,
-            detail="Hackathon not found"
+            status_code=500,
+            detail="Failed to create job"
         )
 
-    analysis_id = analysis_data["analysis_id"]
-    status = analysis_data["status"]
-    status_message = analysis_data.get("status_message", "")
-
-    if analysis_data.get("should_start"):
-        background_tasks.add_task(
-            service.run_async_analysis_pipeline,
-            analysis_id,
-            hackathon_id,
-            user_id
+    # Push job to Redis queue
+    if not redis.push_job(job_id):
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to queue job"
         )
 
     return {
         "success": True,
         "data": {
-            "analysis_id": analysis_id,
-            "status": status,
-            "status_message": status_message
+            "job_id": job_id,
+            "status": "queued",
+            "status_message": "Job queued for processing"
         }
     }
     
@@ -354,4 +353,4 @@ async def download_assets_pptx(
         file_stream,
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+    )

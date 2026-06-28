@@ -8,7 +8,7 @@ import asyncio
 import httpx
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
-from db.database import Database
+from db.db_instance import db
 from scraper.hackathonScraper import scrape_hackathon_detail
 from agents.llm import LLM
 from agents.problem_parser import ProblemStatementParserAgent
@@ -30,8 +30,6 @@ async def scrape_and_insert_hackathon(external_id: int):
         - problems_count (int)
         - message (str)
     """
-
-    db = Database()
     hack_repo = HackathonRepository(db)
     problem_repo = ProblemRepository(db)
 

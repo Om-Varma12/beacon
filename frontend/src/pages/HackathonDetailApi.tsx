@@ -674,6 +674,7 @@ export default function HackathonDetailApi() {
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [user, setUser] = useState<{ name: string; email: string; idToken?: string } | null>(null);
   const [isAuthPopupOpen, setIsAuthPopupOpen] = useState(false);
+  const [jobId, setJobId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkUser = () => {
@@ -831,9 +832,10 @@ export default function HackathonDetailApi() {
   const analysisStatus = analysisQuery.data?.data?.status;
   const [sseEnabled, setSseEnabled] = useState(true);
   useAnalysisSSE({
+    jobId: jobId || "",
     hackathonId: id || "",
     token: user?.idToken || null,
-    enabled: sseEnabled && Boolean(id) && Boolean(user?.idToken) && (analysisStatus === "PENDING" || analysisStatus === "RUNNING"),
+    enabled: sseEnabled && Boolean(jobId) && Boolean(user?.idToken) && (analysisStatus === "PENDING" || analysisStatus === "RUNNING" || analysisStatus === "queued"),
     onError: (error) => {
       console.error("SSE error, disabling SSE and falling back to polling:", error);
       setSseEnabled(false);
@@ -892,6 +894,10 @@ export default function HackathonDetailApi() {
           throw new Error("Failed to run AI Analysis prior to asset generation.");
         }
         const analyzeResult = await analyzeResp.json();
+        // Extract job_id from response
+        if (analyzeResult?.data?.job_id) {
+          setJobId(analyzeResult.data.job_id);
+        }
         // Update query client cache for analysis
         queryClient.setQueryData(["hackathon-analysis", id, user?.idToken], analyzeResult);
         queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id, user?.idToken] });
@@ -905,7 +911,7 @@ export default function HackathonDetailApi() {
             return;
           }
 
-          const url = `${API_BASE_URL}/hackathons/${id}/analysis/stream?token=${encodeURIComponent(user.idToken)}`;
+          const url = `${API_BASE_URL}/hackathons/analysis/stream/${jobId}?token=${encodeURIComponent(user.idToken)}`;
           const timeout = 10 * 60 * 1000; // 10 minutes timeout
           let timeoutId: number;
 
@@ -1370,6 +1376,11 @@ export default function HackathonDetailApi() {
       }
 
       const result = (await resp.json()) as AnalysisResponse;
+
+      // Extract job_id from response
+      if (result?.data?.job_id) {
+        setJobId(result.data.job_id);
+      }
 
       // Update react-query cache for analysis so the UI reflects the new data
       queryClient.setQueryData(["hackathon-analysis", id, user?.idToken], result);

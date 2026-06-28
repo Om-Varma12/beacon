@@ -1,7 +1,16 @@
-ask antigravity
+solve this error:
+psycopg2.OperationalError: connection to server at "db.iuhwysfysvckoigedoep.supabase.co" (2406:da14:271:9921:13d7:b644:57c4:658c), port 5432 failed: FATAL:  remaining connection slots are reserved for roles with the SUPERUSER attribute
+
+see whats in redis
 
 
 
 
 
-see if redis can be used on project or not
+
+
+
+
+
+
+check if everything is working or not

@@ -128,7 +128,7 @@ export function useAnalysisSSE({
         console.log('SSE connection closed for job:', jobId);
       },
     });
-  }, [enabled, token, hackathonId, queryClient, onError]);
+  }, [enabled, token, jobId, hackathonId, queryClient, onError]);
 
   const disconnect = useCallback(() => {
     if (abortControllerRef.current) {
@@ -145,7 +145,7 @@ export function useAnalysisSSE({
     return () => {
       disconnect();
     };
-  }, [enabled, token, hackathonId, connect, disconnect]);
+  }, [enabled, token, jobId, connect, disconnect]);
 
   return { connect, disconnect };
 }

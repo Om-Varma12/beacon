@@ -39,7 +39,7 @@ class Worker:
         print("Worker started, waiting for jobs...")
         while True:
             try:
-                job_id = self.redis.pop_job(timeout=self.queue_timeout)
+                job_id = await asyncio.to_thread(self.redis.pop_job, timeout=self.queue_timeout)
                 if job_id:
                     print("running job", job_id)
                     await self.process_job(job_id)

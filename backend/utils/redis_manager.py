@@ -3,8 +3,11 @@ import json
 import redis
 from typing import Optional
 from dotenv import load_dotenv
+from pathlib import Path
 
-load_dotenv()
+# Load .env from backend directory
+backend_dir = Path(__file__).parent.parent
+load_dotenv(backend_dir / '.env')
 
 
 class RedisManager:

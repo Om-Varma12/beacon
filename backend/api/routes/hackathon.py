@@ -3,7 +3,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
 
-from db.database import Database
+from db.db_instance import db
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
 from db.ResourceRepository import ResourceRepository
@@ -24,10 +24,6 @@ from utils.auth import get_current_user_claims
 from utils.redis_manager import get_redis_manager
 
 router = APIRouter()
-
-
-# Create one DB instance
-db = Database()
 
 
 class ChatModel(BaseModel):

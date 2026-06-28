@@ -11,6 +11,7 @@ interface SSEEvent {
 }
 
 interface UseAnalysisSSEOptions {
+  jobId: string | number;
   hackathonId: string | number;
   token: string | null;
   enabled?: boolean;
@@ -18,6 +19,7 @@ interface UseAnalysisSSEOptions {
 }
 
 export function useAnalysisSSE({
+  jobId,
   hackathonId,
   token,
   enabled = true,
@@ -30,7 +32,7 @@ export function useAnalysisSSE({
   const reconnectDelay = 3000; // 3 seconds
 
   const connect = useCallback(() => {
-    if (!enabled || !token || !hackathonId) {
+    if (!enabled || !token || !jobId || jobId === 'null' || jobId === '') {
       return;
     }
 
@@ -41,7 +43,7 @@ export function useAnalysisSSE({
 
     abortControllerRef.current = new AbortController();
 
-    const url = `${API_BASE_URL}/hackathons/${hackathonId}/analysis/stream?token=${encodeURIComponent(token)}`;
+    const url = `${API_BASE_URL}/hackathons/analysis/stream/${jobId}?token=${encodeURIComponent(token)}`;
 
     fetchEventSource(url, {
       method: 'GET',
@@ -52,7 +54,7 @@ export function useAnalysisSSE({
 
       onopen: async () => {
         reconnectAttemptsRef.current = 0;
-        console.log('SSE connection opened for hackathon:', hackathonId);
+        console.log('SSE connection opened for job:', jobId);
       },
 
       onmessage: (event) => {
@@ -123,7 +125,7 @@ export function useAnalysisSSE({
       },
 
       onclose: () => {
-        console.log('SSE connection closed for hackathon:', hackathonId);
+        console.log('SSE connection closed for job:', jobId);
       },
     });
   }, [enabled, token, hackathonId, queryClient, onError]);
@@ -136,7 +138,7 @@ export function useAnalysisSSE({
   }, []);
 
   useEffect(() => {
-    if (enabled && token && hackathonId) {
+    if (enabled && token && jobId) {
       connect();
     }
 

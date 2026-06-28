@@ -1,10 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from db.database import Database
+from db.db_instance import db
 from db.UserRepository import UserRepository
 from utils.auth import get_current_user_claims
 
 router = APIRouter()
-db = Database()
 
 def get_user_repo():
     return UserRepository(db)

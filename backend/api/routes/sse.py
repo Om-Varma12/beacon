@@ -4,15 +4,13 @@ from typing import Optional
 import json
 import asyncio
 
-from db.database import Database
+from db.db_instance import db
 from db.HackathonRepository import HackathonRepository
 from db.JobRepository import JobRepository
 from utils.redis_manager import get_redis_manager
 from utils.auth import get_current_user_claims
 
 router = APIRouter()
-db = Database()
-
 
 def get_hackathon_repo():
     return HackathonRepository(db)

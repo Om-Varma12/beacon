@@ -4,7 +4,7 @@ import time
 import traceback
 from typing import Optional
 
-from db.database import Database
+from db.db_instance import db
 from db.JobRepository import JobRepository
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
@@ -25,7 +25,7 @@ from orchestrator.pipeline import DebatePipeline
 
 class Worker:
     def __init__(self):
-        self.db = Database()
+        self.db = db
         self.job_repo = JobRepository(self.db)
         self.redis = get_redis_manager()
         
@@ -258,4 +258,5 @@ async def main():
 
 
 if __name__ == "__main__":
+    print("Starting worker...")
     asyncio.run(main())

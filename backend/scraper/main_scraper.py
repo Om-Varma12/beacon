@@ -4,7 +4,7 @@ import httpx
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
 from db.ResourceRepository import ResourceRepository
-from db.database import Database
+from db.db_instance import db
 from scraper.hackathonScraper import scrape_hackathon_detail
 from scraper.pageScraper import scrape_pages
 from agents.llm import LLM
@@ -18,8 +18,6 @@ async def scraperHackathons(concurrency: int = 10):
     parses problem statements via the parser agent,
     and stores hackathons + extracted problems in the DB.
     """
-
-    db = Database()
 
     hack_repo = HackathonRepository(db)
     problem_repo = ProblemRepository(db)

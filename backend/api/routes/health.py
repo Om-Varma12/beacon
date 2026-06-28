@@ -1,13 +1,10 @@
 from fastapi import APIRouter
 
-from db.database import Database
+from db.db_instance import db
 from agents.grok_manager import GroqKeyManager
 from groq import Groq
 
 router = APIRouter()
-
-db = Database()
-
 
 @router.get("/health")
 def health_check():

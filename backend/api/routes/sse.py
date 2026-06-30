@@ -8,7 +8,7 @@ from db.db_instance import db
 from db.HackathonRepository import HackathonRepository
 from db.JobRepository import JobRepository
 from utils.redis_manager import get_redis_manager
-from utils.auth import get_current_user_claims
+from utils.auth import get_current_user_claims, verify_token
 
 router = APIRouter()
 
@@ -24,7 +24,6 @@ def get_job_repo():
 async def stream_analysis_status(
     job_id: int,
     token: str = Query(...),
-    claims: dict = Depends(get_current_user_claims),
     job_repo: JobRepository = Depends(get_job_repo)
 ):
     """
@@ -32,6 +31,8 @@ async def stream_analysis_status(
     
     Token is passed via query parameter because EventSource doesn't support custom headers.
     """
+    # Verify token from query parameter
+    claims = verify_token(token)
     # Resolve user ID from claims
     cognito_sub = claims.get("sub")
     email = claims.get("email")
@@ -76,7 +77,8 @@ async def stream_analysis_status(
             
             # Stream new events from Redis
             while True:
-                message = pubsub.get_message(timeout=15)
+                # Run blocking pubsub.get_message in thread pool
+                message = await asyncio.to_thread(pubsub.get_message, timeout=15)
                 if message:
                     if message["type"] == "message":
                         try:

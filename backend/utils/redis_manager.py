@@ -28,25 +28,44 @@ class RedisManager:
         self.queue_name = os.getenv("REDIS_QUEUE_NAME", "beacon:jobs")
         self.pubsub_channel = os.getenv("REDIS_PUBSUB_CHANNEL", "beacon:progress")
 
-        self.client = redis.from_url(redis_url, decode_responses=True)
+        # Create separate clients for queue and pubsub operations
+        # Queue client: for LPUSH/BRPOP operations
+        self.queue_client = redis.from_url(
+            redis_url,
+            decode_responses=True,
+            socket_timeout=None,
+            socket_connect_timeout=5,
+            health_check_interval=30
+        )
+        # Pubsub client: for publishing and subscribing
+        self.pubsub_client = redis.from_url(
+            redis_url,
+            decode_responses=True,
+            socket_timeout=None,
+            socket_connect_timeout=5,
+            health_check_interval=30
+        )
         self._pubsub = None
 
     def push_job(self, job_id: int) -> bool:
         """Push job_id to Redis queue."""
         try:
-            self.client.lpush(self.queue_name, str(job_id))
+            self.queue_client.lpush(self.queue_name, str(job_id))
             return True
         except Exception as e:
             print(f"Redis error (push_job): {e}")
             return False
 
-    def pop_job(self, timeout: int = 5) -> Optional[int]:
+    def pop_job(self, timeout: int = 0) -> Optional[int]:
         """Pop job_id from Redis queue (blocking with timeout)."""
         try:
-            result = self.client.brpop(self.queue_name, timeout=timeout)
+            result = self.queue_client.brpop(self.queue_name, timeout=timeout)
             if result:
                 _, job_id_str = result
                 return int(job_id_str)
+            return None
+        except redis.exceptions.TimeoutError:
+            # Timeout is expected when using timeout > 0
             return None
         except Exception as e:
             print(f"Redis error (pop_job): {e}")
@@ -60,7 +79,7 @@ class RedisManager:
                 "status": status,
                 "message": message
             }
-            self.client.publish(self.pubsub_channel, json.dumps(event))
+            self.pubsub_client.publish(self.pubsub_channel, json.dumps(event))
             return True
         except Exception as e:
             print(f"Redis error (publish_progress): {e}")
@@ -69,7 +88,7 @@ class RedisManager:
     def get_pubsub(self):
         """Get Redis pubsub instance for subscribing."""
         if self._pubsub is None:
-            self._pubsub = self.client.pubsub()
+            self._pubsub = self.pubsub_client.pubsub()
         return self._pubsub
 
     def subscribe(self, job_id: int):
@@ -82,8 +101,10 @@ class RedisManager:
         """Close Redis connections."""
         if self._pubsub:
             self._pubsub.close()
-        if self.client:
-            self.client.close()
+        if self.queue_client:
+            self.queue_client.close()
+        if self.pubsub_client:
+            self.pubsub_client.close()
 
 
 # Global instance

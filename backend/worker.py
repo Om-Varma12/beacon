@@ -1,8 +1,13 @@
 import asyncio
 import os
-import time
 import traceback
 from typing import Optional
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load .env from backend directory
+backend_dir = Path(__file__).parent
+load_dotenv(backend_dir / '.env')
 
 from db.db_instance import db
 from db.JobRepository import JobRepository
@@ -11,12 +16,9 @@ from db.ProblemRepository import ProblemRepository
 from db.AgentAnalysisRepository import AgentAnalysisRepository
 from db.AgentRoundsRepository import AgentRoundsRepository
 from db.AssetsRepository import AssetsRepository
-from db.UserRepository import UserRepository
-
-from services.AnalysisService import AnalysisService
-from services.AssetsService import AssetsService
 
 from scraper.main_scraper import scraperHackathons
+from services.AssetsService import AssetsService
 
 from utils.redis_manager import get_redis_manager
 from agents.ollama_llm import OllamaLLM
@@ -32,20 +34,17 @@ class Worker:
         # Configuration
         self.max_retries = int(os.getenv("WORKER_MAX_RETRIES", "3"))
         self.retry_backoff_base = int(os.getenv("WORKER_RETRY_BACKOFF_BASE", "2"))
-        self.queue_timeout = int(os.getenv("WORKER_QUEUE_TIMEOUT", "5"))
 
     async def run(self):
         """Main worker loop."""
         print("Worker started, waiting for jobs...")
         while True:
             try:
-                job_id = await asyncio.to_thread(self.redis.pop_job, timeout=self.queue_timeout)
+                # Block indefinitely until a job arrives
+                job_id = await asyncio.to_thread(self.redis.pop_job)
                 if job_id:
                     print("running job", job_id)
                     await self.process_job(job_id)
-                else:
-                    # No job, brief sleep before next check
-                    await asyncio.sleep(0.1)
             except KeyboardInterrupt:
                 print("Worker shutting down...")
                 break
@@ -116,7 +115,7 @@ class Worker:
             else:
                 # Max retries exceeded, mark as failed
                 print(f"Job {job_id} failed after {retry_count} attempts")
-                self.job_repo.update_status(job_id, "completed", error_message=error_msg)
+                self.job_repo.update_status(job_id, "failed", error_message=error_msg)
                 self.redis.publish_progress(job_id, "failed", f"Job failed after {retry_count} attempts: {error_msg}")
 
     async def run_analysis_job(self, job_id: int, payload: dict) -> Optional[int]:

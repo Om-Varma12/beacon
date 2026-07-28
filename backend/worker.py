@@ -122,19 +122,37 @@ class Worker:
         """Run hackathon analysis job."""
         hackathon_id = payload.get("hackathon_id")
         user_id = payload.get("user_id")
+        analysis_id = payload.get("analysis_id")
 
         if not hackathon_id:
             raise ValueError("Missing hackathon_id in payload")
 
-        # Progress callback
-        async def on_progress(message: str):
-            self.redis.publish_progress(job_id, "processing", message)
-
-        # Fetch hackathon
-        hackathon_repo = HackathonRepository(self.db)
-        problem_repo = ProblemRepository(self.db)
         analysis_repo = AgentAnalysisRepository(self.db)
         rounds_repo = AgentRoundsRepository(self.db)
+        hackathon_repo = HackathonRepository(self.db)
+        problem_repo = ProblemRepository(self.db)
+
+        # Ensure we have an analysis_id
+        if not analysis_id:
+            # Fallback for older jobs without analysis_id in payload
+            hackathon = hackathon_repo.get_by_id(hackathon_id)
+            if not hackathon:
+                raise ValueError("Hackathon not found")
+            existing = analysis_repo.get_by_hackathon_id(hackathon["id"], user_id=user_id)
+            if existing:
+                analysis_id = existing["id"]
+                analysis_repo.reset_analysis(analysis_id)
+            else:
+                analysis_id = analysis_repo.create_pending(hackathon["id"], user_id=user_id)
+                if not analysis_id:
+                    raise ValueError("Failed to create pending analysis record")
+
+        # Progress callback
+        async def on_progress(message: str):
+            # Update Redis Pub/Sub progress
+            self.redis.publish_progress(job_id, "processing", message)
+            # Update database status
+            analysis_repo.update_status(analysis_id, "RUNNING", message)
 
         hackathon = hackathon_repo.get_by_id(hackathon_id)
         if not hackathon:
@@ -173,15 +191,14 @@ class Worker:
         result = await pipeline.run(theme=themes, on_progress=on_progress)
 
         await on_progress("Saving analysis results...")
-        # Create analysis record
-        analysis_id = analysis_repo.create(
-            internal_hackathon_id,
+        
+        # Save main analysis results by updating the existing pending row
+        analysis_repo.update_results(
+            analysis_id,
             result,
-            user_id=user_id
+            status="COMPLETED",
+            status_message="Analysis completed successfully."
         )
-
-        if not analysis_id:
-            raise ValueError("Failed to create analysis record")
 
         # Save rounds
         rounds = result.get("rounds", [])

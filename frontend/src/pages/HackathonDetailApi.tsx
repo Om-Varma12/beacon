@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { Icon } from "@iconify/react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
@@ -765,6 +765,8 @@ export default function HackathonDetailApi() {
     }
   };
 
+  const [sseEnabled, setSseEnabled] = useState(true);
+
   const hackathonQuery = useQuery<HackathonQueryResult, Error>({
     queryKey: ["hackathon", id],
     enabled: Boolean(id),
@@ -792,7 +794,13 @@ export default function HackathonDetailApi() {
   const analysisQuery = useQuery<AnalysisResponse, Error>({
     queryKey: ["hackathon-analysis", id, user?.idToken],
     enabled: Boolean(id) && Boolean(user?.idToken),
+    // SSE is the source of truth while the job is running.
+    // Refetching on window focus triggers an unnecessary GET /analysis
+    // which previously caused spurious SSE disconnects.
+    refetchOnWindowFocus: false,
     refetchInterval: (query) => {
+      if (sseEnabled) return false;
+      
       const data = query.state.data as AnalysisResponse | undefined;
       const status = data?.data?.status;
       // Fallback to polling if SSE is not enabled or status is running
@@ -828,19 +836,35 @@ export default function HackathonDetailApi() {
     },
   });
 
-  // Use SSE for real-time updates when analysis is running
+  // Use SSE for real-time updates when analysis is running.
+  // IMPORTANT: analysisStatus is intentionally NOT in the enabled condition.
+  // Putting it there creates a feedback loop: SSE update → analysisStatus changes
+  // → enabled recalculates → hook reconnects → repeat forever.
+  // The hook itself closes the connection when it receives "completed"/"failed".
   const analysisStatus = analysisQuery.data?.data?.status;
-  const [sseEnabled, setSseEnabled] = useState(true);
+
+  // Hydrate jobId from the GET /analysis response after a page reload.
+  // The backend includes job_id when the analysis is still running (PENDING/RUNNING).
+  // Without this, jobId would always be null on reload and the SSE hook would never connect.
+  useEffect(() => {
+    const responseJobId = analysisQuery.data?.data?.job_id;
+    if (responseJobId && !jobId) {
+      setJobId(String(responseJobId));
+    }
+  }, [analysisQuery.data?.data?.job_id, jobId]);
+
+  const handleSseError = useCallback((error: Error) => {
+    console.error("SSE error, disabling SSE and falling back to polling:", error);
+    setSseEnabled(false);
+    // Polling fallback is handled by refetchInterval above
+  }, []);
+
   useAnalysisSSE({
     jobId: jobId || "",
     hackathonId: id || "",
     token: user?.idToken || null,
-    enabled: sseEnabled && Boolean(jobId) && Boolean(user?.idToken) && (analysisStatus === "PENDING" || analysisStatus === "RUNNING" || analysisStatus === "queued"),
-    onError: (error) => {
-      console.error("SSE error, disabling SSE and falling back to polling:", error);
-      setSseEnabled(false);
-      // Polling fallback is handled by refetchInterval above
-    },
+    enabled: sseEnabled && Boolean(jobId) && Boolean(user?.idToken),
+    onError: handleSseError,
   });
 
   // Assets-related states
@@ -880,6 +904,8 @@ export default function HackathonDetailApi() {
     setAssetsGenerating(true);
     setAssetsError(null);
     try {
+      let activeJobId = jobId;
+
       // If we don't have analysis, trigger it!
       if (!hasAnalysis) {
         setAssetsGeneratingText("Triggering AI Agent Debate to select winning idea...");
@@ -896,7 +922,8 @@ export default function HackathonDetailApi() {
         const analyzeResult = await analyzeResp.json();
         // Extract job_id from response
         if (analyzeResult?.data?.job_id) {
-          setJobId(analyzeResult.data.job_id);
+          activeJobId = analyzeResult.data.job_id;
+          setJobId(activeJobId);
         }
         // Update query client cache for analysis
         queryClient.setQueryData(["hackathon-analysis", id, user?.idToken], analyzeResult);
@@ -904,14 +931,19 @@ export default function HackathonDetailApi() {
       }
 
       // Wait for analysis completion using SSE
-      const waitForAnalysisCompletion = (): Promise<void> => {
+      const waitForAnalysisCompletion = (targetJobId: string | number): Promise<void> => {
         return new Promise((resolve, reject) => {
           if (!user?.idToken) {
             reject(new Error("User not authenticated"));
             return;
           }
 
-          const url = `${API_BASE_URL}/hackathons/analysis/stream/${jobId}?token=${encodeURIComponent(user.idToken)}`;
+          if (!targetJobId) {
+            reject(new Error("No active analysis job found"));
+            return;
+          }
+
+          const url = `${API_BASE_URL}/hackathons/analysis/stream/${targetJobId}?token=${encodeURIComponent(user.idToken)}`;
           const timeout = 10 * 60 * 1000; // 10 minutes timeout
           let timeoutId: number;
 
@@ -936,6 +968,14 @@ export default function HackathonDetailApi() {
                 const currentStatus = data.status;
                 const currentMsg = data.status_message || "Analyzing...";
 
+                // Normalize status to uppercase and align with database status strings
+                let normalizedStatus = (currentStatus || '').toUpperCase();
+                if (normalizedStatus === 'PROCESSING') {
+                  normalizedStatus = 'RUNNING';
+                } else if (normalizedStatus === 'QUEUED') {
+                  normalizedStatus = 'PENDING';
+                }
+
                 // Update progress text
                 setAssetsGeneratingText(`[AI Debate] ${currentMsg}`);
 
@@ -946,18 +986,18 @@ export default function HackathonDetailApi() {
                     ...oldData,
                     data: {
                       ...oldData?.data,
-                      status: currentStatus,
+                      status: normalizedStatus,
                       status_message: currentMsg,
                     }
                   })
                 );
 
                 // Check if completed
-                if (currentStatus === "COMPLETED") {
+                if (normalizedStatus === "COMPLETED") {
                   cleanup();
                   queryClient.invalidateQueries({ queryKey: ["hackathon-analysis", id, user?.idToken] });
                   resolve();
-                } else if (currentStatus === "FAILED") {
+                } else if (normalizedStatus === "FAILED") {
                   cleanup();
                   reject(new Error(currentMsg || "AI Analysis failed prior to asset generation."));
                 }
@@ -981,7 +1021,7 @@ export default function HackathonDetailApi() {
       };
 
       try {
-        await waitForAnalysisCompletion();
+        await waitForAnalysisCompletion(activeJobId || "");
       } catch (sseError) {
         // Fallback to polling if SSE fails
         console.log("SSE failed, falling back to polling for asset generation");

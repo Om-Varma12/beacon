@@ -187,3 +187,48 @@ class JobRepository:
 
         finally:
             self.db.release_conn(conn)
+
+    def get_active_job_for_hackathon(self, hackathon_id: int, user_id: int = None) -> Optional[Dict]:
+        """
+        Find the latest active (queued or processing) analysis job for a hackathon.
+        Used by GET /analysis so the frontend can reconnect SSE after a page reload.
+        """
+        if user_id is not None:
+            query = """
+                SELECT id, status
+                FROM jobs
+                WHERE job_type = 'analysis'
+                  AND (payload->>'hackathon_id')::bigint = %s
+                  AND (payload->>'user_id')::int = %s
+                  AND status IN ('queued', 'processing')
+                ORDER BY created_at DESC
+                LIMIT 1
+            """
+            params = (hackathon_id, user_id)
+        else:
+            query = """
+                SELECT id, status
+                FROM jobs
+                WHERE job_type = 'analysis'
+                  AND (payload->>'hackathon_id')::bigint = %s
+                  AND status IN ('queued', 'processing')
+                ORDER BY created_at DESC
+                LIMIT 1
+            """
+            params = (hackathon_id,)
+
+        conn = self.db.get_conn()
+        try:
+            with conn.cursor() as cur:
+                cur.execute(query, params)
+                row = cur.fetchone()
+                if not row:
+                    return None
+                columns = [desc[0] for desc in cur.description]
+                return dict(zip(columns, row))
+        except Exception as e:
+            print(f"DB error (JobRepository.get_active_job_for_hackathon): {e}")
+            return None
+        finally:
+            self.db.release_conn(conn)
+

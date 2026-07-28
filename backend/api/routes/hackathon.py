@@ -182,15 +182,30 @@ async def analyze_hackathon(
     hackathon_id: int,
     claims: dict = Depends(get_current_user_claims),
     user_repo: UserRepository = Depends(get_user_repo),
-    job_repo: JobRepository = Depends(get_job_repo)
+    job_repo: JobRepository = Depends(get_job_repo),
+    service: AnalysisService = Depends(get_analysis_service)
 ):
     user_id = resolve_user_id(claims, user_repo)
     redis = get_redis_manager()
 
-    # Create job record
+    analysis_data = service.get_or_create_pending_analysis(
+        hackathon_id,
+        user_id=user_id
+    )
+
+    if analysis_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Hackathon not found"
+        )
+
+    analysis_id = analysis_data["analysis_id"]
+
+    # Create job record with analysis_id in payload
     payload = {
         "hackathon_id": hackathon_id,
-        "user_id": user_id
+        "user_id": user_id,
+        "analysis_id": analysis_id
     }
     job_id = job_repo.create("analysis", payload)
 
@@ -222,7 +237,8 @@ def get_analysis(
     hackathon_id: int,
     claims: dict = Depends(get_current_user_claims),
     service: AnalysisService = Depends(get_analysis_service),
-    user_repo: UserRepository = Depends(get_user_repo)
+    user_repo: UserRepository = Depends(get_user_repo),
+    job_repo: JobRepository = Depends(get_job_repo)
 ):
     user_id = resolve_user_id(claims, user_repo)
     data = service.get_analysis(hackathon_id, user_id=user_id)
@@ -232,6 +248,14 @@ def get_analysis(
             status_code=404,
             detail="Hackathon not found"
         )
+
+    # If the analysis is still running, attach the active job_id so
+    # the frontend can reconnect its SSE stream after a page reload.
+    status = data.get("status") if data else None
+    if status in ("PENDING", "RUNNING"):
+        active_job = job_repo.get_active_job_for_hackathon(hackathon_id, user_id=user_id)
+        if active_job:
+            data["job_id"] = active_job["id"]
 
     return {
         "success": True,

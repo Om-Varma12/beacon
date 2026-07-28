@@ -179,6 +179,7 @@ class AgentAnalysisRepository:
                 SELECT *
                 FROM agent_analysis
                 WHERE hackathon_id = %s AND user_id = %s
+                ORDER BY id DESC
                 LIMIT 1
             """
             params = (hackathon_id, user_id)
@@ -187,6 +188,7 @@ class AgentAnalysisRepository:
                 SELECT *
                 FROM agent_analysis
                 WHERE hackathon_id = %s AND user_id IS NULL
+                ORDER BY id DESC
                 LIMIT 1
             """
             params = (hackathon_id,)

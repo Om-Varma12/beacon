@@ -6,9 +6,7 @@ __pycache__/
 TODO
 ISSUES.md
 
-CLAUDE.MD
-contexts
-.claude
-
 schema/
 debate-results/
+
+cmds.txt

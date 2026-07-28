@@ -51,7 +51,8 @@ async def stream_analysis_status(
     # If already completed/failed, send final event and close
     if current_status in ("completed", "failed"):
         async def send_final():
-            yield f"data: {json.dumps({'status': current_status, 'message': current_message})}\n\n"
+            # Include status_message for frontend compatibility
+            yield f"data: {json.dumps({'status': current_status, 'message': current_message, 'status_message': current_message, 'seq': 0})}\n\n"
         
         return StreamingResponse(
             send_final(),
@@ -69,48 +70,70 @@ async def stream_analysis_status(
     async def event_generator():
         pubsub = None
         try:
-            # Subscribe to Redis Pub/Sub
-            pubsub = redis.subscribe(job_id)
+            # 1. Subscribe first to ensure no gap between replay and subscription
+            pubsub = await redis.subscribe(job_id)
             
-            # Send current status immediately
-            yield f"data: {json.dumps({'status': current_status, 'message': current_message})}\n\n"
+            # 2. Fetch and replay all historical progress events in order
+            replayed_events = await redis.get_replayed_events(job_id)
+            max_sent_seq = 0
             
-            # Stream new events from Redis
+            for event in replayed_events:
+                yield f"data: {json.dumps(event)}\n\n"
+                max_sent_seq = max(max_sent_seq, event.get("seq", 0))
+            
+            # 3. If there are no replayed events, yield the initial queued status
+            if max_sent_seq == 0:
+                initial_event = {
+                    "job_id": job_id,
+                    "status": current_status,
+                    "message": current_message,
+                    "status_message": current_message,
+                    "seq": 0
+                }
+                yield f"data: {json.dumps(initial_event)}\n\n"
+            
+            # 4. Stream new events from Redis Pub/Sub, deduping by sequence number
             while True:
-                # Run blocking pubsub.get_message in thread pool
-                message = await asyncio.to_thread(pubsub.get_message, timeout=15)
+                # Fully async call - does not block FastAPI thread pool
+                message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=15)
                 if message:
-                    if message["type"] == "message":
-                        try:
-                            event_data = json.loads(message["data"])
-                            # Only send events for this job
-                            if event_data.get("job_id") == job_id:
-                                yield f"data: {json.dumps({'status': event_data.get('status'), 'message': event_data.get('message')})}\n\n"
-                                
-                                # Stop if job is completed or failed
-                                if event_data.get("status") in ("completed", "failed"):
-                                    break
-                        except json.JSONDecodeError:
-                            pass
+                    try:
+                        event_data = json.loads(message["data"])
+                        seq = event_data.get("seq", 0)
+                        
+                        # Only deliver events we haven't sent yet
+                        if seq > max_sent_seq:
+                            yield f"data: {json.dumps(event_data)}\n\n"
+                            max_sent_seq = seq
+                            
+                            # Stop if job is completed or failed
+                            if event_data.get("status") in ("completed", "failed", "COMPLETED", "FAILED"):
+                                break
+                    except json.JSONDecodeError:
+                        pass
                 else:
                     # Send keepalive every 15 seconds
                     yield ": keepalive\n\n"
                     
         except asyncio.CancelledError:
-            # Client disconnected
             print(f"SSE client disconnected for job_id: {job_id}")
             raise
         except Exception as e:
-            print(f"SSE error for job_id: {job_id}: {e}")
+            import traceback
+            error_trace = traceback.format_exc()
+            print(f"SSE connection error for job_id: {job_id}:\n{error_trace}")
+            
+            # Differentiate transport/redis stream errors from upstream job failures
             error_data = {
-                'status': 'ERROR',
-                'message': f'Stream error: {str(e)}'
+                'status': 'STREAM_ERROR',
+                'message': f'SSE stream error: {str(e)}',
+                'status_message': f'SSE stream error: {str(e)}'
             }
             yield f"data: {json.dumps(error_data)}\n\n"
         finally:
             if pubsub:
-                pubsub.unsubscribe()
-                pubsub.close()
+                await pubsub.unsubscribe()
+                await pubsub.close()
     
     return StreamingResponse(
         event_generator(),

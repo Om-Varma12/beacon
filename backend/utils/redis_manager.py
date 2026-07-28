@@ -1,11 +1,12 @@
 import os
 import json
 import redis
-from typing import Optional
-from dotenv import load_dotenv
-from pathlib import Path
+import redis.asyncio as aioredis
+from typing import Optional, List, Dict
 
 # Load .env from backend directory
+from pathlib import Path
+from dotenv import load_dotenv
 backend_dir = Path(__file__).parent.parent
 load_dotenv(backend_dir / '.env')
 
@@ -26,10 +27,9 @@ class RedisManager:
 
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
         self.queue_name = os.getenv("REDIS_QUEUE_NAME", "beacon:jobs")
-        self.pubsub_channel = os.getenv("REDIS_PUBSUB_CHANNEL", "beacon:progress")
 
         # Create separate clients for queue and pubsub operations
-        # Queue client: for LPUSH/BRPOP operations
+        # Queue client: sync client for worker job queue operations and sync progress publishing
         self.queue_client = redis.from_url(
             redis_url,
             decode_responses=True,
@@ -37,15 +37,14 @@ class RedisManager:
             socket_connect_timeout=5,
             health_check_interval=30
         )
-        # Pubsub client: for publishing and subscribing
-        self.pubsub_client = redis.from_url(
+        # Pubsub client: async client for non-blocking SSE connections
+        self.pubsub_client = aioredis.from_url(
             redis_url,
             decode_responses=True,
             socket_timeout=None,
             socket_connect_timeout=5,
             health_check_interval=30
         )
-        self._pubsub = None
 
     def push_job(self, job_id: int) -> bool:
         """Push job_id to Redis queue."""
@@ -72,39 +71,71 @@ class RedisManager:
             return None
 
     def publish_progress(self, job_id: int, status: str, message: str) -> bool:
-        """Publish progress event to Redis Pub/Sub."""
+        """
+        Publish progress event to a per-job Redis Pub/Sub channel and append to a durable list.
+        Uses the sync queue_client so it is thread-safe and safe for sync workers.
+        """
         try:
+            # 1. Increment sequence number
+            seq_key = f"beacon:events:{job_id}:seq"
+            seq = self.queue_client.incr(seq_key)
+            if seq == 1:
+                self.queue_client.expire(seq_key, 3600)  # 1 hour TTL
+            
+            # 2. Build the event payload
+            # Both "message" and "status_message" are included for frontend compatibility.
             event = {
                 "job_id": job_id,
                 "status": status,
-                "message": message
+                "message": message,
+                "status_message": message,
+                "seq": seq
             }
-            self.pubsub_client.publish(self.pubsub_channel, json.dumps(event))
+            event_str = json.dumps(event)
+            
+            # 3. Append to the durable events list
+            list_key = f"beacon:events:{job_id}"
+            self.queue_client.rpush(list_key, event_str)
+            self.queue_client.expire(list_key, 3600)  # 1 hour TTL
+            
+            # 4. Publish to the per-job channel
+            channel_key = f"beacon:progress:{job_id}"
+            self.queue_client.publish(channel_key, event_str)
             return True
         except Exception as e:
-            print(f"Redis error (publish_progress): {e}")
+            import traceback
+            print(f"Redis error (publish_progress) for job {job_id}: {e}")
+            traceback.print_exc()
             return False
 
-    def get_pubsub(self):
-        """Get Redis pubsub instance for subscribing."""
-        if self._pubsub is None:
-            self._pubsub = self.pubsub_client.pubsub()
-        return self._pubsub
+    async def get_replayed_events(self, job_id: int) -> List[Dict]:
+        """
+        Fetch all replayed events from the durable list for a job.
+        Uses the async pubsub_client so it doesn't block the async loop.
+        """
+        try:
+            list_key = f"beacon:events:{job_id}"
+            events = await self.pubsub_client.lrange(list_key, 0, -1)
+            return [json.loads(e) for e in events]
+        except Exception as e:
+            print(f"Error fetching replayed events for job {job_id}: {e}")
+            return []
 
-    def subscribe(self, job_id: int):
-        """Subscribe to progress channel for a specific job."""
-        pubsub = self.get_pubsub()
-        pubsub.subscribe(self.pubsub_channel)
+    async def subscribe(self, job_id: int):
+        """
+        Create and return a new independent async Redis pubsub instance.
+        Each SSE connection gets its own pubsub object.
+        """
+        pubsub = self.pubsub_client.pubsub()
+        await pubsub.subscribe(f"beacon:progress:{job_id}")
         return pubsub
 
-    def close(self):
+    async def close(self):
         """Close Redis connections."""
-        if self._pubsub:
-            self._pubsub.close()
         if self.queue_client:
             self.queue_client.close()
         if self.pubsub_client:
-            self.pubsub_client.close()
+            await self.pubsub_client.close()
 
 
 # Global instance

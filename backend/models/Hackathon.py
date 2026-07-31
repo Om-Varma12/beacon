@@ -5,7 +5,7 @@ from sqlalchemy import JSON, func
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
-from Base import Base
+from .Base import Base
 
 
 class Hackathon(Base):

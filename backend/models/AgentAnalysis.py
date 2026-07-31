@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 from sqlalchemy import func, ForeignKey
 
-from Base import Base
+from .Base import Base
 
 class AgentAnalysis(Base):
     __tablename__ = "agent_analysis"

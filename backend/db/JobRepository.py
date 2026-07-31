@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.types import BigInteger, Integer
 
-from ..models.Job import Job
+from models.Job import Job
 
 
 class JobRepository:

@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.AgentRound import AgentRound
+from models.AgentRound import AgentRound
 
 
 class AgentRoundsRepository:

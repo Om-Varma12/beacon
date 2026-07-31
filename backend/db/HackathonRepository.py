@@ -4,7 +4,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.Hackathon import Hackathon
+from models.Hackathon import Hackathon
 
 
 def parse_date(value):

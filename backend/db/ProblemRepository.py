@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ..models.ProblemStatement import ProblemStatement
+from models.ProblemStatement import ProblemStatement
 
 
 class ProblemRepository:

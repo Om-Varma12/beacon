@@ -11,6 +11,15 @@
       "isBackground": true
     },
     {
+      "label": "Worker",
+      "type": "shell",
+      "command": "uv run -m worker",
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "isBackground": true
+    },
+    {
       "label": "Frontend",
       "type": "shell",
       "command": "npm run dev",
@@ -23,7 +32,8 @@
       "label": "Start Beacon",
       "dependsOn": [
         "Backend",
-        "Frontend"
+        "Frontend",
+        "Worker"
       ],
       "dependsOrder": "parallel"
     }

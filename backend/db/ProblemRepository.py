@@ -1,73 +1,47 @@
-from .database import Database
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..models.ProblemStatement import ProblemStatement
 
 
 class ProblemRepository:
-    def __init__(self, db: Database):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    def create(self, hackathon_id: int, data: dict):
-        query = """
-            INSERT INTO problem_statements (
-                hackathon_id,
-                title,
-                description,
-                type
-            )
-            VALUES (%s, %s, %s, %s)
-            RETURNING id
-        """
 
-        values = (
-            hackathon_id,
-            data.get("title"),
-            data.get("description"),
-            data.get("type"),
+    async def create(self, hackathon_id: int, data: dict):
+        problem = ProblemStatement(
+            hackathon_id=hackathon_id,
+            title=data.get("title"),
+            description=data.get("description"),
+            type=data.get("type"),
         )
 
-        conn = self.db.get_conn()
+        self.session.add(problem)
 
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-                result = cur.fetchone()
+        await self.session.flush()
 
-            conn.commit()
+        return problem.id
 
-            if result:
-                return result[0]
 
-            return None
+    async def get_by_hackathon_id(self, hackathon_id: int):
+        stmt = (
+            select(ProblemStatement)
+            .where(ProblemStatement.hackathon_id == hackathon_id)
+            .order_by(ProblemStatement.id.asc())
+        )
 
-        except Exception as e:
-            conn.rollback()
-            print(f"DB error (ProblemRepository.create): {e}")
-            return None
+        result = await self.session.execute(stmt)
 
-        finally:
-            self.db.release_conn(conn)
-            
-            
-    def get_by_hackathon_id(self, hackathon_id: int):
-        conn = self.db.get_conn()
+        problems = result.scalars().all()
 
-        try:
-            with conn.cursor() as cur:
-
-                cur.execute("""
-                    SELECT *
-                    FROM problem_statements
-                    WHERE hackathon_id = %s
-                    ORDER BY id ASC
-                """, (hackathon_id,))
-
-                rows = cur.fetchall()
-
-                columns = [desc[0] for desc in cur.description]
-
-                return [
-                    dict(zip(columns, row))
-                    for row in rows
-                ]
-
-        finally:
-            self.db.release_conn(conn)
+        return [
+            {
+                "id": p.id,
+                "hackathon_id": p.hackathon_id,
+                "title": p.title,
+                "description": p.description,
+                "type": p.type,
+            }
+            for p in problems
+        ]

@@ -1,103 +1,59 @@
-from .database import Database
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..models.ChatMessage import ChatMessage
 
 
 class ChatMessageRepository:
-    def __init__(self, db: Database):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
 
-    def create(
+    async def create(
         self,
         hackathon_id: int,
         role: str,
-        content: str
+        content: str,
     ):
-        query = """
-            INSERT INTO chat_messages (
-                hackathon_id,
-                role,
-                content
-            )
-            VALUES (%s, %s, %s)
-            RETURNING id
-        """
-
-        values = (
-            hackathon_id,
-            role,
-            content
+        message = ChatMessage(
+            hackathon_id=hackathon_id,
+            role=role,
+            content=content,
         )
-        conn = self.db.get_conn()
 
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-                row = cur.fetchone()
+        self.session.add(message)
 
-            conn.commit()
+        await self.session.flush()
 
-            if row:
-                return row[0]
-
-            return None
-
-        except Exception as e:
-            conn.rollback()
-            print(
-                f"DB error (ChatMessageRepository.create): {e}"
-            )
-            return None
-
-        finally:
-            self.db.release_conn(conn)
+        return message.id
 
 
-    def get_recent_by_hackathon_id(
+    async def get_recent_by_hackathon_id(
         self,
         hackathon_id: int,
-        limit: int = 10
+        limit: int = 10,
     ):
-        query = """
-            SELECT *
-            FROM chat_messages
-            WHERE hackathon_id = %s
-            ORDER BY created_at DESC
-            LIMIT %s
-        """
-        conn = self.db.get_conn()
+        stmt = (
+            select(ChatMessage)
+            .where(ChatMessage.hackathon_id == hackathon_id)
+            .order_by(ChatMessage.created_at.desc())
+            .limit(limit)
+        )
 
-        try:
-            with conn.cursor() as cur:
-                cur.execute(
-                    query,
-                    (hackathon_id, limit)
-                )
-                
-                rows = cur.fetchall()
-                
-                columns = [
-                    desc[0]
-                    for desc in cur.description
-                ]
+        result = await self.session.execute(stmt)
 
-                messages = [
-                    dict(zip(columns, row))
-                    for row in rows
-                ]
+        messages = result.scalars().all()
 
-                # Reverse so conversation flows correctly
-                messages.reverse()
+        # Reverse so conversation flows correctly
+        messages.reverse()
 
-                return messages
-
-        except Exception as e:
-            print(
-                "DB error "
-                "(ChatMessageRepository.get_recent_by_hackathon_id): "
-                f"{e}"
-            )
-
-            return []
-
-        finally:
-            self.db.release_conn(conn)
+        return [
+            {
+                "id": m.id,
+                "hackathon_id": m.hackathon_id,
+                "role": m.role,
+                "content": m.content,
+                "created_at": m.created_at,
+            }
+            for m in messages
+        ]

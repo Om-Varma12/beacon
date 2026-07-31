@@ -1,234 +1,229 @@
-import json
-from typing import Optional, Dict, List
+from typing import Dict, List, Optional
 
-from db.database import Database
+from sqlalchemy import cast, select
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.types import BigInteger, Integer
+
+from ..models.Job import Job
 
 
 class JobRepository:
-    def __init__(self, db: Database):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    def create(self, job_type: str, payload: Dict) -> Optional[int]:
-        """Create a new job with status='queued'."""
-        query = """
-            INSERT INTO jobs (job_type, payload, status)
-            VALUES (%s, %s, 'queued')
-            RETURNING id
-        """
-        values = (job_type, json.dumps(payload))
-        conn = self.db.get_conn()
 
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-                row = cur.fetchone()
-            conn.commit()
+    async def create(
+        self,
+        job_type: str,
+        payload: Dict,
+    ) -> Optional[int]:
+        job = Job(
+            job_type=job_type,
+            payload=payload,
+            status="queued",
+        )
 
-            if row:
-                return row[0]
+        self.session.add(job)
+
+        await self.session.flush()
+
+        return job.id
+
+
+    async def get_by_id(
+        self,
+        job_id: int,
+    ) -> Optional[Dict]:
+        stmt = (
+            select(Job)
+            .where(Job.id == job_id)
+        )
+
+        result = await self.session.execute(stmt)
+
+        job = result.scalar_one_or_none()
+
+        if job is None:
             return None
 
-        except Exception as e:
-            conn.rollback()
-            print(f"DB error (JobRepository.create): {e}")
-            return None
+        return {
+            "id": job.id,
+            "job_type": job.job_type,
+            "payload": job.payload,
+            "status": job.status,
+            "result_id": job.result_id,
+            "retry_count": job.retry_count,
+            "error_message": job.error_message,
+            "created_at": job.created_at,
+        }
 
-        finally:
-            self.db.release_conn(conn)
 
-    def get_by_id(self, job_id: int) -> Optional[Dict]:
-        """Fetch job details by ID."""
-        query = """
-            SELECT *
-            FROM jobs
-            WHERE id = %s
-        """
-        conn = self.db.get_conn()
+    async def update_status(
+        self,
+        job_id: int,
+        status: str,
+        error_message: Optional[str] = None,
+    ):
+        stmt = (
+            select(Job)
+            .where(Job.id == job_id)
+        )
 
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, (job_id,))
-                row = cur.fetchone()
-                if not row:
-                    return None
+        result = await self.session.execute(stmt)
 
-                columns = [desc[0] for desc in cur.description]
-                return dict(zip(columns, row))
+        job = result.scalar_one_or_none()
 
-        except Exception as e:
-            print(f"DB error (JobRepository.get_by_id): {e}")
-            return None
+        if job is None:
+            return
 
-        finally:
-            self.db.release_conn(conn)
+        job.status = status
 
-    def update_status(self, job_id: int, status: str, error_message: Optional[str] = None):
-        """Update job status and optionally error message."""
-        if error_message:
-            query = """
-                UPDATE jobs
-                SET status = %s,
-                    error_message = %s
-                WHERE id = %s
-            """
-            values = (status, error_message, job_id)
-        else:
-            query = """
-                UPDATE jobs
-                SET status = %s
-                WHERE id = %s
-            """
-            values = (status, job_id)
+        if error_message is not None:
+            job.error_message = error_message
 
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            print(f"DB error (JobRepository.update_status): {e}")
-        finally:
-            self.db.release_conn(conn)
 
-    def update_result(self, job_id: int, result_id: Optional[int]):
-        """Link job to result table (agent_analysis, assets, etc)."""
-        query = """
-            UPDATE jobs
-            SET result_id = %s
-            WHERE id = %s
-        """
-        values = (result_id, job_id)
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            print(f"DB error (JobRepository.update_result): {e}")
-        finally:
-            self.db.release_conn(conn)
+    async def update_result(
+        self,
+        job_id: int,
+        result_id: Optional[int],
+    ):
+        stmt = (
+            select(Job)
+            .where(Job.id == job_id)
+        )
 
-    def increment_retry(self, job_id: int) -> int:
-        """Increment retry count and return new count."""
-        query = """
-            UPDATE jobs
-            SET retry_count = retry_count + 1
-            WHERE id = %s
-            RETURNING retry_count
-        """
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, (job_id,))
-                row = cur.fetchone()
-            conn.commit()
-            if row:
-                return row[0]
+        result = await self.session.execute(stmt)
+
+        job = result.scalar_one_or_none()
+
+        if job is None:
+            return
+
+        job.result_id = result_id
+
+
+    async def increment_retry(
+        self,
+        job_id: int,
+    ) -> int:
+        stmt = (
+            select(Job)
+            .where(Job.id == job_id)
+        )
+
+        result = await self.session.execute(stmt)
+
+        job = result.scalar_one_or_none()
+
+        if job is None:
             return 0
-        except Exception as e:
-            conn.rollback()
-            print(f"DB error (JobRepository.increment_retry): {e}")
-            return 0
-        finally:
-            self.db.release_conn(conn)
 
-    def get_queued_jobs(self, limit: int = 100) -> List[Dict]:
-        """Fetch queued jobs for monitoring."""
-        query = """
-            SELECT *
-            FROM jobs
-            WHERE status = 'queued'
-            ORDER BY created_at ASC
-            LIMIT %s
-        """
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, (limit,))
-                rows = cur.fetchall()
-                if not rows:
-                    return []
+        job.retry_count += 1
 
-                columns = [desc[0] for desc in cur.description]
-                return [dict(zip(columns, row)) for row in rows]
+        await self.session.flush()
 
-        except Exception as e:
-            print(f"DB error (JobRepository.get_queued_jobs): {e}")
-            return []
+        return job.retry_count
 
-        finally:
-            self.db.release_conn(conn)
 
-    def get_jobs_by_status(self, status: str, limit: int = 100) -> List[Dict]:
-        """Fetch jobs by status."""
-        query = """
-            SELECT *
-            FROM jobs
-            WHERE status = %s
-            ORDER BY created_at DESC
-            LIMIT %s
-        """
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, (status, limit))
-                rows = cur.fetchall()
-                if not rows:
-                    return []
+    async def get_queued_jobs(
+        self,
+        limit: int = 100,
+    ) -> List[Dict]:
+        stmt = (
+            select(Job)
+            .where(Job.status == "queued")
+            .order_by(Job.created_at.asc())
+            .limit(limit)
+        )
 
-                columns = [desc[0] for desc in cur.description]
-                return [dict(zip(columns, row)) for row in rows]
+        result = await self.session.execute(stmt)
 
-        except Exception as e:
-            print(f"DB error (JobRepository.get_jobs_by_status): {e}")
-            return []
+        jobs = result.scalars().all()
 
-        finally:
-            self.db.release_conn(conn)
+        return [
+            {
+                "id": j.id,
+                "job_type": j.job_type,
+                "payload": j.payload,
+                "status": j.status,
+                "result_id": j.result_id,
+                "retry_count": j.retry_count,
+                "error_message": j.error_message,
+                "created_at": j.created_at,
+            }
+            for j in jobs
+        ]
 
-    def get_active_job_for_hackathon(self, hackathon_id: int, user_id: int = None) -> Optional[Dict]:
-        """
-        Find the latest active (queued or processing) analysis job for a hackathon.
-        Used by GET /analysis so the frontend can reconnect SSE after a page reload.
-        """
+
+    async def get_jobs_by_status(
+        self,
+        status: str,
+        limit: int = 100,
+    ) -> List[Dict]:
+        stmt = (
+            select(Job)
+            .where(Job.status == status)
+            .order_by(Job.created_at.desc())
+            .limit(limit)
+        )
+
+        result = await self.session.execute(stmt)
+
+        jobs = result.scalars().all()
+
+        return [
+            {
+                "id": j.id,
+                "job_type": j.job_type,
+                "payload": j.payload,
+                "status": j.status,
+                "result_id": j.result_id,
+                "retry_count": j.retry_count,
+                "error_message": j.error_message,
+                "created_at": j.created_at,
+            }
+            for j in jobs
+        ]
+
+
+    async def get_active_job_for_hackathon(
+        self,
+        hackathon_id: int,
+        user_id: int = None,
+    ) -> Optional[Dict]:
+        stmt = (
+            select(Job.id, Job.status)
+            .where(Job.job_type == "analysis")
+            .where(
+                cast(
+                    Job.payload["hackathon_id"].astext,
+                    BigInteger,
+                ) == hackathon_id
+            )
+            .where(
+                Job.status.in_(["queued", "processing"])
+            )
+            .order_by(Job.created_at.desc())
+            .limit(1)
+        )
+
         if user_id is not None:
-            query = """
-                SELECT id, status
-                FROM jobs
-                WHERE job_type = 'analysis'
-                  AND (payload->>'hackathon_id')::bigint = %s
-                  AND (payload->>'user_id')::int = %s
-                  AND status IN ('queued', 'processing')
-                ORDER BY created_at DESC
-                LIMIT 1
-            """
-            params = (hackathon_id, user_id)
-        else:
-            query = """
-                SELECT id, status
-                FROM jobs
-                WHERE job_type = 'analysis'
-                  AND (payload->>'hackathon_id')::bigint = %s
-                  AND status IN ('queued', 'processing')
-                ORDER BY created_at DESC
-                LIMIT 1
-            """
-            params = (hackathon_id,)
+            stmt = stmt.where(
+                cast(
+                    Job.payload["user_id"].astext,
+                    Integer,
+                ) == user_id
+            )
 
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, params)
-                row = cur.fetchone()
-                if not row:
-                    return None
-                columns = [desc[0] for desc in cur.description]
-                return dict(zip(columns, row))
-        except Exception as e:
-            print(f"DB error (JobRepository.get_active_job_for_hackathon): {e}")
+        result = await self.session.execute(stmt)
+
+        row = result.first()
+
+        if row is None:
             return None
-        finally:
-            self.db.release_conn(conn)
 
+        return {
+            "id": row.id,
+            "status": row.status,
+        }

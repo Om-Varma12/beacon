@@ -1,215 +1,165 @@
-import json
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.database import Database
+from ..models.AgentAnalysis import AgentAnalysis
 
 
 class AgentAnalysisRepository:
-    def __init__(self, db: Database):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
 
-    def create(self, hackathon_id: int, result: dict, user_id: int = None):
-        query = """
-            INSERT INTO agent_analysis (
-                hackathon_id,
-                user_id,
-                winner,
-                leaderboard,
-                final_scores,
-                winning_idea,
-                synthesized
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-        """
-        values = (
-            hackathon_id,
-            user_id,
-            result.get("winner"),
-            json.dumps(
-                result.get("leaderboard", [])
-            ),
-            json.dumps(
-                result.get("final_scores", {})
-            ),
-            json.dumps(
-                result.get("winning_idea", {})
-            ),
-            json.dumps(
-                result.get("synthesized", {})
-            ),
+    async def create(
+        self,
+        hackathon_id: int,
+        result: dict,
+        user_id: int = None
+    ):
+        analysis = AgentAnalysis(
+            hackathon_id=hackathon_id,
+            user_id=user_id,
+            winner=result.get("winner"),
+            leaderboard=result.get("leaderboard", []),
+            final_scores=result.get("final_scores", {}),
+            winning_idea=result.get("winning_idea", {}),
+            synthesized=result.get("synthesized", {}),
         )
-        conn = self.db.get_conn()
 
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-                row = cur.fetchone()
+        self.session.add(analysis)
 
-            conn.commit()
+        await self.session.flush()
 
-            if row:
-                return row[0]
+        return analysis.id
 
-            return None
 
-        except Exception as e:
-            conn.rollback()
-            print(
-                f"DB error (AgentAnalysisRepository.create): {e}"
-            )
-            return None
+    async def create_pending(
+        self,
+        hackathon_id: int,
+        user_id: int = None
+    ):
+        analysis = AgentAnalysis(
+            hackathon_id=hackathon_id,
+            user_id=user_id,
+            status="PENDING",
+            status_message="Initializing analysis pipeline...",
+        )
 
-        finally:
-            self.db.release_conn(conn)
+        self.session.add(analysis)
 
-    def create_pending(self, hackathon_id: int, user_id: int = None) -> int:
-        query = """
-            INSERT INTO agent_analysis (
-                hackathon_id,
-                user_id,
-                status,
-                status_message
-            )
-            VALUES (%s, %s, 'PENDING', 'Initializing analysis pipeline...')
-            RETURNING id
-        """
-        values = (hackathon_id, user_id)
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-                row = cur.fetchone()
-            conn.commit()
-            if row:
-                return row[0]
-            return None
-        except Exception as e:
-            conn.rollback()
-            print(f"DB error (AgentAnalysisRepository.create_pending): {e}")
-            return None
-        finally:
-            self.db.release_conn(conn)
+        await self.session.flush()
 
-    def update_status(self, analysis_id: int, status: str, status_message: str):
-        query = """
-            UPDATE agent_analysis
-            SET status = %s,
-                status_message = %s
-            WHERE id = %s
-        """
-        values = (status, status_message, analysis_id)
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            print(f"DB error (AgentAnalysisRepository.update_status): {e}")
-        finally:
-            self.db.release_conn(conn)
+        return analysis.id
 
-    def update_results(
+
+    async def update_status(
+        self,
+        analysis_id: int,
+        status: str,
+        status_message: str,
+    ):
+        stmt = (
+            select(AgentAnalysis)
+            .where(AgentAnalysis.id == analysis_id)
+        )
+
+        result = await self.session.execute(stmt)
+
+        analysis = result.scalar_one_or_none()
+
+        if analysis is None:
+            return
+
+        analysis.status = status
+        analysis.status_message = status_message
+
+
+    async def update_results(
         self,
         analysis_id: int,
         result: dict,
         status: str = "COMPLETED",
-        status_message: str = "Analysis completed."
+        status_message: str = "Analysis completed.",
     ):
-        query = """
-            UPDATE agent_analysis
-            SET winner = %s,
-                leaderboard = %s,
-                final_scores = %s,
-                winning_idea = %s,
-                synthesized = %s,
-                status = %s,
-                status_message = %s
-            WHERE id = %s
-        """
-        values = (
-            result.get("winner"),
-            json.dumps(result.get("leaderboard", [])),
-            json.dumps(result.get("final_scores", {})),
-            json.dumps(result.get("winning_idea", {})),
-            json.dumps(result.get("synthesized", {})),
-            status,
-            status_message,
-            analysis_id,
+        stmt = (
+            select(AgentAnalysis)
+            .where(AgentAnalysis.id == analysis_id)
         )
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            print(f"DB error (AgentAnalysisRepository.update_results): {e}")
-        finally:
-            self.db.release_conn(conn)
 
-    def reset_analysis(self, analysis_id: int):
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute("DELETE FROM agent_rounds WHERE analysis_id = %s", (analysis_id,))
-                query = """
-                    UPDATE agent_analysis
-                    SET winner = NULL,
-                        leaderboard = NULL,
-                        final_scores = NULL,
-                        winning_idea = NULL,
-                        synthesized = NULL,
-                        status = 'PENDING',
-                        status_message = 'Resetting and starting analysis pipeline...'
-                    WHERE id = %s
-                """
-                cur.execute(query, (analysis_id,))
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            print(f"DB error (AgentAnalysisRepository.reset_analysis): {e}")
-        finally:
-            self.db.release_conn(conn)
-            
-    def get_by_hackathon_id(self, hackathon_id: int, user_id: int = None):
+        result_db = await self.session.execute(stmt)
+
+        analysis = result_db.scalar_one_or_none()
+
+        if analysis is None:
+            return
+
+        analysis.winner = result.get("winner")
+        analysis.leaderboard = result.get("leaderboard", [])
+        analysis.final_scores = result.get("final_scores", {})
+        analysis.winning_idea = result.get("winning_idea", {})
+        analysis.synthesized = result.get("synthesized", {})
+        analysis.status = status
+        analysis.status_message = status_message
+
+
+    async def reset_analysis(self, analysis_id: int):
+        stmt = (
+            select(AgentAnalysis)
+            .where(AgentAnalysis.id == analysis_id)
+        )
+
+        result = await self.session.execute(stmt)
+
+        analysis = result.scalar_one_or_none()
+
+        if analysis is None:
+            return
+
+        # Delete related AgentRound objects separately
+        analysis.winner = None
+        analysis.leaderboard = None
+        analysis.final_scores = None
+        analysis.winning_idea = None
+        analysis.synthesized = None
+        analysis.status = "PENDING"
+        analysis.status_message = (
+            "Resetting and starting analysis pipeline..."
+        )
+
+
+    async def get_by_hackathon_id(
+        self,
+        hackathon_id: int,
+        user_id: int = None,
+    ):
+        stmt = (
+            select(AgentAnalysis)
+            .where(AgentAnalysis.hackathon_id == hackathon_id)
+            .order_by(AgentAnalysis.id.desc())
+            .limit(1)
+        )
+
         if user_id is not None:
-            query = """
-                SELECT *
-                FROM agent_analysis
-                WHERE hackathon_id = %s AND user_id = %s
-                ORDER BY id DESC
-                LIMIT 1
-            """
-            params = (hackathon_id, user_id)
+            stmt = stmt.where(AgentAnalysis.user_id == user_id)
         else:
-            query = """
-                SELECT *
-                FROM agent_analysis
-                WHERE hackathon_id = %s AND user_id IS NULL
-                ORDER BY id DESC
-                LIMIT 1
-            """
-            params = (hackathon_id,)
+            stmt = stmt.where(AgentAnalysis.user_id.is_(None))
 
-        conn = self.db.get_conn()
+        result = await self.session.execute(stmt)
 
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, params)
-                row = cur.fetchone()
-                if not row:
-                    return None
+        analysis = result.scalar_one_or_none()
 
-                columns = [desc[0] for desc in cur.description]
-                return dict(zip(columns, row))
-
-        except Exception as e:
-            print(
-                f"DB error (AgentAnalysisRepository.get_by_hackathon_id): {e}"
-            )
+        if analysis is None:
             return None
 
-        finally:
-            self.db.release_conn(conn)
+        return {
+            "id": analysis.id,
+            "hackathon_id": analysis.hackathon_id,
+            "user_id": analysis.user_id,
+            "winner": analysis.winner,
+            "leaderboard": analysis.leaderboard,
+            "final_scores": analysis.final_scores,
+            "winning_idea": analysis.winning_idea,
+            "synthesized": analysis.synthesized,
+            "status": analysis.status,
+            "status_message": analysis.status_message,
+            "created_at": analysis.created_at,
+        }

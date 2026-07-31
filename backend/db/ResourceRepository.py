@@ -1,80 +1,46 @@
-from db.database import Database
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from ..models.Resource import Resource
 
 
 class ResourceRepository:
-    def __init__(self, db: Database):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
 
-    def create(self, hackathon_id: int, data: dict):
-        query = """
-            INSERT INTO resources (
-                hackathon_id,
-                resource_type,
-                title,
-                url
-            )
-            VALUES (%s, %s, %s, %s)
-            RETURNING id
-        """
-
-        values = (
-            hackathon_id,
-            data.get("resource_type"),
-            data.get("title"),
-            data.get("url"),
+    async def create(self, hackathon_id: int, data: dict):
+        resource = Resource(
+            hackathon_id=hackathon_id,
+            resource_type=data["resource_type"],
+            title=data["title"],
+            url=data["url"]
         )
-        conn = self.db.get_conn()
 
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-                result = cur.fetchone()
-            conn.commit()
+        self.session.add(resource)
 
-            if result:
-                return result[0]
+        await self.session.flush()
 
-            return None
-
-        except Exception as e:
-            conn.rollback()
-            print(f"DB error (ResourceRepository.create): {e}")
-            return None
-
-        finally:
-            self.db.release_conn(conn)
+        return resource.id
             
     
-    def get_by_hackathon_id(self, hackathon_id: int):
-        query = """
-            SELECT
-                id,
-                resource_type,
-                title,
-                url
-            FROM resources
-            WHERE hackathon_id = %s
-            ORDER BY id ASC
-        """
+    async def get_by_hackathon_id(self, hackathon_id: int):
+        stmt = (
+            select(Resource)
+            .where(Resource.hackathon_id == hackathon_id)
+            .order_by(Resource.id)
+        )
 
-        conn = self.db.get_conn()
+        result = await self.session.execute(stmt)
 
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, (hackathon_id,))
-                rows = cur.fetchall()
+        resources = result.scalars().all()
 
-                columns = [desc[0] for desc in cur.description]
-
-                return [
-                    dict(zip(columns, row))
-                    for row in rows
-                ]
-
-        except Exception as e:
-            print(f"DB error (ResourceRepository.get_by_hackathon_id): {e}")
-            return []
-
-        finally:
-            self.db.release_conn(conn)
+        return [
+            {
+                "id": r.id,
+                "resource_type": r.resource_type,
+                "title": r.title,
+                "url": r.url,
+            }
+            for r in resources
+        ]

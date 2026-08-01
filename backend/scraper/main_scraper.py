@@ -1,14 +1,18 @@
 import asyncio
+
 import httpx
 
+from agents.llm import LLM
+from agents.problem_parser import ProblemStatementParserAgent
+
+from db.database import SessionLocal
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
 from db.ResourceRepository import ResourceRepository
-from db.db_instance import db
+
 from scraper.hackathonScraper import scrape_hackathon_detail
 from scraper.pageScraper import scrape_pages
-from agents.llm import LLM
-from agents.problem_parser import ProblemStatementParserAgent
+
 from services.problem_context_builder import ProblemContextBuilder
 
 
@@ -19,10 +23,6 @@ async def scraperHackathons(concurrency: int = 10):
     and stores hackathons + extracted problems in the DB.
     """
 
-    hack_repo = HackathonRepository(db)
-    problem_repo = ProblemRepository(db)
-    resource_repo = ResourceRepository(db)
-
     llm = LLM()
     prbm_parser = ProblemStatementParserAgent(llm)
 
@@ -32,68 +32,131 @@ async def scraperHackathons(concurrency: int = 10):
         async with semaphore:
             enriched = await scrape_hackathon_detail(client, hackathon)
 
-            try:
-                hackathon_id = hack_repo.create(enriched)
+            async with SessionLocal() as session:
+                hack_repo = HackathonRepository(session)
+                problem_repo = ProblemRepository(session)
+                resource_repo = ResourceRepository(session)
 
-                if hackathon_id:
-                    print(f"Inserted: {enriched['title']} | ID: {hackathon_id}")
-                    
-                    # Inserting resources
-                    resources = enriched.get("resources", [])
-                    for resource in resources:
-                        resource_id = resource_repo.create(hackathon_id, resource)
+                try:
+                    hackathon_id = await hack_repo.create(enriched)
 
-                        if resource_id:
-                            print(f"Inserted resource id={resource_id}")
-                        else:
-                            print(f"Failed resource insert for hackathon id={hackathon_id}")
+                    if hackathon_id:
+                        print(
+                            f"Inserted: {enriched['title']} | ID: {hackathon_id}"
+                        )
 
-                    # Build unified context and run parser agent
-                    context_builder = ProblemContextBuilder()
-                    try:
-                        combined = await context_builder.build(enriched)
-                        combined_context = combined.get("combined_context") or ""
-                        parsed = await prbm_parser.run(combined_context)
-                    except Exception as e:
-                        print(f"Parser agent error for {enriched.get('external_id')}: {e}")
-                        parsed = None
+                        # Insert resources
+                        resources = enriched.get("resources", [])
 
-                    # problem stmt
-                    if parsed:
-                        problems = parsed.get("problem_statements")
-                        if problems:
-                            for p in problems:
-                                title = p.get("heading") or p.get("title")
-                                desc = p.get("description")
-                                p_type = p.get("type")
+                        for resource in resources:
+                            resource_id = await resource_repo.create(
+                                hackathon_id,
+                                resource,
+                            )
 
-                                created_id = problem_repo.create(hackathon_id, {
-                                    "title": title,
-                                    "description": desc,
-                                    "type": p_type,
-                                })
+                            if resource_id:
+                                print(
+                                    f"Inserted resource id={resource_id}"
+                                )
+                            else:
+                                print(
+                                    "Failed resource insert "
+                                    f"for hackathon id={hackathon_id}"
+                                )
 
-                                if created_id:
-                                    print(f"Inserted problem id={created_id} for hackathon id={hackathon_id}")
-                                else:
-                                    print(f"Failed to insert problem for hackathon id={hackathon_id}")
+                        # Build unified context and parse problems
+                        context_builder = ProblemContextBuilder()
 
-                else:
-                    print(f"Skipped (duplicate): {enriched['title']}")
+                        try:
+                            combined = await context_builder.build(
+                                enriched
+                            )
 
-            except Exception as e:
-                print(f"DB error: {e}")
+                            combined_context = (
+                                combined.get("combined_context") or ""
+                            )
+
+                            parsed = await prbm_parser.run(
+                                combined_context
+                            )
+
+                        except Exception as e:
+                            print(
+                                "Parser agent error for "
+                                f"{enriched.get('external_id')}: {e}"
+                            )
+
+                            parsed = None
+
+                        # Insert problem statements
+                        if parsed:
+                            problems = parsed.get(
+                                "problem_statements"
+                            )
+
+                            if problems:
+                                for p in problems:
+                                    title = (
+                                        p.get("heading")
+                                        or p.get("title")
+                                    )
+
+                                    desc = p.get("description")
+                                    p_type = p.get("type")
+
+                                    created_id = (
+                                        await problem_repo.create(
+                                            hackathon_id,
+                                            {
+                                                "title": title,
+                                                "description": desc,
+                                                "type": p_type,
+                                            },
+                                        )
+                                    )
+
+                                    if created_id:
+                                        print(
+                                            "Inserted problem "
+                                            f"id={created_id} "
+                                            f"for hackathon "
+                                            f"id={hackathon_id}"
+                                        )
+                                    else:
+                                        print(
+                                            "Failed to insert "
+                                            f"problem for hackathon "
+                                            f"id={hackathon_id}"
+                                        )
+
+                    else:
+                        print(
+                            f"Skipped (duplicate): "
+                            f"{enriched['title']}"
+                        )
+
+                    await session.commit()
+
+                except Exception as e:
+                    await session.rollback()
+                    print(f"DB error: {e}")
 
     async with httpx.AsyncClient() as client:
         tasks = []
 
         async for hackathon in scrape_pages():
-            task = asyncio.create_task(
-                worker(semaphore, client, hackathon)
+            tasks.append(
+                asyncio.create_task(
+                    worker(
+                        semaphore,
+                        client,
+                        hackathon,
+                    )
+                )
             )
-            tasks.append(task)
 
         await asyncio.gather(*tasks)
+
 
 if __name__ == "__main__":
     asyncio.run(scraperHackathons())

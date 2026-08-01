@@ -13,3 +13,6 @@ uvicorn
 ollama
 langsmith
 redis
+sqlalchemy
+asyncpg
+alembic

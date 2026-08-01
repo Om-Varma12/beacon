@@ -1,107 +1,85 @@
-import json
-from db.database import Database
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from models.HackathonAsset import HackathonAsset
+
 
 class AssetsRepository:
-    def __init__(self, db: Database):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
-    def create(self, hackathon_id: int, doc_content: dict, ppt_content: dict, user_id: int = None):
-        # Let's check if assets already exist for this hackathon and user
-        existing = self.get_by_hackathon_id(hackathon_id, user_id)
-        
-        if existing:
-            if user_id is not None:
-                query = """
-                    UPDATE hackathon_assets
-                    SET doc_content = %s,
-                        ppt_content = %s,
-                        created_at = CURRENT_TIMESTAMP
-                    WHERE hackathon_id = %s AND user_id = %s
-                    RETURNING id
-                """
-                values = (
-                    json.dumps(doc_content),
-                    json.dumps(ppt_content),
-                    hackathon_id,
-                    user_id
-                )
-            else:
-                query = """
-                    UPDATE hackathon_assets
-                    SET doc_content = %s,
-                        ppt_content = %s,
-                        created_at = CURRENT_TIMESTAMP
-                    WHERE hackathon_id = %s AND user_id IS NULL
-                    RETURNING id
-                """
-                values = (
-                    json.dumps(doc_content),
-                    json.dumps(ppt_content),
-                    hackathon_id
-                )
+
+    async def create(
+        self,
+        hackathon_id: int,
+        doc_content: dict,
+        ppt_content: dict,
+        user_id: int = None,
+    ):
+        stmt = (
+            select(HackathonAsset)
+            .where(HackathonAsset.hackathon_id == hackathon_id)
+        )
+
+        if user_id is not None:
+            stmt = stmt.where(HackathonAsset.user_id == user_id)
         else:
-            query = """
-                INSERT INTO hackathon_assets (
-                    hackathon_id,
-                    user_id,
-                    doc_content,
-                    ppt_content
-                )
-                VALUES (%s, %s, %s, %s)
-                RETURNING id
-            """
-            values = (
-                hackathon_id,
-                user_id,
-                json.dumps(doc_content),
-                json.dumps(ppt_content)
+            stmt = stmt.where(HackathonAsset.user_id.is_(None))
+
+        result = await self.session.execute(stmt)
+
+        asset = result.scalar_one_or_none()
+
+        if asset is None:
+            asset = HackathonAsset(
+                hackathon_id=hackathon_id,
+                user_id=user_id,
+                doc_content=doc_content,
+                ppt_content=ppt_content,
             )
 
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-                row = cur.fetchone()
-            conn.commit()
-            if row:
-                return row[0]
-            return None
-        except Exception as e:
-            conn.rollback()
-            print(f"DB error (AssetsRepository.create): {e}")
-            return None
-        finally:
-            self.db.release_conn(conn)
+            self.session.add(asset)
 
-    def get_by_hackathon_id(self, hackathon_id: int, user_id: int = None):
+            await self.session.flush()
+
+            return asset.id
+
+        asset.doc_content = doc_content
+        asset.ppt_content = ppt_content
+
+        # Optional only if your model doesn't automatically update this field
+        # asset.created_at = datetime.utcnow()
+
+        return asset.id
+
+
+    async def get_by_hackathon_id(
+        self,
+        hackathon_id: int,
+        user_id: int = None,
+    ):
+        stmt = (
+            select(HackathonAsset)
+            .where(HackathonAsset.hackathon_id == hackathon_id)
+            .limit(1)
+        )
+
         if user_id is not None:
-            query = """
-                SELECT id, hackathon_id, doc_content, ppt_content, created_at
-                FROM hackathon_assets
-                WHERE hackathon_id = %s AND user_id = %s
-                LIMIT 1
-            """
-            params = (hackathon_id, user_id)
+            stmt = stmt.where(HackathonAsset.user_id == user_id)
         else:
-            query = """
-                SELECT id, hackathon_id, doc_content, ppt_content, created_at
-                FROM hackathon_assets
-                WHERE hackathon_id = %s AND user_id IS NULL
-                LIMIT 1
-            """
-            params = (hackathon_id,)
-        conn = self.db.get_conn()
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, params)
-                row = cur.fetchone()
-                if not row:
-                    return None
-                
-                columns = [desc[0] for desc in cur.description]
-                return dict(zip(columns, row))
-        except Exception as e:
-            print(f"DB error (AssetsRepository.get_by_hackathon_id): {e}")
+            stmt = stmt.where(HackathonAsset.user_id.is_(None))
+
+        result = await self.session.execute(stmt)
+
+        asset = result.scalar_one_or_none()
+
+        if asset is None:
             return None
-        finally:
-            self.db.release_conn(conn)
+
+        return {
+            "id": asset.id,
+            "hackathon_id": asset.hackathon_id,
+            "doc_content": asset.doc_content,
+            "ppt_content": asset.ppt_content,
+            "created_at": asset.created_at,
+        }

@@ -1,93 +1,60 @@
-import json
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.database import Database
+from models.AgentRound import AgentRound
 
 
 class AgentRoundsRepository:
-    def __init__(self, db: Database):
-        self.db = db
+    def __init__(self, session: AsyncSession):
+        self.session = session
 
 
-    def create(self, analysis_id: int, round_number: int, data: dict, user_id: int = None):
-        query = """
-            INSERT INTO agent_rounds (
-                analysis_id,
-                user_id,
-                round_number,
-                phase,
-                ideas,
-                debates,
-                judge
-            )
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-        """
-        values = (
-            analysis_id,
-            user_id,
-            round_number,
-            data.get("phase"),
-            json.dumps(
-                data.get("ideas", [])
-            ),
-            json.dumps(
-                data.get("debates", [])
-            ),
-            json.dumps(
-                data.get("judge", {})
-            ),
+    async def create(
+        self,
+        analysis_id: int,
+        round_number: int,
+        data: dict,
+        user_id: int = None,
+    ):
+        round_obj = AgentRound(
+            analysis_id=analysis_id,
+            user_id=user_id,
+            round_number=round_number,
+            phase=data.get("phase"),
+            ideas=data.get("ideas", []),
+            debates=data.get("debates", []),
+            judge=data.get("judge", {}),
         )
-        conn = self.db.get_conn()
 
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, values)
-                row = cur.fetchone()
-                
-            conn.commit()
+        self.session.add(round_obj)
 
-            if row:
-                return row[0]
+        await self.session.flush()
 
-            return None
+        return round_obj.id
 
-        except Exception as e:
-            conn.rollback()
-            print(
-                f"DB error (AgentRoundsRepository.create): {e}"
-            )
-            return None
 
-        finally:
-            self.db.release_conn(conn)
-            
-    def get_by_analysis_id(self, analysis_id: int):
-        query = """
-            SELECT *
-            FROM agent_rounds
-            WHERE analysis_id = %s
-            ORDER BY round_number ASC
-        """
+    async def get_by_analysis_id(self, analysis_id: int):
+        stmt = (
+            select(AgentRound)
+            .where(AgentRound.analysis_id == analysis_id)
+            .order_by(AgentRound.round_number.asc())
+        )
 
-        conn = self.db.get_conn()
+        result = await self.session.execute(stmt)
 
-        try:
-            with conn.cursor() as cur:
-                cur.execute(query, (analysis_id,))
-                rows = cur.fetchall()
+        rounds = result.scalars().all()
 
-                columns = [desc[0] for desc in cur.description]
-
-                return [
-                    dict(zip(columns, row))
-                    for row in rows
-                ]
-
-        except Exception as e:
-            print(
-                f"DB error (AgentRoundsRepository.get_by_analysis_id): {e}"
-            )
-            return []
-
-        finally:
-            self.db.release_conn(conn)
+        return [
+            {
+                "id": r.id,
+                "analysis_id": r.analysis_id,
+                "user_id": r.user_id,
+                "round_number": r.round_number,
+                "phase": r.phase,
+                "ideas": r.ideas,
+                "debates": r.debates,
+                "judge": r.judge,
+                "created_at": r.created_at,
+            }
+            for r in rounds
+        ]

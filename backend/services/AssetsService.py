@@ -19,12 +19,12 @@ class AssetsService:
 
     async def get_assets(self, hackathon_id: int, user_id: int = None):
         # Fetch hackathon to make sure it exists
-        hackathon = self.hackathon_repo.get_by_id(hackathon_id)
+        hackathon = await self.hackathon_repo.get_by_id(hackathon_id)
         if not hackathon:
             return None
 
         # Fetch assets
-        assets = self.assets_repo.get_by_hackathon_id(hackathon["id"], user_id=user_id)
+        assets = await self.assets_repo.get_by_hackathon_id(hackathon["id"], user_id=user_id)
         if not assets:
             return {
                 "generated": False,
@@ -41,12 +41,12 @@ class AssetsService:
     @traceable
     async def generate_assets(self, hackathon_id: int, user_id: int = None):
         # Fetch hackathon
-        hackathon = self.hackathon_repo.get_by_id(hackathon_id)
+        hackathon = await self.hackathon_repo.get_by_id(hackathon_id)
         if not hackathon:
             return None
 
         # Fetch analysis
-        analysis = self.analysis_repo.get_by_hackathon_id(hackathon["id"], user_id=user_id)
+        analysis = await self.analysis_repo.get_by_hackathon_id(hackathon["id"], user_id=user_id)
         if not analysis:
             raise ValueError("No analysis found for this hackathon. Run analysis first.")
 
@@ -125,7 +125,7 @@ class AssetsService:
         }
 
         # Save to DB
-        asset_id = self.assets_repo.create(
+        asset_id = await self.assets_repo.create(
             hackathon_id=hackathon["id"],
             doc_content=doc_content,
             ppt_content=ppt_content,

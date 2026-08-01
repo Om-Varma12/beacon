@@ -4,7 +4,9 @@ from typing import Optional
 import json
 import asyncio
 
-from db.db_instance import db
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.database import get_session
 from db.HackathonRepository import HackathonRepository
 from db.JobRepository import JobRepository
 from utils.redis_manager import get_redis_manager
@@ -12,12 +14,16 @@ from utils.auth import get_current_user_claims, verify_token
 
 router = APIRouter()
 
-def get_hackathon_repo():
-    return HackathonRepository(db)
+async def get_hackathon_repo(
+    session: AsyncSession = Depends(get_session),
+):
+    return HackathonRepository(session)
 
 
-def get_job_repo():
-    return JobRepository(db)
+async def get_job_repo(
+    session: AsyncSession = Depends(get_session),
+):
+    return JobRepository(session)
 
 
 @router.get("/analysis/stream/{job_id}")
@@ -41,7 +47,7 @@ async def stream_analysis_status(
         raise HTTPException(status_code=401, detail="Invalid authentication")
     
     # Get job
-    job = job_repo.get_by_id(job_id)
+    job = await job_repo.get_by_id(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     

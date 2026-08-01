@@ -1,4 +1,8 @@
 import asyncio
+import sys
+
+if sys.platform == "win32":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 import httpx
 
@@ -155,8 +159,20 @@ async def scraperHackathons(concurrency: int = 10):
                 )
             )
 
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(
+            *tasks,
+            return_exceptions=True,
+        )
 
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                print(f"\nTask {i} failed:")
+                import traceback
+                traceback.print_exception(
+                    type(result),
+                    result,
+                    result.__traceback__,
+                )
 
 if __name__ == "__main__":
     asyncio.run(scraperHackathons())

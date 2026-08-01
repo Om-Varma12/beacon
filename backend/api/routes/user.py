@@ -1,15 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
-from db.db_instance import db
+from sqlalchemy.ext.asyncio import AsyncSession
+from db.database import get_session
 from db.UserRepository import UserRepository
 from utils.auth import get_current_user_claims
 
 router = APIRouter()
 
-def get_user_repo():
-    return UserRepository(db)
+def get_user_repo(session: AsyncSession = Depends(get_session)):
+    return UserRepository(session)
 
 @router.get("/me")
-def get_or_create_me(
+async def get_or_create_me(
     claims: dict = Depends(get_current_user_claims),
     repo: UserRepository = Depends(get_user_repo)
 ):
@@ -26,7 +27,7 @@ def get_or_create_me(
     if not name:
         name = email.split("@")[0]
         
-    user = repo.get_or_create_user(cognito_sub=cognito_sub, email=email, name=name)
+    user = await repo.get_or_create_user(cognito_sub=cognito_sub, email=email, name=name)
     if not user:
         raise HTTPException(status_code=500, detail="Failed to fetch or create user in database")
         

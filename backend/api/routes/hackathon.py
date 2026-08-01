@@ -3,7 +3,9 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
 
-from db.db_instance import db
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.database import SessionLocal
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
 from db.ResourceRepository import ResourceRepository
@@ -29,16 +31,26 @@ router = APIRouter()
 class ChatModel(BaseModel):
     message: str
 
+
+async def get_session():
+    async with SessionLocal() as session:
+        yield session
+
+        
 # Dependency
-def get_repo():
-    return HackathonRepository(db)
+def get_repo(
+    session: AsyncSession = Depends(get_session),
+):
+    return HackathonRepository(session)
 
 
-def get_service():
-    hackathon_repo = HackathonRepository(db)
-    problem_repo = ProblemRepository(db)
-    resource_repo = ResourceRepository(db)
-    
+async def get_service(
+    session: AsyncSession = Depends(get_session),
+):
+    hackathon_repo = HackathonRepository(session)
+    problem_repo = ProblemRepository(session)
+    resource_repo = ResourceRepository(session)
+
     return HackathonService(
         hackathon_repo,
         problem_repo,
@@ -46,11 +58,13 @@ def get_service():
     )
 
 
-def get_analysis_service():
-    hackathon_repo = HackathonRepository(db)
-    problem_repo = ProblemRepository(db)
-    analysis_repo = AgentAnalysisRepository(db)
-    rounds_repo = AgentRoundsRepository(db)
+async def get_analysis_service(
+    session: AsyncSession = Depends(get_session),
+):
+    hackathon_repo = HackathonRepository(session)
+    problem_repo = ProblemRepository(session)
+    analysis_repo = AgentAnalysisRepository(session)
+    rounds_repo = AgentRoundsRepository(session)
 
     return AnalysisService(
         hackathon_repo,
@@ -60,13 +74,15 @@ def get_analysis_service():
     )
     
 
-def get_chat_service():
-    hackathon_repo = HackathonRepository(db)
-    problem_repo = ProblemRepository(db)
-    resource_repo = ResourceRepository(db)
-    analysis_repo = AgentAnalysisRepository(db)
-    rounds_repo = AgentRoundsRepository(db)
-    chat_repo = ChatMessageRepository(db)
+async def get_chat_service(
+    session: AsyncSession = Depends(get_session),
+):
+    hackathon_repo = HackathonRepository(session)
+    problem_repo = ProblemRepository(session)
+    resource_repo = ResourceRepository(session)
+    analysis_repo = AgentAnalysisRepository(session)
+    rounds_repo = AgentRoundsRepository(session)
+    chat_repo = ChatMessageRepository(session)
 
     return ChatService(
         hackathon_repo,
@@ -78,10 +94,12 @@ def get_chat_service():
     )
 
 
-def get_assets_service():
-    hackathon_repo = HackathonRepository(db)
-    analysis_repo = AgentAnalysisRepository(db)
-    assets_repo = AssetsRepository(db)
+async def get_assets_service(
+    session: AsyncSession = Depends(get_session),
+):
+    hackathon_repo = HackathonRepository(session)
+    analysis_repo = AgentAnalysisRepository(session)
+    assets_repo = AssetsRepository(session)
 
     return AssetsService(
         hackathon_repo,
@@ -90,15 +108,19 @@ def get_assets_service():
     )
 
 
-def get_user_repo():
-    return UserRepository(db)
+async def get_user_repo(
+    session: AsyncSession = Depends(get_session),
+):
+    return UserRepository(session)
 
 
-def get_job_repo():
-    return JobRepository(db)
+async def get_job_repo(
+    session: AsyncSession = Depends(get_session),
+):
+    return JobRepository(session)
 
 
-def resolve_user_id(claims: dict, user_repo: UserRepository) -> Optional[int]:
+async def resolve_user_id(claims: dict, user_repo: UserRepository) -> Optional[int]:
     """Look up (or create) the user in the DB and return their integer id."""
     cognito_sub = claims.get("sub")
     email = claims.get("email")
@@ -107,7 +129,7 @@ def resolve_user_id(claims: dict, user_repo: UserRepository) -> Optional[int]:
     if not cognito_sub or not email:
         return None
 
-    user = user_repo.get_or_create_user(cognito_sub=cognito_sub, email=email, name=name)
+    user = await user_repo.get_or_create_user(cognito_sub=cognito_sub, email=email, name=name)
     if not user:
         return None
 
@@ -119,7 +141,7 @@ def resolve_user_id(claims: dict, user_repo: UserRepository) -> Optional[int]:
 
 
 @router.get("/")
-def get_hackathons(
+async def get_hackathons(
     repo: HackathonRepository = Depends(get_repo),
     limit: int = Query(12, le=100),
     offset: int = 0,
@@ -127,8 +149,8 @@ def get_hackathons(
     order: str = "asc"
 ):
     try:
-        data = repo.get_all(limit, offset, sort_by, order)
-        total_count = repo.get_total_active_count()
+        data = await repo.get_all(limit, offset, sort_by, order)
+        total_count = await repo.get_total_active_count()
 
         return {
             "success": True,
@@ -162,11 +184,11 @@ async def scrape_hackathon(background_tasks: BackgroundTasks):
 
 
 @router.get("/{hackathon_id}")
-def get_hackathon(
+async def get_hackathon(
     hackathon_id: int,
     service: HackathonService = Depends(get_service)
 ):
-    data = service.get_hackathon_detail(hackathon_id)
+    data = await service.get_hackathon_detail(hackathon_id)
 
     if data is None:
         raise HTTPException(status_code=404, detail="Hackathon not found")
@@ -185,10 +207,10 @@ async def analyze_hackathon(
     job_repo: JobRepository = Depends(get_job_repo),
     service: AnalysisService = Depends(get_analysis_service)
 ):
-    user_id = resolve_user_id(claims, user_repo)
+    user_id = await resolve_user_id(claims, user_repo)
     redis = get_redis_manager()
 
-    analysis_data = service.get_or_create_pending_analysis(
+    analysis_data = await service.get_or_create_pending_analysis(
         hackathon_id,
         user_id=user_id
     )
@@ -207,7 +229,7 @@ async def analyze_hackathon(
         "user_id": user_id,
         "analysis_id": analysis_id
     }
-    job_id = job_repo.create("analysis", payload)
+    job_id = await job_repo.create("analysis", payload)
 
     if job_id is None:
         raise HTTPException(
@@ -233,15 +255,15 @@ async def analyze_hackathon(
     
     
 @router.get("/{hackathon_id}/analysis")
-def get_analysis(
+async def get_analysis(
     hackathon_id: int,
     claims: dict = Depends(get_current_user_claims),
     service: AnalysisService = Depends(get_analysis_service),
     user_repo: UserRepository = Depends(get_user_repo),
     job_repo: JobRepository = Depends(get_job_repo)
 ):
-    user_id = resolve_user_id(claims, user_repo)
-    data = service.get_analysis(hackathon_id, user_id=user_id)
+    user_id = await resolve_user_id(claims, user_repo)
+    data = await service.get_analysis(hackathon_id, user_id=user_id)
 
     if data is None:
         raise HTTPException(
@@ -253,7 +275,7 @@ def get_analysis(
     # the frontend can reconnect its SSE stream after a page reload.
     status = data.get("status") if data else None
     if status in ("PENDING", "RUNNING"):
-        active_job = job_repo.get_active_job_for_hackathon(hackathon_id, user_id=user_id)
+        active_job = await job_repo.get_active_job_for_hackathon(hackathon_id, user_id=user_id)
         if active_job:
             data["job_id"] = active_job["id"]
 
@@ -293,7 +315,7 @@ async def get_assets(
     service: AssetsService = Depends(get_assets_service),
     user_repo: UserRepository = Depends(get_user_repo)
 ):
-    user_id = resolve_user_id(claims, user_repo)
+    user_id = await resolve_user_id(claims, user_repo)
     data = await service.get_assets(hackathon_id, user_id=user_id)
     if data is None:
         raise HTTPException(status_code=404, detail="Hackathon not found")
@@ -312,7 +334,7 @@ async def generate_assets(
     user_repo: UserRepository = Depends(get_user_repo)
 ):
     try:
-        user_id = resolve_user_id(claims, user_repo)
+        user_id = await resolve_user_id(claims, user_repo)
 
         data = await service.generate_assets(hackathon_id, user_id=user_id)
         if data is None:
@@ -335,7 +357,7 @@ async def download_assets_docx(
     service: AssetsService = Depends(get_assets_service),
     user_repo: UserRepository = Depends(get_user_repo)
 ):
-    user_id = resolve_user_id(claims, user_repo)
+    user_id = await resolve_user_id(claims, user_repo)
     from utils.asset_generator import generate_docx_proposal
     data = await service.get_assets(hackathon_id, user_id=user_id)
     if data is None or not data.get("generated") or not data.get("doc_content"):
@@ -361,7 +383,7 @@ async def download_assets_pptx(
     service: AssetsService = Depends(get_assets_service),
     user_repo: UserRepository = Depends(get_user_repo)
 ):
-    user_id = resolve_user_id(claims, user_repo)
+    user_id = await resolve_user_id(claims, user_repo)
     from utils.asset_generator import generate_pptx_slides
     data = await service.get_assets(hackathon_id, user_id=user_id)
     if data is None or not data.get("generated") or not data.get("ppt_content"):

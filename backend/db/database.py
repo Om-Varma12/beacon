@@ -18,3 +18,8 @@ SessionLocal = async_sessionmaker(
     engine,
     expire_on_commit=False,
 )
+
+async def get_session():
+    """Dependency injection for async database sessions."""
+    async with SessionLocal() as session:
+        yield session

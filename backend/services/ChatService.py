@@ -27,7 +27,7 @@ class ChatService:
         message: str
     ):
         # Fetch Hackathon
-        hackathon = self.hackathon_repo.get_by_id(
+        hackathon = await self.hackathon_repo.get_by_id(
             hackathon_id
         )
         if not hackathon:
@@ -37,35 +37,35 @@ class ChatService:
 
         # Fetch Problem Statements
         problems = (
-            self.problem_repo.get_by_hackathon_id(
+            await self.problem_repo.get_by_hackathon_id(
                 internal_hackathon_id
             )
         )
 
         # Fetch Resources
         resources = (
-            self.resource_repo.get_by_hackathon_id(
+            await self.resource_repo.get_by_hackathon_id(
                 internal_hackathon_id
             )
         )
 
         # Fetch Analysis
         analysis = (
-            self.analysis_repo.get_by_hackathon_id(
+            await self.analysis_repo.get_by_hackathon_id(
                 internal_hackathon_id
             )
         )
 
         # Fetch Recent Messages
         recent_messages = (
-            self.chat_repo.get_recent_by_hackathon_id(
+            await self.chat_repo.get_recent_by_hackathon_id(
                 internal_hackathon_id,
                 limit=10
             )
         )
 
         # Save User Message
-        self.chat_repo.create(
+        await self.chat_repo.create(
             hackathon_id=internal_hackathon_id,
             role="user",
             content=message
@@ -88,7 +88,7 @@ class ChatService:
         response = await agent.run(task)
 
         # Save Assistant Response
-        self.chat_repo.create(
+        await self.chat_repo.create(
             hackathon_id=internal_hackathon_id,
             role="assistant",
             content=response.get("response", "")

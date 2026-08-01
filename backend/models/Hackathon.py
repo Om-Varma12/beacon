@@ -23,3 +23,4 @@ class Hackathon(Base):
     start_date:         Mapped[Optional[date]]
     deadline:           Mapped[Optional[date]]
     created_at:         Mapped[Optional[datetime]] = mapped_column(server_default=func.now())
+    prizes:             Mapped[Optional[dict]]     = mapped_column(JSON)

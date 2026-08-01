@@ -13,7 +13,7 @@ class AnalysisService:
 
     async def analyze_hackathon(self, hackathon_id: int, user_id: int = None):
         # Fetch Hackathon
-        hackathon = self.hackathon_repo.get_by_id(hackathon_id)
+        hackathon = await self.hackathon_repo.get_by_id(hackathon_id)
 
         if not hackathon:
             return None
@@ -22,7 +22,7 @@ class AnalysisService:
 
 
         # Fetch Problem Statements
-        problems = self.problem_repo.get_by_hackathon_id(internal_hackathon_id)
+        problems = await self.problem_repo.get_by_hackathon_id(internal_hackathon_id)
 
 
         # Build Theme Payload
@@ -49,7 +49,7 @@ class AnalysisService:
 
 
         # Save Main Analysis
-        analysis_id = self.analysis_repo.create(
+        analysis_id = await self.analysis_repo.create(
             internal_hackathon_id,
             result,
             user_id=user_id
@@ -66,7 +66,7 @@ class AnalysisService:
         rounds = result.get("rounds", [])
 
         for idx, round_data in enumerate(rounds):
-            self.rounds_repo.create(
+            await self.rounds_repo.create(
                 analysis_id=analysis_id,
                 round_number=idx + 1,
                 data=round_data,
@@ -79,15 +79,15 @@ class AnalysisService:
             "result": result
         }
         
-    def get_or_create_pending_analysis(self, hackathon_id: int, user_id: int = None):
-        hackathon = self.hackathon_repo.get_by_id(hackathon_id)
+    async def get_or_create_pending_analysis(self, hackathon_id: int, user_id: int = None):
+        hackathon = await self.hackathon_repo.get_by_id(hackathon_id)
         if not hackathon:
             return None
 
         internal_hackathon_id = hackathon["id"]
 
         # Check if one already exists
-        analysis = self.analysis_repo.get_by_hackathon_id(
+        analysis = await self.analysis_repo.get_by_hackathon_id(
             internal_hackathon_id,
             user_id=user_id
         )
@@ -103,7 +103,7 @@ class AnalysisService:
                 }
             else:
                 # Reset existing analysis row for a re-run
-                self.analysis_repo.reset_analysis(analysis["id"])
+                await self.analysis_repo.reset_analysis(analysis["id"])
                 return {
                     "analysis_id": analysis["id"],
                     "status": "PENDING",
@@ -112,7 +112,7 @@ class AnalysisService:
                 }
         else:
             # Create a new pending analysis row
-            analysis_id = self.analysis_repo.create_pending(
+            analysis_id = await self.analysis_repo.create_pending(
                 internal_hackathon_id,
                 user_id=user_id
             )
@@ -128,7 +128,7 @@ class AnalysisService:
         try:
             # 1. Update status to RUNNING
             status_message = "Preparing and loading hackathon problem statements..."
-            self.analysis_repo.update_status(
+            await self.analysis_repo.update_status(
                 analysis_id,
                 "RUNNING",
                 status_message
@@ -137,14 +137,14 @@ class AnalysisService:
             await sse_queue.publish(analysis_id, "RUNNING", status_message)
 
             # Fetch Hackathon
-            hackathon = self.hackathon_repo.get_by_id(hackathon_id)
+            hackathon = await self.hackathon_repo.get_by_id(hackathon_id)
             if not hackathon:
                 raise ValueError("Hackathon not found")
 
             internal_hackathon_id = hackathon["id"]
 
             # Fetch Problem Statements
-            problems = self.problem_repo.get_by_hackathon_id(internal_hackathon_id)
+            problems = await self.problem_repo.get_by_hackathon_id(internal_hackathon_id)
 
             # Build Theme Payload
             themes = []
@@ -172,7 +172,7 @@ class AnalysisService:
 
             # Callback to update progress in DB and publish to SSE
             async def on_progress(message: str):
-                self.analysis_repo.update_status(
+                await self.analysis_repo.update_status(
                     analysis_id,
                     "RUNNING",
                     message
@@ -184,7 +184,7 @@ class AnalysisService:
 
             # 2. Save Main Analysis
             status_message = "Analysis completed successfully."
-            self.analysis_repo.update_results(
+            await self.analysis_repo.update_results(
                 analysis_id,
                 result,
                 status="COMPLETED",
@@ -195,7 +195,7 @@ class AnalysisService:
             # 3. Save Rounds
             rounds = result.get("rounds", [])
             for idx, round_data in enumerate(rounds):
-                self.rounds_repo.create(
+                await self.rounds_repo.create(
                     analysis_id=analysis_id,
                     round_number=idx + 1,
                     data=round_data,
@@ -206,20 +206,20 @@ class AnalysisService:
             import traceback
             traceback.print_exc()
             error_msg = f"Analysis failed: {str(e)}"
-            self.analysis_repo.update_status(
+            await self.analysis_repo.update_status(
                 analysis_id,
                 "FAILED",
                 error_msg
             )
             await sse_queue.publish(analysis_id, "FAILED", error_msg)
 
-    def get_analysis(self, hackathon_id: int, user_id: int = None):
-        hackathon = self.hackathon_repo.get_by_id(hackathon_id)
+    async def get_analysis(self, hackathon_id: int, user_id: int = None):
+        hackathon = await self.hackathon_repo.get_by_id(hackathon_id)
 
         if not hackathon:
             return None
 
-        analysis = self.analysis_repo.get_by_hackathon_id(
+        analysis = await self.analysis_repo.get_by_hackathon_id(
             hackathon["id"],
             user_id=user_id
         )
@@ -227,7 +227,7 @@ class AnalysisService:
         if not analysis:
             return {}
 
-        rounds = self.rounds_repo.get_by_analysis_id(
+        rounds = await self.rounds_repo.get_by_analysis_id(
             analysis["id"]
         )
 

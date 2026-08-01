@@ -237,6 +237,9 @@ async def analyze_hackathon(
             detail="Failed to create job"
         )
 
+    # Explicitly commit the transaction so that the worker (and SSE stream) can see the job in the DB immediately
+    await job_repo.session.commit()
+
     # Push job to Redis queue
     if not redis.push_job(job_id):
         raise HTTPException(
@@ -339,6 +342,10 @@ async def generate_assets(
         data = await service.generate_assets(hackathon_id, user_id=user_id)
         if data is None:
             raise HTTPException(status_code=404, detail="Hackathon not found")
+
+        # Explicitly commit the session before returning the response
+        # to ensure the client GET request fetches the committed assets
+        await service.assets_repo.session.commit()
 
         return {
             "success": True,

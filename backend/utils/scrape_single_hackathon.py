@@ -6,9 +6,9 @@ Usage:
 
 import asyncio
 import httpx
+from db.database import SessionLocal
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
-from db.db_instance import db
 from scraper.hackathonScraper import scrape_hackathon_detail
 from agents.llm import LLM
 from agents.problem_parser import ProblemStatementParserAgent
@@ -30,80 +30,83 @@ async def scrape_and_insert_hackathon(external_id: int):
         - problems_count (int)
         - message (str)
     """
-    hack_repo = HackathonRepository(db)
-    problem_repo = ProblemRepository(db)
+    async with SessionLocal() as session:
+        hack_repo = HackathonRepository(session)
+        problem_repo = ProblemRepository(session)
 
-    llm = LLM()
-    parser_agent = ProblemStatementParserAgent(llm)
+        llm = LLM()
+        parser_agent = ProblemStatementParserAgent(llm)
 
-    # Create a minimal hackathon dict to pass to scrape_hackathon_detail
-    minimal_hackathon = {
-        "external_id": external_id,
-        "url": f"https://unstop.com/hackathon/{external_id}",
-        "title": f"Hackathon {external_id}",
-        "description": "",
-    }
+        # Create a minimal hackathon dict to pass to scrape_hackathon_detail
+        minimal_hackathon = {
+            "external_id": external_id,
+            "url": f"https://unstop.com/hackathon/{external_id}",
+            "title": f"Hackathon {external_id}",
+            "description": "",
+        }
 
-    try:
-        # Fetch detailed data from Unstop API
-        async with httpx.AsyncClient() as client:
-            enriched = await scrape_hackathon_detail(client, minimal_hackathon)
+        try:
+            # Fetch detailed data from Unstop API
+            async with httpx.AsyncClient() as client:
+                enriched = await scrape_hackathon_detail(client, minimal_hackathon)
 
-        # Insert hackathon into DB
-        hackathon_id = hack_repo.create(enriched)
+            # Insert hackathon into DB
+            hackathon_id = await hack_repo.create(enriched)
 
-        if not hackathon_id:
+            if not hackathon_id:
+                return {
+                    "success": False,
+                    "hackathon_id": None,
+                    "problems_count": 0,
+                    "message": f"Hackathon {external_id} already exists or failed to insert.",
+                }
+
+            print(f"✓ Inserted hackathon: {enriched.get('title')} | ID: {hackathon_id}")
+
+            # Parse and insert problem statements
+            problems_count = 0
+            description = enriched.get("description") or ""
+
+            try:
+                parsed = await parser_agent.run(description)
+            except Exception as e:
+                print(f"⚠ Parser agent error: {e}")
+                parsed = None
+
+            if parsed:
+                problems = parsed.get("problem_statements")
+                if problems:
+                    for p in problems:
+                        title = p.get("heading") or p.get("title")
+                        desc = p.get("description")
+                        p_type = p.get("type")
+
+                        created_id = await problem_repo.create(hackathon_id, {
+                            "title": title,
+                            "description": desc,
+                            "type": p_type,
+                        })
+
+                        if created_id:
+                            problems_count += 1
+                            print(f"  ✓ Problem ID {created_id}: {title}")
+
+            await session.commit()
+            return {
+                "success": True,
+                "hackathon_id": hackathon_id,
+                "problems_count": problems_count,
+                "message": f"Successfully inserted hackathon {external_id} with {problems_count} problem statement(s).",
+            }
+
+        except Exception as e:
+            await session.rollback()
             return {
                 "success": False,
                 "hackathon_id": None,
                 "problems_count": 0,
-                "message": f"Hackathon {external_id} already exists or failed to insert.",
+                "message": f"Error: {str(e)}",
             }
-
-        print(f"✓ Inserted hackathon: {enriched.get('title')} | ID: {hackathon_id}")
-
-        # Parse and insert problem statements
-        problems_count = 0
-        description = enriched.get("description") or ""
-
-        try:
-            parsed = await parser_agent.run(description)
-        except Exception as e:
-            print(f"⚠ Parser agent error: {e}")
-            parsed = None
-
-        if parsed:
-            problems = parsed.get("problem_statements")
-            if problems:
-                for p in problems:
-                    title = p.get("heading") or p.get("title")
-                    desc = p.get("description")
-                    p_type = p.get("type")
-
-                    created_id = problem_repo.create(hackathon_id, {
-                        "title": title,
-                        "description": desc,
-                        "type": p_type,
-                    })
-
-                    if created_id:
-                        problems_count += 1
-                        print(f"  ✓ Problem ID {created_id}: {title}")
-
-        return {
-            "success": True,
-            "hackathon_id": hackathon_id,
-            "problems_count": problems_count,
-            "message": f"Successfully inserted hackathon {external_id} with {problems_count} problem statement(s).",
-        }
-
-    except Exception as e:
-        return {
-            "success": False,
-            "hackathon_id": None,
-            "problems_count": 0,
-            "message": f"Error: {str(e)}",
-        }
 
 
 if __name__ == "__main__":

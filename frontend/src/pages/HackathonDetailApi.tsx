@@ -2090,7 +2090,7 @@ export default function HackathonDetailApi() {
                     </div>
 
                     {/* Solution Blueprint & Slide Deck Action Banner */}
-                    <div className="mt-8 bg-paper border border-grid/20 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden premium-card">
+                    {/* <div className="mt-8 bg-paper border border-grid/20 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden premium-card">
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--forest)]" />
                       <div className="space-y-2">
                         <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-forest bg-forest/5 border border-forest/10 px-2 py-0.5">
@@ -2151,7 +2151,7 @@ export default function HackathonDetailApi() {
                           </button>
                         )}
                       </div>
-                    </div>
+                    </div> */}
 
                     <div className="w-full mt-20">
                       <div className=" border-grid/20 pb-8">

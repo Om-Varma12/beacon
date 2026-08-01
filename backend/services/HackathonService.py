@@ -5,18 +5,18 @@ class HackathonService:
         self.resource_repo = resource_repo
 
 
-    def get_hackathon_detail(self, hackathon_id: int):
-        hackathon = self.hackathon_repo.get_by_id(hackathon_id)
+    async def get_hackathon_detail(self, hackathon_id: int):
+        hackathon = await self.hackathon_repo.get_by_id(hackathon_id)
 
         if not hackathon:
             return None
         
         # print(hackathon)
 
-        problems = self.problem_repo.get_by_hackathon_id(hackathon['id'])
+        problems = await self.problem_repo.get_by_hackathon_id(hackathon['id'])
         hackathon["problem_statements"] = problems
 
-        resources = self.resource_repo.get_by_hackathon_id(hackathon['id'])
+        resources = await self.resource_repo.get_by_hackathon_id(hackathon['id'])
         hackathon["resources"] = resources
 
         return hackathon

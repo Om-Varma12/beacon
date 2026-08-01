@@ -1,13 +1,17 @@
 from fastapi import APIRouter
 
-from db.db_instance import db
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from db.database import get_session
+
 from agents.grok_manager import GroqKeyManager
 from groq import Groq
 
 router = APIRouter()
 
 @router.get("/health")
-def health_check():
+async def health_check():
     db_status = {
         "ok": False,
         "error": None,
@@ -19,16 +23,15 @@ def health_check():
 
     conn = None
     try:
-        conn = db.get_conn()
-        with conn.cursor() as cursor:
-            cursor.execute("SELECT 1")
-            cursor.fetchone()
+        async for session in get_session():
+            await session.execute(text("SELECT 1"))
+            break
+
         db_status["ok"] = True
+
     except Exception as exc:
         db_status["error"] = str(exc)
-    finally:
-        if conn is not None:
-            db.release_conn(conn)
+
 
     try:
         key_manager = GroqKeyManager()

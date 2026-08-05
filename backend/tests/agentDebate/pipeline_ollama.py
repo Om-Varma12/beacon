@@ -2,13 +2,13 @@ import asyncio
 import json
 from datetime import datetime
 from pprint import pprint
-from agents.gemini_llm import GeminiLLM
+from agents.hybrid_llm import HybridLLM
 from orchestrator.pipeline import DebatePipeline
 from utils.attachment_downloader import download
 
 async def main():
     themes = download()
-    llm = GeminiLLM()
+    llm = HybridLLM()
     pipeline = DebatePipeline(llm=llm, debate_rounds=1, use_synthesizer=True) # Run 1 round for quick verification
 
     result = await pipeline.run(theme=themes)

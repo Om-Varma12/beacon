@@ -8,13 +8,13 @@ import time
 from google import genai
 from dotenv import load_dotenv
 
-from config import GEMINI_MODEL
+from config import GEMINI_INIT_IDEA_MODEL
 
 load_dotenv()
 
 
 class GeminiLLM:
-    def __init__(self, model: str = GEMINI_MODEL):
+    def __init__(self, model: str = GEMINI_INIT_IDEA_MODEL):
         self.model = model
         self.client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 

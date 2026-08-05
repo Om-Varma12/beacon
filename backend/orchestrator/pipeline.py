@@ -2,6 +2,13 @@ import asyncio
 from typing import Any
 from langsmith import traceable
 
+from config import (
+    GEMINI_INIT_IDEA_MODEL,
+    GEMINI_SUBSEQUENT_IDEA_MODEL,
+    GEMINI_SYNTHESIS_MODEL,
+)
+from agents.gemini_llm import GeminiLLM
+from agents.hybrid_llm import HybridLLM
 from agents.business_idea_agent import BusinessIdeaAgent
 from agents.innovation_idea_agent import InnovationIdeaAgent
 from agents.judge_agent import JudgeAgent
@@ -14,14 +21,38 @@ PERSONAS = ("practical", "innovation", "business")
 
 class DebatePipeline:
 	def __init__(self, llm, debate_rounds: int = 2, use_synthesizer: bool = True):
+		# Build correctly-modelled LLM instances for each pipeline stage.
+		# HybridLLM and GeminiLLM are treated specially; any other LLM is
+		# used as-is for all stages.
+		if isinstance(llm, HybridLLM):
+			def _h(gemini_model: str) -> HybridLLM:
+				return HybridLLM(
+					ollama_model=llm.ollama.model,
+					gemini_model=gemini_model,
+				)
+			self.llm_init       = _h(GEMINI_INIT_IDEA_MODEL)
+			self.llm_subsequent = _h(GEMINI_SUBSEQUENT_IDEA_MODEL)
+			self.llm_judge      = _h(GEMINI_SUBSEQUENT_IDEA_MODEL)
+			self.llm_synthesis  = _h(GEMINI_SYNTHESIS_MODEL)
+		elif isinstance(llm, GeminiLLM):
+			self.llm_init       = GeminiLLM(model=GEMINI_INIT_IDEA_MODEL)
+			self.llm_subsequent = GeminiLLM(model=GEMINI_SUBSEQUENT_IDEA_MODEL)
+			self.llm_judge      = GeminiLLM(model=GEMINI_SUBSEQUENT_IDEA_MODEL)
+			self.llm_synthesis  = GeminiLLM(model=GEMINI_SYNTHESIS_MODEL)
+		else:
+			self.llm_init       = llm
+			self.llm_subsequent = llm
+			self.llm_judge      = llm
+			self.llm_synthesis  = llm
+
 		self.idea_agents = {
-			"practical": PracticalIdeaAgent(llm),
-			"innovation": InnovationIdeaAgent(llm),
-			"business": BusinessIdeaAgent(llm),
+			"practical": PracticalIdeaAgent(self.llm_init),
+			"innovation": InnovationIdeaAgent(self.llm_init),
+			"business": BusinessIdeaAgent(self.llm_init),
 		}
-		self.judge = JudgeAgent(llm)
+		self.judge = JudgeAgent(self.llm_judge)
 		self.use_synthesizer = use_synthesizer
-		self.synthesizer = SynthesizerAgent(llm) if use_synthesizer else None
+		self.synthesizer = SynthesizerAgent(self.llm_synthesis) if use_synthesizer else None
 		self.debate_rounds = max(1, debate_rounds)
 
 	@traceable
@@ -30,6 +61,11 @@ class DebatePipeline:
 		
 		if on_progress:
 			await on_progress("Generating initial project ideas (Persona Agents drafting proposals)...")
+		
+		# Ensure the initial LLM is used for the generation round
+		for agent in self.idea_agents.values():
+			agent.llm = self.llm_init
+
 		ideas = await self._run_generation_round(theme)
 		
 		if on_progress:
@@ -51,6 +87,10 @@ class DebatePipeline:
 
 		critiques_received: dict[str, list[dict]] = {persona: [] for persona in PERSONAS}
 		current_ideas = ideas
+
+		# Switch the idea agents to the subsequent LLM for all debate rounds
+		for agent in self.idea_agents.values():
+			agent.llm = self.llm_subsequent
 
 		for round_number in range(2, 2 + self.debate_rounds):
 			debate_idx = round_number - 1

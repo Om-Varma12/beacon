@@ -4,18 +4,19 @@ from prompts.parser_agent import SYSTEM_PROMPT
 class ProblemStatementParserAgent(Agent):
     def get_system_prompt(self):
         return SYSTEM_PROMPT
-    
+
     def build_user_prompt(self, context: str):
         return f"""
-            Extract the hackathon problem statement from the following aggregated hackathon context.
+Below is the raw aggregated hackathon context. It may contain HTML markup, plain text, extracted PDF/doc content, and external resource text all combined together.
 
-            The context may include:
-              - hackathon description
-              - attached documents (pdf, docx, pptx, txt)
-              - linked external resources
+YOUR TASK:
+1. Mentally strip all HTML tags and read the actual text content within them.
+2. Scan the ENTIRE context from top to bottom — do not skip any section, paragraph, bullet point, or heading.
+3. Look for keywords: "Problem Statement", "PS", "PS1", "Track", "Challenge", "Build", "Develop", "Create", "Solve", "Objective", "Task".
+4. Extract ALL problem statements, tracks, and defined challenges you find as separate items.
+5. Assign the correct "type" to each item: "problem_statement" or "open_innovation".
+6. Return ONLY raw JSON as per the schema. No extra text, no markdown.
 
-            Return the result strictly in the required JSON format.
-
-            AGGREGATED CONTEXT:
-            {context}
+AGGREGATED CONTEXT:
+{context}
         """

@@ -82,7 +82,7 @@ class Worker:
             # Update status to processing
             await job_repo.update_status(job_id, "processing")
             await session.commit()
-            self.redis.publish_progress(job_id, "processing", f"Starting {job_type} job...")
+            await self.redis.publish_progress(job_id, "processing", f"Starting {job_type} job...")
 
             try:
                 # Execute job based on type
@@ -98,7 +98,7 @@ class Worker:
                 # Success
                 await job_repo.update_status(job_id, "completed")
                 await job_repo.update_result(job_id, result_id)
-                self.redis.publish_progress(job_id, "completed", f"{job_type} job completed successfully")
+                await self.redis.publish_progress(job_id, "completed", f"{job_type} job completed successfully")
                 print(f"Job {job_id} completed successfully")
                 await session.commit()
 
@@ -115,7 +115,7 @@ class Worker:
                     backoff_delay = self.retry_backoff_base ** retry_count
                     print(f"Job {job_id} failed (attempt {retry_count}/{self.max_retries}), retrying in {backoff_delay}s...")
                     
-                    self.redis.publish_progress(
+                    await self.redis.publish_progress(
                         job_id, 
                         "retrying", 
                         f"Job failed (attempt {retry_count}/{self.max_retries}), retrying in {backoff_delay}s..."
@@ -133,7 +133,7 @@ class Worker:
                     # Max retries exceeded, mark as failed
                     print(f"Job {job_id} failed after {retry_count} attempts")
                     await job_repo.update_status(job_id, "failed", error_message=error_msg)
-                    self.redis.publish_progress(job_id, "failed", f"Job failed after {retry_count} attempts: {error_msg}")
+                    await self.redis.publish_progress(job_id, "failed", f"Job failed after {retry_count} attempts: {error_msg}")
                     await session.commit()
 
     async def run_analysis_job(self, job_id: int, payload: dict, session: AsyncSession) -> Optional[int]:
@@ -168,7 +168,7 @@ class Worker:
         # Progress callback
         async def on_progress(message: str):
             # Update Redis Pub/Sub progress
-            self.redis.publish_progress(job_id, "processing", message)
+            await self.redis.publish_progress(job_id, "processing", message)
             # Update database status
             await analysis_repo.update_status(analysis_id, "RUNNING", message)
             await session.commit()
@@ -240,7 +240,7 @@ class Worker:
             raise ValueError("Missing hackathon_id in payload")
 
         async def on_progress(message: str):
-            self.redis.publish_progress(job_id, "processing", message)
+            await self.redis.publish_progress(job_id, "processing", message)
 
         hackathon_repo = HackathonRepository(session)
         analysis_repo = AgentAnalysisRepository(session)
@@ -272,7 +272,7 @@ class Worker:
     async def run_scrape_job(self, job_id: int, payload: dict, session: AsyncSession) -> Optional[int]:
         """Run scraping job."""
         async def on_progress(message: str):
-            self.redis.publish_progress(job_id, "processing", message)
+            await self.redis.publish_progress(job_id, "processing", message)
 
         await on_progress("Starting hackathon scraping...")
         scraperHackathons()

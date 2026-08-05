@@ -29,7 +29,8 @@ class RedisManager:
         self.queue_name = os.getenv("REDIS_QUEUE_NAME", "beacon:jobs")
 
         # Create separate clients for queue and pubsub operations
-        # Queue client: sync client for worker job queue operations and sync progress publishing
+        # Queue client: sync client used exclusively for blocking BRPOP/LPUSH job-queue operations.
+        # All pub/sub and progress publishing uses the async pubsub_client.
         self.queue_client = redis.from_url(
             redis_url,
             decode_responses=True,
@@ -37,7 +38,7 @@ class RedisManager:
             socket_connect_timeout=5,
             health_check_interval=30
         )
-        # Pubsub client: async client for non-blocking SSE connections
+        # Pubsub client: async client for non-blocking SSE, pub/sub, and progress publishing
         self.pubsub_client = aioredis.from_url(
             redis_url,
             decode_responses=True,
@@ -70,17 +71,17 @@ class RedisManager:
             print(f"Redis error (pop_job): {e}")
             return None
 
-    def publish_progress(self, job_id: int, status: str, message: str) -> bool:
+    async def publish_progress(self, job_id: int, status: str, message: str) -> bool:
         """
         Publish progress event to a per-job Redis Pub/Sub channel and append to a durable list.
-        Uses the sync queue_client so it is thread-safe and safe for sync workers.
+        Uses the async pubsub_client so it is non-blocking.
         """
         try:
             # 1. Increment sequence number
             seq_key = f"beacon:events:{job_id}:seq"
-            seq = self.queue_client.incr(seq_key)
+            seq = await self.pubsub_client.incr(seq_key)
             if seq == 1:
-                self.queue_client.expire(seq_key, 3600)  # 1 hour TTL
+                await self.pubsub_client.expire(seq_key, 3600)  # 1 hour TTL
             
             # 2. Build the event payload
             # Both "message" and "status_message" are included for frontend compatibility.
@@ -95,12 +96,12 @@ class RedisManager:
             
             # 3. Append to the durable events list
             list_key = f"beacon:events:{job_id}"
-            self.queue_client.rpush(list_key, event_str)
-            self.queue_client.expire(list_key, 3600)  # 1 hour TTL
+            await self.pubsub_client.rpush(list_key, event_str)
+            await self.pubsub_client.expire(list_key, 3600)  # 1 hour TTL
             
             # 4. Publish to the per-job channel
             channel_key = f"beacon:progress:{job_id}"
-            self.queue_client.publish(channel_key, event_str)
+            await self.pubsub_client.publish(channel_key, event_str)
             return True
         except Exception as e:
             import traceback

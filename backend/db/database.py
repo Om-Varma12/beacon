@@ -11,7 +11,12 @@ engine = create_async_engine(
     os.getenv("DATABASE_URL"),
     pool_size=20,
     max_overflow=30,
+    pool_timeout=30,
+    pool_recycle=1800,
     pool_pre_ping=True,
+    connect_args={
+        "command_timeout": 30,
+    }
 )
 
 SessionLocal = async_sessionmaker(

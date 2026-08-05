@@ -1,5 +1,6 @@
 import asyncio
 import json
+import random
 import re
 from ollama import chat
 
@@ -38,9 +39,21 @@ class OllamaLLM:
                 print(f"Ollama attempt {attempt + 1} failed: {e}")
                 if attempt == max_retries - 1:
                     raise e
-                # Wait briefly before retry
-                import time
-                time.sleep(1)
+                
+                # Check if it's a rate limit error
+                error_str = str(e).lower()
+                is_rate_limit = "rate limit" in error_str or "429" in error_str or "too many concurrent" in error_str
+                
+                if is_rate_limit:
+                    # Use random wait between 1-15 seconds for rate limit errors
+                    wait_time = random.randint(1, 15)
+                    print(f"Rate limit detected, waiting {wait_time} seconds before retry...")
+                    import time
+                    time.sleep(wait_time)
+                else:
+                    # Standard 1 second wait for other errors
+                    import time
+                    time.sleep(1)
 
     @staticmethod
     def _extract_json(text: str) -> str:

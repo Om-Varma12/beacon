@@ -1,6 +1,5 @@
 from agents.hybrid_llm import HybridLLM
 from orchestrator.pipeline import DebatePipeline
-from utils.sse_queue import get_sse_queue
 
 
 class AnalysisService:
@@ -122,96 +121,6 @@ class AnalysisService:
                 "status_message": "Initializing analysis pipeline...",
                 "should_start": True
             }
-
-    async def run_async_analysis_pipeline(self, analysis_id: int, hackathon_id: int, user_id: int = None):
-        sse_queue = get_sse_queue()
-        try:
-            # 1. Update status to RUNNING
-            status_message = "Preparing and loading hackathon problem statements..."
-            await self.analysis_repo.update_status(
-                analysis_id,
-                "RUNNING",
-                status_message
-            )
-            # Publish to SSE queue
-            await sse_queue.publish(analysis_id, "RUNNING", status_message)
-
-            # Fetch Hackathon
-            hackathon = await self.hackathon_repo.get_by_id(hackathon_id)
-            if not hackathon:
-                raise ValueError("Hackathon not found")
-
-            internal_hackathon_id = hackathon["id"]
-
-            # Fetch Problem Statements
-            problems = await self.problem_repo.get_by_hackathon_id(internal_hackathon_id)
-
-            # Build Theme Payload
-            themes = []
-            for problem in problems:
-                themes.append({
-                    "title": problem.get("title"),
-                    "description": problem.get("description"),
-                    "type": problem.get("type")
-                })
-
-            if not themes:
-                themes.append({
-                    "title": hackathon.get("title", "General Theme"),
-                    "description": hackathon.get("description", ""),
-                    "type": "general"
-                })
-
-            # Run Debate Pipeline
-            llm = HybridLLM()
-            pipeline = DebatePipeline(
-                llm=llm,
-                debate_rounds=2,
-                use_synthesizer=True
-            )
-
-            # Callback to update progress in DB and publish to SSE
-            async def on_progress(message: str):
-                await self.analysis_repo.update_status(
-                    analysis_id,
-                    "RUNNING",
-                    message
-                )
-                await sse_queue.publish(analysis_id, "RUNNING", message)
-
-            # Run the pipeline
-            result = await pipeline.run(theme=themes, on_progress=on_progress)
-
-            # 2. Save Main Analysis
-            status_message = "Analysis completed successfully."
-            await self.analysis_repo.update_results(
-                analysis_id,
-                result,
-                status="COMPLETED",
-                status_message=status_message
-            )
-            await sse_queue.publish(analysis_id, "COMPLETED", status_message)
-
-            # 3. Save Rounds
-            rounds = result.get("rounds", [])
-            for idx, round_data in enumerate(rounds):
-                await self.rounds_repo.create(
-                    analysis_id=analysis_id,
-                    round_number=idx + 1,
-                    data=round_data,
-                    user_id=user_id
-                )
-
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            error_msg = f"Analysis failed: {str(e)}"
-            await self.analysis_repo.update_status(
-                analysis_id,
-                "FAILED",
-                error_msg
-            )
-            await sse_queue.publish(analysis_id, "FAILED", error_msg)
 
     async def get_analysis(self, hackathon_id: int, user_id: int = None):
         hackathon = await self.hackathon_repo.get_by_id(hackathon_id)

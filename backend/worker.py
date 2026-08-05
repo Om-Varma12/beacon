@@ -33,17 +33,22 @@ class Worker:
         # Configuration
         self.max_retries = int(os.getenv("WORKER_MAX_RETRIES", "3"))
         self.retry_backoff_base = int(os.getenv("WORKER_RETRY_BACKOFF_BASE", "2"))
+        self.max_concurrent = int(os.getenv("WORKER_MAX_CONCURRENT_JOBS", "5"))
+        self.semaphore = asyncio.Semaphore(self.max_concurrent)
 
     async def run(self):
         """Main worker loop."""
-        print("Worker started, waiting for jobs...")
+        print(f"Worker started (max_concurrent={self.max_concurrent}), waiting for jobs...")
         while True:
             try:
                 # Block indefinitely until a job arrives
                 job_id = await asyncio.to_thread(self.redis.pop_job)
                 if job_id:
-                    print("running job", job_id)
-                    await self.process_job(job_id)
+                    print(f"Queuing job {job_id} ({self.max_concurrent - self.semaphore._value}/{self.max_concurrent} slots in use)")
+                    # Acquire a slot before spawning — blocks here if all slots are full
+                    await self.semaphore.acquire()
+                    # Fire-and-forget: the main loop is free to pop the next job immediately
+                    asyncio.create_task(self._process_with_semaphore(job_id))
             except KeyboardInterrupt:
                 print("Worker shutting down...")
                 break
@@ -51,6 +56,13 @@ class Worker:
                 print(f"Worker error in main loop: {e}")
                 traceback.print_exc()
                 await asyncio.sleep(1)
+
+    async def _process_with_semaphore(self, job_id: int):
+        """Runs process_job and releases the semaphore slot when done."""
+        try:
+            await self.process_job(job_id)
+        finally:
+            self.semaphore.release()
 
     async def process_job(self, job_id: int):
         """Process a single job with retry logic."""

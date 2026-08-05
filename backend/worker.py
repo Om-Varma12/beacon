@@ -22,7 +22,7 @@ from scraper.main_scraper import scraperHackathons
 from services.AssetsService import AssetsService
 
 from utils.redis_manager import get_redis_manager
-from agents.ollama_llm import OllamaLLM
+from agents.gemini_llm import GeminiLLM
 from orchestrator.pipeline import DebatePipeline
 
 
@@ -187,7 +187,7 @@ class Worker:
             })
 
         await on_progress("Initializing AI agents and debate pipeline...")
-        llm = OllamaLLM()
+        llm = GeminiLLM()
         pipeline = DebatePipeline(
             llm=llm,
             debate_rounds=2,

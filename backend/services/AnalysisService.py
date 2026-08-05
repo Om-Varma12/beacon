@@ -1,4 +1,4 @@
-from agents.ollama_llm import OllamaLLM
+from agents.gemini_llm import GeminiLLM
 from orchestrator.pipeline import DebatePipeline
 from utils.sse_queue import get_sse_queue
 
@@ -37,7 +37,7 @@ class AnalysisService:
 
 
         # Run Debate Pipeline
-        llm = OllamaLLM()
+        llm = GeminiLLM()
 
         pipeline = DebatePipeline(
             llm=llm,
@@ -163,7 +163,7 @@ class AnalysisService:
                 })
 
             # Run Debate Pipeline
-            llm = OllamaLLM()
+            llm = GeminiLLM()
             pipeline = DebatePipeline(
                 llm=llm,
                 debate_rounds=2,

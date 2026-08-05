@@ -45,11 +45,12 @@ interface HackathonListQueryResult {
   hasMore: boolean;
 }
 
+import { API_BASE_URL } from '../config';
+
 type FeeFilter = 'all' | 'free' | 'paid';
 type ModeFilter = 'all' | 'remote' | 'offline';
 
 const itemsPerPage = 12;
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
 
 function parseTeamSize(value: unknown): string {
   if (!value) return 'TBD';

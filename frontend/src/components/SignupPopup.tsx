@@ -21,7 +21,7 @@ try {
   console.error('Amplify configure error:', e);
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000';
+import { API_BASE_URL } from '../config';
 
 async function syncUserWithBackend(idToken: string) {
   const response = await fetch(`${API_BASE_URL}/me`, {

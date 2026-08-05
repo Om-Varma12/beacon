@@ -56,6 +56,7 @@ class HackathonRepository:
         offset: int = 0,
         sort_by: str = "start_date",
         order: str = "asc",
+        last_id: int = None,
     ):
         allowed_fields = {
             "start_date": Hackathon.start_date,
@@ -83,8 +84,16 @@ class HackathonRepository:
             )
             .order_by(sort_column)
             .limit(limit)
-            .offset(offset)
         )
+
+        # Cursor-based pagination: skip offset scan when a cursor is provided.
+        # When last_id is supplied the client is saying "give me rows after this id",
+        # which allows PostgreSQL to use the primary-key index regardless of page depth.
+        # Fall back to OFFSET only when no cursor is available (first page / legacy).
+        if last_id is not None:
+            stmt = stmt.where(Hackathon.id > last_id)
+        else:
+            stmt = stmt.offset(offset)
 
         result = await self.session.execute(stmt)
 

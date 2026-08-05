@@ -38,7 +38,7 @@ async def stream_analysis_status(
     Token is passed via query parameter because EventSource doesn't support custom headers.
     """
     # Verify token from query parameter
-    claims = verify_token(token)
+    claims = await verify_token(token)
     # Resolve user ID from claims
     cognito_sub = claims.get("sub")
     email = claims.get("email")

@@ -1,5 +1,6 @@
 import os
-import requests
+import httpx
+import asyncio
 import jwt
 from jwt.algorithms import RSAAlgorithm
 from fastapi import HTTPException, Security
@@ -12,24 +13,31 @@ COGNITO_REGION = COGNITO_USER_POOL_ID.split("_")[0] if "_" in COGNITO_USER_POOL_
 JWKS_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
 
 _jwks_cache = None
+_jwks_cache_lock = asyncio.Lock()
 
-def get_jwks():
+async def get_jwks():
     global _jwks_cache
     if _jwks_cache is None:
-        try:
-            resp = requests.get(JWKS_URL, timeout=5)
-            resp.raise_for_status()
-            _jwks_cache = resp.json()
-        except Exception as e:
-            print(f"Error fetching JWKS from Cognito: {e}")
-            raise HTTPException(status_code=500, detail="Could not verify credentials with authentication server")
+        async with _jwks_cache_lock:
+            if _jwks_cache is None:
+                try:
+                    async with httpx.AsyncClient() as client:
+                        resp = await client.get(JWKS_URL, timeout=5.0)
+                        resp.raise_for_status()
+                        _jwks_cache = resp.json()
+                except Exception as e:
+                    print(f"Error fetching JWKS from Cognito: {e}")
+                    raise HTTPException(
+                        status_code=500,
+                        detail="Could not verify credentials with authentication server"
+                    )
     return _jwks_cache
 
 security = HTTPBearer()
 
-def verify_token(token: str):
+async def verify_token(token: str):
     """Verify JWT token and return claims. Used for SSE where token is passed as query param."""
-    jwks = get_jwks()
+    jwks = await get_jwks()
     
     try:
         # Get token header to find the kid
@@ -43,8 +51,9 @@ def verify_token(token: str):
         if not key_data:
             # Refresh JWKS cache and try again
             global _jwks_cache
-            _jwks_cache = None
-            jwks = get_jwks()
+            async with _jwks_cache_lock:
+                _jwks_cache = None
+            jwks = await get_jwks()
             key_data = next((key for key in jwks.get("keys", []) if key.get("kid") == kid), None)
             
             if not key_data:
@@ -90,9 +99,9 @@ def verify_token(token: str):
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
 
-def get_current_user_claims(credentials: HTTPAuthorizationCredentials = Security(security)):
+async def get_current_user_claims(credentials: HTTPAuthorizationCredentials = Security(security)):
     token = credentials.credentials
-    jwks = get_jwks()
+    jwks = await get_jwks()
     
     try:
         # Get token header to find the kid
@@ -106,8 +115,9 @@ def get_current_user_claims(credentials: HTTPAuthorizationCredentials = Security
         if not key_data:
             # Refresh JWKS cache and try again
             global _jwks_cache
-            _jwks_cache = None
-            jwks = get_jwks()
+            async with _jwks_cache_lock:
+                _jwks_cache = None
+            jwks = await get_jwks()
             key_data = next((key for key in jwks.get("keys", []) if key.get("kid") == kid), None)
             
             if not key_data:

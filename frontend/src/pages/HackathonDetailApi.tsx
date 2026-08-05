@@ -282,8 +282,7 @@ export interface AssetsResponse {
 
 type TabType = "overview" | "analysis" | "assets" | "chat";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+import { API_BASE_URL } from "../config";
 
 function formatDate(value?: string | null): string {
   if (!value) return "TBD";

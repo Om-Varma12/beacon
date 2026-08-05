@@ -227,3 +227,44 @@ class JobRepository:
             "id": row.id,
             "status": row.status,
         }
+
+    async def get_active_assets_job(
+        self,
+        hackathon_id: int,
+        user_id: int = None,
+    ) -> Optional[Dict]:
+        """Return a queued/processing assets job for this user+hackathon, if any."""
+        stmt = (
+            select(Job.id, Job.status)
+            .where(Job.job_type == "assets")
+            .where(
+                cast(
+                    Job.payload["hackathon_id"].astext,
+                    BigInteger,
+                ) == hackathon_id
+            )
+            .where(
+                Job.status.in_(["queued", "processing"])
+            )
+            .order_by(Job.created_at.desc())
+            .limit(1)
+        )
+
+        if user_id is not None:
+            stmt = stmt.where(
+                cast(
+                    Job.payload["user_id"].astext,
+                    Integer,
+                ) == user_id
+            )
+
+        result = await self.session.execute(stmt)
+        row = result.first()
+
+        if row is None:
+            return None
+
+        return {
+            "id": row.id,
+            "status": row.status,
+        }

@@ -145,17 +145,22 @@ async def get_hackathons(
     repo: HackathonRepository = Depends(get_repo),
     limit: int = Query(12, le=100),
     offset: int = 0,
+    last_id: int = Query(None, description="Cursor: last hackathon id from previous page (preferred over offset)"),
     sort_by: str = "start_date",
     order: str = "asc"
 ):
     try:
-        data = await repo.get_all(limit, offset, sort_by, order)
+        data = await repo.get_all(limit, offset, sort_by, order, last_id=last_id)
         total_count = await repo.get_total_active_count()
+
+        # next_cursor lets callers page forward without OFFSET
+        next_cursor = data[-1]["id"] if data else None
 
         return {
             "success": True,
             "count": total_count,
             "page_count": len(data),
+            "next_cursor": next_cursor,
             "data": data
         }
 
@@ -209,6 +214,14 @@ async def analyze_hackathon(
 ):
     user_id = await resolve_user_id(claims, user_repo)
     redis = get_redis_manager()
+
+    # Rate-limit: reject if this user already has an active analysis job for this hackathon
+    active_job = await job_repo.get_active_job_for_hackathon(hackathon_id, user_id=user_id)
+    if active_job:
+        raise HTTPException(
+            status_code=429,
+            detail="An analysis job is already queued or processing for this hackathon. Please wait for it to complete."
+        )
 
     analysis_data = await service.get_or_create_pending_analysis(
         hackathon_id,
@@ -334,10 +347,19 @@ async def generate_assets(
     hackathon_id: int,
     claims: dict = Depends(get_current_user_claims),
     service: AssetsService = Depends(get_assets_service),
-    user_repo: UserRepository = Depends(get_user_repo)
+    user_repo: UserRepository = Depends(get_user_repo),
+    job_repo: JobRepository = Depends(get_job_repo)
 ):
     try:
         user_id = await resolve_user_id(claims, user_repo)
+
+        # Rate-limit: reject if this user already has an active assets job for this hackathon
+        active_job = await job_repo.get_active_assets_job(hackathon_id, user_id=user_id)
+        if active_job:
+            raise HTTPException(
+                status_code=429,
+                detail="An assets generation job is already queued or processing. Please wait for it to complete."
+            )
 
         data = await service.generate_assets(hackathon_id, user_id=user_id)
         if data is None:
@@ -353,6 +375,8 @@ async def generate_assets(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate assets: {str(e)}")
 

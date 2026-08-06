@@ -1,5 +1,5 @@
 generation agents-v2
 
+worker -> celery
 
-prbm stmt agent: -
-    problem statement is not properly extracted from the description
+TESTS bana for entire project

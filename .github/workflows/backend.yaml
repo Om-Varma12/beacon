@@ -69,6 +69,8 @@ jobs:
         run: |
           alembic upgrade head
 
-      - name: Run Tests
-        run: |
-          pytest tests
+      - name: Run main test suite
+        run: uv run pytest tests -v
+
+      - name: Run migration tests
+        run: uv run pytest tests/migrations/ -v

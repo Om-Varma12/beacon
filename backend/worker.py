@@ -274,8 +274,7 @@ class Worker:
         async def on_progress(message: str):
             await self.redis.publish_progress(job_id, "processing", message)
 
-        await on_progress("Starting hackathon scraping...")
-        scraperHackathons()
+        await scraperHackathons()
         await on_progress("Scraping completed")
         
         # Return None as scraping doesn't create a specific result record

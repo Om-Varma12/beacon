@@ -134,3 +134,34 @@ def mock_cognito_claims():
         app.dependency_overrides[get_current_user_claims] = _fake_claims
 
     return _override
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def reset_redis_singleton():
+    """
+    Resets the RedisManager singleton before each test and closes connections
+    after each test. This ensures all Redis clients are bound to the active
+    test event loop and prevents "Event loop is closed" errors.
+    """
+    from utils.redis_manager import RedisManager, get_redis_manager
+    
+    # Save old instance
+    old_instance = RedisManager._instance
+    # Reset singleton
+    RedisManager._instance = None
+    
+    # Initialize a clean manager for the current test loop
+    manager = get_redis_manager()
+    
+    yield
+    
+    # Close connections on the current loop
+    await manager.close()
+    
+    if old_instance:
+        try:
+            old_instance.queue_client.close()
+            await old_instance.pubsub_client.close()
+        except Exception:
+            pass
+

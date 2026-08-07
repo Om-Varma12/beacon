@@ -5,7 +5,7 @@ from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.database import SessionLocal
+from db.database import get_session
 from db.HackathonRepository import HackathonRepository
 from db.ProblemRepository import ProblemRepository
 from db.ResourceRepository import ResourceRepository
@@ -24,6 +24,7 @@ from services.AssetsService import AssetsService
 from scraper.main_scraper import scraperHackathons
 from utils.auth import get_current_user_claims
 from utils.redis_manager import get_redis_manager
+from utils.asset_generator import generate_docx_proposal, generate_pptx_slides
 
 router = APIRouter()
 
@@ -32,9 +33,6 @@ class ChatModel(BaseModel):
     message: str
 
 
-async def get_session():
-    async with SessionLocal() as session:
-        yield session
 
         
 # Dependency
@@ -389,7 +387,6 @@ async def download_assets_docx(
     user_repo: UserRepository = Depends(get_user_repo)
 ):
     user_id = await resolve_user_id(claims, user_repo)
-    from utils.asset_generator import generate_docx_proposal
     data = await service.get_assets(hackathon_id, user_id=user_id)
     if data is None or not data.get("generated") or not data.get("doc_content"):
         raise HTTPException(status_code=404, detail="Assets not generated yet")
@@ -415,7 +412,6 @@ async def download_assets_pptx(
     user_repo: UserRepository = Depends(get_user_repo)
 ):
     user_id = await resolve_user_id(claims, user_repo)
-    from utils.asset_generator import generate_pptx_slides
     data = await service.get_assets(hackathon_id, user_id=user_id)
     if data is None or not data.get("generated") or not data.get("ppt_content"):
         raise HTTPException(status_code=404, detail="Assets not generated yet")

@@ -1,5 +1,9 @@
 generation agents-v2
 
+worker -> celery
 
-prbm stmt agent: -
-    problem statement is not properly extracted from the description
+
+update backend/db/schema to match the schema of main db
+TESTS bana -> each feature
+
+notification system design for sending emails to user according to their hackathon preferences

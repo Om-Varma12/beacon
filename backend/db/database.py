@@ -7,17 +7,32 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker
 )
 
-engine = create_async_engine(
-    os.getenv("DATABASE_URL"),
-    pool_size=20,
-    max_overflow=30,
-    pool_timeout=30,
-    pool_recycle=1800,
-    pool_pre_ping=True,
-    connect_args={
-        "command_timeout": 30,
-    }
-)
+# Check if we are running in test mode and use the test database url if set
+db_url = os.getenv("TEST_DATABASE_URL") or os.getenv("DATABASE_URL")
+
+from sqlalchemy.pool import NullPool
+
+if os.getenv("TEST_DATABASE_URL"):
+    # Disable pooling for tests to avoid asyncpg ProactorEventLoop closed errors
+    engine = create_async_engine(
+        db_url,
+        poolclass=NullPool,
+        connect_args={
+            "command_timeout": 30,
+        }
+    )
+else:
+    engine = create_async_engine(
+        db_url,
+        pool_size=20,
+        max_overflow=30,
+        pool_timeout=30,
+        pool_recycle=1800,
+        pool_pre_ping=True,
+        connect_args={
+            "command_timeout": 30,
+        }
+    )
 
 SessionLocal = async_sessionmaker(
     engine,

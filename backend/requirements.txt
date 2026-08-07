@@ -19,3 +19,4 @@ alembic
 google-genai
 pytest
 pytest-asyncio
+groq

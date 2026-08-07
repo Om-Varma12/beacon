@@ -151,13 +151,18 @@ def upgrade() -> None:
         """
     )
     # Create the trigger on jobs table
-    op.execute(
-        """
+    # Drop the trigger if it exists
+    op.execute("""
         DROP TRIGGER IF EXISTS update_jobs_updated_at ON jobs;
-        CREATE TRIGGER update_jobs_updated_at BEFORE UPDATE ON jobs
-            FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-        """
-    )
+    """)
+
+    # Create the trigger
+    op.execute("""
+        CREATE TRIGGER update_jobs_updated_at
+        BEFORE UPDATE ON jobs
+        FOR EACH ROW
+        EXECUTE FUNCTION update_updated_at_column();
+    """)
     # ### end Alembic commands ###
 
 

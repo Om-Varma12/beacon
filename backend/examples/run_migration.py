@@ -1,6 +1,13 @@
 """
 Script to run the jobs table migration.
-Run this script to create the jobs table in PostgreSQL.
+
+⚠️ DEPRECATED: This script is deprecated and should not be used.
+The project now uses Alembic for database migrations.
+
+Please use Alembic instead:
+    alembic upgrade head
+
+For more information, see the README.md file in the backend directory.
 """
 import os
 from dotenv import load_dotenv

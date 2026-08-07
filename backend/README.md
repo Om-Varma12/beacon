@@ -34,6 +34,51 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+## Database Migrations
+
+This project uses **Alembic** for database migrations. Alembic is the recommended way to manage schema changes.
+
+### Running Migrations
+
+To apply database migrations:
+
+```bash
+# Run all pending migrations
+alembic upgrade head
+
+# Run a specific migration
+alembic upgrade <revision_id>
+
+# Rollback to previous version
+alembic downgrade -1
+
+# Rollback to base (no tables)
+alembic downgrade base
+```
+
+### Creating New Migrations
+
+When you modify SQLAlchemy models, create a new migration:
+
+```bash
+# Auto-generate migration from model changes
+alembic revision --autogenerate -m "description of changes"
+
+# Create empty migration for manual SQL
+alembic revision -m "description of changes"
+```
+
+### Migration Status
+
+Check current migration status:
+
+```bash
+alembic current
+alembic history
+```
+
+**Note:** The old SQL migration script (`examples/run_migration.py`) is deprecated and should not be used. Always use Alembic for database schema changes.
+
 ## Run
 
 Start the API with Uvicorn:
@@ -61,3 +106,4 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 - The API now uses the plural `/hackathons` prefix consistently.
 - The health check performs a simple `SELECT 1` on PostgreSQL and a minimal Groq chat completion request.
+- Database schema changes should be managed through Alembic migrations to ensure consistency across environments.

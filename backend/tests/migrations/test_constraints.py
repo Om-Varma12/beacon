@@ -57,13 +57,6 @@ class TestJobsJobTypeConstraint:
         await _insert_job(full_schema_conn, "scrape")
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="Job ORM model does not define CheckConstraint on job_type; "
-               "CHECK constraints only exist in the raw SQL migration file "
-               "(tested in test_sql_migration.py). Add CheckConstraint to "
-               "models/Job.py to make this pass.",
-        strict=False,
-    )
     async def test_invalid_job_type_rejected(self, full_schema_conn):
         """Any value outside the allowed set must raise a DB error."""
         with pytest.raises((IntegrityError, DBAPIError, Exception)):
@@ -72,10 +65,6 @@ class TestJobsJobTypeConstraint:
             )
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="Job ORM model has no CheckConstraint on job_type; empty string not blocked at DB level.",
-        strict=False,
-    )
     async def test_empty_job_type_rejected(self, full_schema_conn):
         with pytest.raises((IntegrityError, DBAPIError, Exception)):
             await full_schema_conn.execute(
@@ -96,10 +85,6 @@ class TestJobsStatusConstraint:
             await _insert_job(full_schema_conn, "analysis", status=status)
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(
-        reason="Job ORM model has no CheckConstraint on status; invalid values not blocked at DB level.",
-        strict=False,
-    )
     async def test_invalid_status_rejected(self, full_schema_conn):
         with pytest.raises((IntegrityError, DBAPIError, Exception)):
             await full_schema_conn.execute(

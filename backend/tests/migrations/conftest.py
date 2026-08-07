@@ -1,13 +1,16 @@
 """
 conftest.py for migration tests.
 
-Provides two key fixtures:
+Provides fixtures for testing both raw SQL migrations and Alembic migrations:
 
   raw_conn   — a single AsyncConnection to a completely empty public schema.
                Drops and recreates the public schema before and after each test.
 
   full_schema_conn — same, but also runs Base.metadata.create_all after cleanup,
                so tests can query a fully built schema.
+
+  alembic_conn — wipes the DB, runs Alembic migrations up, then yields a connection.
+               Drops all tables via Alembic downgrade after the test.
 
 All fixtures are function-scoped to avoid the "Future attached to a different loop"
 error that occurs when asyncpg connections are shared across pytest-asyncio event loops.
@@ -16,9 +19,12 @@ import os
 import pathlib
 import pytest_asyncio
 from dotenv import load_dotenv
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncConnection
+from sqlalchemy import create_engine
 from sqlalchemy.pool import NullPool
 from sqlalchemy import text
+from alembic.config import Config
+from alembic import command
 
 load_dotenv(".env.test")
 
@@ -93,3 +99,70 @@ def read_migration(filename: str) -> str:
     """Read a raw SQL migration file and return its contents."""
     path = MIGRATIONS_DIR / filename
     return path.read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# Alembic migration fixtures
+# ---------------------------------------------------------------------------
+
+def _get_alembic_config() -> Config:
+    """Create and configure an Alembic Config object for testing."""
+    backend_dir = pathlib.Path(__file__).parent.parent.parent
+    alembic_dir = backend_dir / "alembic"
+    ini_path = backend_dir / "alembic.ini"
+    
+    config = Config(str(ini_path))
+    config.set_main_option("script_location", str(alembic_dir))
+    config.set_main_option("sqlalchemy.url", TEST_DATABASE_URL)
+    
+    return config
+
+
+@pytest_asyncio.fixture(scope="function")
+async def alembic_conn():
+    """
+    Function-scoped: wipes the DB, runs Alembic migrations up to head,
+    then yields a connection for testing. Runs Alembic downgrade to base
+    after the test to clean up.
+    """
+    from sqlalchemy import create_engine
+    from sqlalchemy.pool import NullPool
+    
+    # Create a sync engine for Alembic (Alembic is synchronous)
+    sync_db_url = TEST_DATABASE_URL.replace("+asyncpg", "")
+    sync_engine = create_engine(sync_db_url, poolclass=NullPool)
+    
+    # Pre-clean: drop schema to ensure clean state
+    with sync_engine.begin() as conn:
+        conn.execute(text("DROP SCHEMA public CASCADE"))
+        conn.execute(text("CREATE SCHEMA public"))
+        conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
+        conn.commit()
+    
+    # Run Alembic upgrade to head
+    config = _get_alembic_config()
+    with sync_engine.begin() as conn:
+        config.attributes["connection"] = conn
+        command.upgrade(config, "head")
+    
+    # Create async engine for testing
+    async_engine = create_async_engine(TEST_DATABASE_URL, poolclass=NullPool)
+    
+    # Yield a connection for testing
+    async with async_engine.connect() as conn:
+        await conn.execution_options(isolation_level="AUTOCOMMIT")
+        yield conn
+    
+    # Post-clean: run Alembic downgrade to base
+    with sync_engine.begin() as conn:
+        config.attributes["connection"] = conn
+        command.downgrade(config, "base")
+    
+    # Final cleanup: drop schema
+    with sync_engine.begin() as conn:
+        conn.execute(text("DROP SCHEMA public CASCADE"))
+        conn.execute(text("CREATE SCHEMA public"))
+        conn.commit()
+    
+    sync_engine.dispose()
+    await async_engine.dispose()

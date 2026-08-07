@@ -20,3 +20,5 @@ google-genai
 pytest
 pytest-asyncio
 groq
+pytest-mock
+pyjwt>=2.12.1

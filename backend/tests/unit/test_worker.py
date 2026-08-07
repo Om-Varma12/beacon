@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from unittest.mock import AsyncMock, MagicMock
 
-from tests.conftest import db_session
 from worker import Worker
 from models.Hackathon import Hackathon
 from models.User import User
@@ -16,19 +15,6 @@ from models.ChatMessage import ChatMessage
 from models.Resource import Resource
 from models.ProblemStatement import ProblemStatement
 from utils.redis_manager import get_redis_manager
-
-
-# ---------------------------------------------------------------------------
-# Helper context manager to mock SessionLocal
-# ---------------------------------------------------------------------------
-
-class AsyncContextManagerMock:
-    def __init__(self, value):
-        self.value = value
-    async def __aenter__(self):
-        return self.value
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        pass
 
 
 # ---------------------------------------------------------------------------
@@ -92,10 +78,7 @@ async def test_worker_run_analysis_job_success(
     Test worker.process_job() on an 'analysis' job:
     Verifies that the DebatePipeline is executed, results are saved, and status completes.
     """
-    # 1. Mock SessionLocal in worker to return our test db_session
-    # mocker.patch("worker.SessionLocal", return_value=AsyncContextManagerMock(db_session))
-
-    # 2. Mock DebatePipeline
+    # Mock DebatePipeline
     mock_pipeline_cls = mocker.patch("worker.DebatePipeline")
     mock_run = AsyncMock(return_value={
         "winner": "Agent Beta",
@@ -106,6 +89,9 @@ async def test_worker_run_analysis_job_success(
         "rounds": [{"round": 1, "ideas": []}]
     })
     mock_pipeline_cls.return_value.run = mock_run
+
+    # Mock HybridLLM (avoid real LLM calls)
+    mocker.patch("worker.HybridLLM")
 
     # Mock Redis manager
     redis = get_redis_manager()
@@ -136,12 +122,11 @@ async def test_worker_run_analysis_job_success(
     db_session.add(job)
     await db_session.flush()
 
-    # 3. Process job
+    # Process job — pass session directly
     worker = Worker()
     await worker.process_job(job.id, session=db_session)
 
-
-    # 4. Verify DB state updates
+    # Verify DB state updates
     await db_session.refresh(job)
     assert job.status == "completed"
     assert job.result_id == analysis.id
@@ -173,8 +158,6 @@ async def test_worker_run_assets_job_success(
     mocker
 ):
     """Test worker.process_job() on an 'assets' job: generates tech plan assets from analysis."""
-    mocker.patch("worker.SessionLocal", return_value=AsyncContextManagerMock(db_session))
-
     # Mocks AssetsAgent
     mocker.patch("services.AssetsService.LLM")
     mock_agent_cls = mocker.patch("services.AssetsService.AssetsAgent")
@@ -207,9 +190,9 @@ async def test_worker_run_assets_job_success(
     db_session.add(job)
     await db_session.flush()
 
-    # Process job
+    # Process job — pass session directly
     worker = Worker()
-    await worker.process_job(job.id)
+    await worker.process_job(job.id, session=db_session)
 
     # Verify DB state
     await db_session.refresh(job)
@@ -232,7 +215,6 @@ async def test_worker_run_scrape_job_success(
     mocker
 ):
     """Test worker.process_job() on a 'scrape' job: runs the scraper."""
-    mocker.patch("worker.SessionLocal", return_value=AsyncContextManagerMock(db_session))
     mock_scraper = mocker.patch("worker.scraperHackathons", new_callable=AsyncMock)
 
     job = Job(
@@ -244,7 +226,7 @@ async def test_worker_run_scrape_job_success(
     await db_session.flush()
 
     worker = Worker()
-    await worker.process_job(job.id)
+    await worker.process_job(job.id, session=db_session)
 
     await db_session.refresh(job)
     assert job.status == "completed"

@@ -64,9 +64,16 @@ class Worker:
         finally:
             self.semaphore.release()
 
-    async def process_job(self, job_id: int):
+    async def process_job(self, job_id: int, session: AsyncSession | None = None):
         """Process a single job with retry logic."""
-        async with SessionLocal() as session:
+        close_session = False
+        
+        # Use provided session or create new one
+        if session is None:
+            session = SessionLocal()
+            close_session = True
+        
+        try:
             job_repo = JobRepository(session)
             job = await job_repo.get_by_id(job_id)
             if not job:
@@ -135,6 +142,10 @@ class Worker:
                     await job_repo.update_status(job_id, "failed", error_message=error_msg)
                     await self.redis.publish_progress(job_id, "failed", f"Job failed after {retry_count} attempts: {error_msg}")
                     await session.commit()
+        
+        finally:
+            if close_session:
+                await session.close()
 
     async def run_analysis_job(self, job_id: int, payload: dict, session: AsyncSession) -> Optional[int]:
         """Run hackathon analysis job."""

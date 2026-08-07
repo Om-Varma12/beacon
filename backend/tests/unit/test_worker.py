@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from unittest.mock import AsyncMock, MagicMock
 
+from backend.tests.conftest import db_session
 from worker import Worker
 from models.Hackathon import Hackathon
 from models.User import User
@@ -137,7 +138,8 @@ async def test_worker_run_analysis_job_success(
 
     # 3. Process job
     worker = Worker()
-    await worker.process_job(job.id)
+    await worker.process_job(job.id, session=db_session)
+
 
     # 4. Verify DB state updates
     await db_session.refresh(job)

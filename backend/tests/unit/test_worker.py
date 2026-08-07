@@ -93,7 +93,7 @@ async def test_worker_run_analysis_job_success(
     Verifies that the DebatePipeline is executed, results are saved, and status completes.
     """
     # 1. Mock SessionLocal in worker to return our test db_session
-    mocker.patch("worker.SessionLocal", return_value=AsyncContextManagerMock(db_session))
+    # mocker.patch("worker.SessionLocal", return_value=AsyncContextManagerMock(db_session))
 
     # 2. Mock DebatePipeline
     mock_pipeline_cls = mocker.patch("worker.DebatePipeline")

@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
 from unittest.mock import AsyncMock, MagicMock
 
-from backend.tests.conftest import db_session
+from tests.conftest import db_session
 from worker import Worker
 from models.Hackathon import Hackathon
 from models.User import User

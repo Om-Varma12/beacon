@@ -2,4 +2,8 @@ generation agents-v2
 
 worker -> celery
 
-TESTS bana for entire project
+
+update backend/db/schema to match the schema of main db
+TESTS bana -> each feature
+
+notification system design for sending emails to user according to their hackathon preferences

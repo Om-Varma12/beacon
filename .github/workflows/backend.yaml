@@ -70,7 +70,7 @@ jobs:
           alembic upgrade head
 
       - name: Run main test suite
-        run: uv run pytest tests -v
+        run: pytest tests -v
 
       - name: Run migration tests
-        run: uv run pytest tests/migrations/ -v
+        run: pytest tests/migrations/ -v

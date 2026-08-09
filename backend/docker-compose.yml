@@ -3,7 +3,7 @@ services:
     image: omvarma12/beacon-backend:v1
     container_name: beacon-api
     restart: unless-stopped
-    command: uvicorn main:app --host 0.0.0.0 -- port 8000 --workers 4
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
 
     ports:
       - "8000:8000"
@@ -31,14 +31,14 @@ services:
     env_file:
       - .env
 
-    enviroment:
+    environment:
       REDIS_URL: redis://redis:6379/0
 
     depends_on:
       - redis
 
     networks:
-      - beacon_network
+      - beacon-network
 
 
   redis:
@@ -46,7 +46,7 @@ services:
     container_name: beacon-redis
     restart: unless-stopped
 
-    network:
+    networks:
       - beacon-network
 
 

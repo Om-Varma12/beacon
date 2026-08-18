@@ -1,5 +1,5 @@
 LARGE_MODEL = 'qwen/qwen3.6-27b'
-SMALL_MODEL = 'llama-3.3-70b-versatile'
+SMALL_MODEL = 'openai/gpt-oss-120b'
 GEMINI_MODEL = 'gemma4'
 GEMINI_INIT_IDEA_MODEL = 'gemini-3.5-flash-lite'
 GEMINI_SUBSEQUENT_IDEA_MODEL = 'gemini-3.1-flash-lite'

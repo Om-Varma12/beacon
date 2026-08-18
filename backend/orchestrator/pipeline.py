@@ -55,7 +55,7 @@ class DebatePipeline:
 		self.synthesizer = SynthesizerAgent(self.llm_synthesis) if use_synthesizer else None
 		self.debate_rounds = max(1, debate_rounds)
 
-	@traceable
+	# @traceable
 	async def run(self, theme: Any, on_progress = None) -> dict:
 		history: list[dict] = []
 		

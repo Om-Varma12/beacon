@@ -137,12 +137,6 @@ export function Navbar({ visible = true }: NavbarProps) {
             >
               Sign In
             </button>
-            <button
-              onClick={handleSignOut}
-              className="jetbrains text-[10px] uppercase px-4 py-2 border border-coral text-coral bg-transparent hover:bg-coral hover:text-white transition-all select-none cursor-pointer"
-            >
-              Sign Out Test
-            </button>
             <a
               href="#waitlist"
               className="jetbrains text-[10px] uppercase px-4 py-2 border border-forest text-forest bg-transparent hover:bg-forest hover:text-white transition-all select-none"
@@ -177,16 +171,7 @@ export function Navbar({ visible = true }: NavbarProps) {
               className="jetbrains text-[11px] uppercase px-6 py-4 border border-forest text-forest bg-transparent text-center hover:bg-forest hover:text-white transition-all cursor-pointer w-full"
             >
               Sign In
-            </button>
-            <button
-              onClick={async () => {
-                await handleSignOut();
-                setMobileOpen(false);
-              }}
-              className="jetbrains text-[11px] uppercase px-6 py-4 border border-coral text-coral bg-transparent text-center hover:bg-coral hover:text-white transition-all cursor-pointer w-full"
-            >
-              Sign Out Test
-            </button>
+            </button> 
             <a
               href="#waitlist"
               onClick={() => setMobileOpen(false)}

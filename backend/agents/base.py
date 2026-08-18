@@ -6,7 +6,7 @@ class Agent:
         self.llm = llm
         self.name = name
 
-    @traceable
+    # @traceable
     async def run(self, task: str) -> dict:
         response = await self.llm.generate(
             self.get_system_prompt(),

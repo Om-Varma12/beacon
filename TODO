@@ -1,9 +1,8 @@
 generation agents-v2
 
-worker -> celery
 
-
-update backend/db/schema to match the schema of main db
-TESTS bana -> each feature
-
+hackathon likes and dislikes buttons -> w.r.t. =>
 notification system design for sending emails to user according to their hackathon preferences
+
+
+deploy to ecs or asg

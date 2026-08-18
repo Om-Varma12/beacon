@@ -222,6 +222,7 @@ interface AnalysisResult {
 
 interface AnalysisPayload {
   analysis_id?: number | null;
+  job_id?: string | number | null;
   result?: AnalysisResult | null;
   status?: string | null;
   status_message?: string | null;
@@ -281,6 +282,7 @@ export interface AssetsResponse {
 }
 
 type TabType = "overview" | "analysis" | "assets" | "chat";
+type HackathonPreference = "like" | "dislike" | null;
 
 import { API_BASE_URL } from "../config";
 
@@ -674,6 +676,8 @@ export default function HackathonDetailApi() {
   const [user, setUser] = useState<{ name: string; email: string; idToken?: string } | null>(null);
   const [isAuthPopupOpen, setIsAuthPopupOpen] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [hackathonPreference, setHackathonPreference] =
+    useState<HackathonPreference>(null);
 
   useEffect(() => {
     const checkUser = () => {
@@ -834,13 +838,6 @@ export default function HackathonDetailApi() {
       return result;
     },
   });
-
-  // Use SSE for real-time updates when analysis is running.
-  // IMPORTANT: analysisStatus is intentionally NOT in the enabled condition.
-  // Putting it there creates a feedback loop: SSE update → analysisStatus changes
-  // → enabled recalculates → hook reconnects → repeat forever.
-  // The hook itself closes the connection when it receives "completed"/"failed".
-  const analysisStatus = analysisQuery.data?.data?.status;
 
   // Hydrate jobId from the GET /analysis response after a page reload.
   // The backend includes job_id when the analysis is still running (PENDING/RUNNING).
@@ -1418,7 +1415,7 @@ export default function HackathonDetailApi() {
 
       // Extract job_id from response
       if (result?.data?.job_id) {
-        setJobId(result.data.job_id);
+        setJobId(String(result.data.job_id));
       }
 
       // Update react-query cache for analysis so the UI reflects the new data
@@ -1438,6 +1435,12 @@ export default function HackathonDetailApi() {
     } else {
       setExpandedCard({ roundIndex, agent });
     }
+  };
+
+  const handlePreferenceClick = (preference: Exclude<HackathonPreference, null>) => {
+    setHackathonPreference((current) =>
+      current === preference ? null : preference,
+    );
   };
 
   const lastSaved = new Date();
@@ -1500,6 +1503,7 @@ export default function HackathonDetailApi() {
                       : "DEADLINE PASSED"}
                 </span>
               </div>
+
             </div>
 
             <div className="lg:w-100">
@@ -1538,6 +1542,47 @@ export default function HackathonDetailApi() {
                   >
                     Re-run
                   </button>
+                </div>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handlePreferenceClick("like")}
+                  aria-pressed={hackathonPreference === "like"}
+                  className={`inline-flex flex-1 items-center justify-center gap-2 border px-4 py-2 font-mono text-[10px] tracking-widest uppercase transition-all ${
+                    hackathonPreference === "like"
+                      ? "border-forest bg-forest text-white"
+                      : "border-forest bg-white text-forest hover:bg-[var(--forest)] hover:text-white"
+                  }`}
+                >
+                  <Icon icon="lucide:thumbs-up" className="text-sm" />
+                  Like
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePreferenceClick("dislike")}
+                  aria-pressed={hackathonPreference === "dislike"}
+                  className={`inline-flex flex-1 items-center justify-center gap-2 border px-4 py-2 font-mono text-[10px] tracking-widest uppercase transition-all ${
+                    hackathonPreference === "dislike"
+                      ? "border-coral bg-coral text-white"
+                      : "border-forest bg-white text-forest hover:border-coral hover:bg-[var(--coral)] hover:text-white"
+                  }`}
+                >
+                  <Icon icon="lucide:thumbs-down" className="text-sm" />
+                  Dislike
+                </button>
+                <div className="group relative inline-flex">
+                  <button
+                    type="button"
+                    aria-label="Preference info"
+                    title="Interacting with these buttons helps us recommend more hackathons like this to you in future."
+                    className="inline-flex h-8 w-8 items-center justify-center bg-white text-forest transition-all hover:bg-[var(--forest)] hover:text-white"
+                  >
+                    <Icon icon="lucide:circle-help" className="text-sm" />
+                  </button>
+                  <div className="pointer-events-none absolute right-0 top-10 z-20 hidden w-64 border border-grid/20 bg-white p-3 font-mono text-[10px] leading-relaxed tracking-wider text-grid/70 shadow-sm group-hover:block">
+                    Interacting with these buttons helps us recommend more hackathons like this to you in future.
+                  </div>
                 </div>
               </div>
             </div>

@@ -21,10 +21,14 @@ from services.AnalysisService import AnalysisService
 from services.ChatService import ChatService
 from services.AssetsService import AssetsService
 
+import json
+import uuid
+from datetime import datetime
 from scraper.main_scraper import scraperHackathons
-from utils.auth import get_current_user_claims
+from utils.auth import get_current_user_claims, get_optional_user_claims
 from utils.redis_manager import get_redis_manager
 from utils.asset_generator import generate_docx_proposal, generate_pptx_slides
+
 
 router = APIRouter()
 
@@ -32,7 +36,8 @@ router = APIRouter()
 class ChatModel(BaseModel):
     message: str
 
-
+class ReactionRequest(BaseModel):
+    reaction: str
 
         
 # Dependency
@@ -189,9 +194,15 @@ async def scrape_hackathon(background_tasks: BackgroundTasks):
 @router.get("/{hackathon_id}")
 async def get_hackathon(
     hackathon_id: int,
+    claims: Optional[dict] = Depends(get_optional_user_claims),
+    user_repo: UserRepository = Depends(get_user_repo),
     service: HackathonService = Depends(get_service)
 ):
-    data = await service.get_hackathon_detail(hackathon_id)
+    user_id = None
+    if claims:
+        user_id = await resolve_user_id(claims, user_repo)
+
+    data = await service.get_hackathon_detail(hackathon_id, user_id=user_id)
 
     if data is None:
         raise HTTPException(status_code=404, detail="Hackathon not found")
@@ -427,3 +438,47 @@ async def download_assets_pptx(
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+    
+    
+async def put_reaction(hackathon_id: int, user_id: int, reaction: Optional[str], session: AsyncSession):
+    if reaction not in ("like", "dislike", None):
+        raise HTTPException(status_code=400, detail="Invalid reaction. Must be 'like', 'dislike', or null")
+
+    hackathon_repo = HackathonRepository(session)
+    hackathon = await hackathon_repo.get_by_id(hackathon_id)
+    if not hackathon:
+        raise HTTPException(status_code=404, detail="Hackathon not found")
+    
+    redis = get_redis_manager()
+    event = {
+        "eventId": str(uuid.uuid4()),
+        "userId": user_id,
+        "hackathonId": hackathon["id"],
+        "reaction": reaction,
+        "createdAt": datetime.utcnow().isoformat()
+    }
+    
+    success = redis.push_job(json.dumps(event), queue_name="beacon:jobs:reactions")
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to queue reaction")
+    
+    return {
+        "success": True,
+        "message": "Reaction queued successfully"
+    }
+    
+    
+@router.put("/{hackathon_id}/reaction")
+async def reaction(
+    hackathon_id: int,
+    data: ReactionRequest,
+    claims: dict = Depends(get_current_user_claims),
+    user_repo: UserRepository = Depends(get_user_repo),
+    session: AsyncSession = Depends(get_session)
+):
+    user_id = await resolve_user_id(claims, user_repo)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not found")
+    result = await put_reaction(hackathon_id, user_id, data.reaction, session)
+    
+    return result

@@ -162,3 +162,19 @@ async def get_current_user_claims(credentials: HTTPAuthorizationCredentials = Se
         raise he
     except Exception as e:
         raise HTTPException(status_code=401, detail=f"Authentication failed: {str(e)}")
+
+
+from typing import Optional
+
+optional_security = HTTPBearer(auto_error=False)
+
+async def get_optional_user_claims(
+    credentials: Optional[HTTPAuthorizationCredentials] = Security(optional_security)
+) -> Optional[dict]:
+    if not credentials:
+        return None
+    try:
+        return await verify_token(credentials.credentials)
+    except Exception:
+        return None
+

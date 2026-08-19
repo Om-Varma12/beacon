@@ -53,10 +53,11 @@ async def get_session():
 # Import all models to ensure they are registered with Base.metadata
 from models.User import User
 from models.Hackathon import Hackathon
+from models.HackathonReaction import HackathonReaction
 from models.ProblemStatement import ProblemStatement
 from models.Resource import Resource
 from models.AgentAnalysis import AgentAnalysis
 from models.AgentRound import AgentRound
 from models.ChatMessage import ChatMessage
 from models.HackathonAsset import HackathonAsset
-from models.Job import Job
+from models.Job import Job

@@ -72,6 +72,9 @@ interface HackathonViewModel {
   prizes: Prize[];
   rewardItems: RewardItem[];
   resources: ResourceItem[];
+  likeCount: number;
+  dislikeCount: number;
+  myReaction: "like" | "dislike" | null;
 }
 
 interface BackendHackathon {
@@ -86,6 +89,11 @@ interface BackendHackathon {
   url?: string | null;
   start_date?: string | null;
   deadline?: string | null;
+  like_count?: number | string | null;
+  likes_count?: number | string | null;
+  dislike_count?: number | string | null;
+  dislikes_count?: number | string | null;
+  my_reaction?: string | null;
   prizes?: Array<{
     rank?: string | null;
     cash?: number | null;
@@ -101,13 +109,9 @@ interface BackendHackathon {
     url?: string | null;
   }> | null;
   problem_statements?: ProblemStatement[];
-}
-
-interface HackathonResponse {
-  success: boolean;
-  data: BackendHackathon | null;
   error?: string;
 }
+
 
 interface FinalIdea {
   title: string;
@@ -222,6 +226,7 @@ interface AnalysisResult {
 
 interface AnalysisPayload {
   analysis_id?: number | null;
+  job_id?: string | number | null;
   result?: AnalysisResult | null;
   status?: string | null;
   status_message?: string | null;
@@ -281,6 +286,7 @@ export interface AssetsResponse {
 }
 
 type TabType = "overview" | "analysis" | "assets" | "chat";
+type HackathonPreference = "like" | "dislike" | null;
 
 import { API_BASE_URL } from "../config";
 
@@ -521,6 +527,14 @@ function mapResourceType(
   return "link";
 }
 
+function normalizeCount(value?: number | string | null): number {
+  const count = Number(value ?? 0);
+
+  if (!Number.isFinite(count)) return 0;
+
+  return Math.max(0, Math.round(count));
+}
+
 function buildViewModel(
   data: BackendHackathon | null,
 ): HackathonViewModel | null {
@@ -600,6 +614,11 @@ function buildViewModel(
     prizes,
     rewardItems,
     resources,
+    likeCount: normalizeCount(data.likes_count ?? data.like_count),
+    dislikeCount: normalizeCount(data.dislikes_count ?? data.dislike_count),
+    myReaction: (data.my_reaction === "like" || data.my_reaction === "dislike")
+      ? (data.my_reaction as "like" | "dislike")
+      : null,
   };
 }
 
@@ -674,6 +693,12 @@ export default function HackathonDetailApi() {
   const [user, setUser] = useState<{ name: string; email: string; idToken?: string } | null>(null);
   const [isAuthPopupOpen, setIsAuthPopupOpen] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [hackathonPreference, setHackathonPreference] =
+    useState<HackathonPreference>(null);
+  // Ref to hold the latest pending preference value that hasn't been flushed yet
+  const pendingPreferenceRef = useRef<HackathonPreference | undefined>(undefined);
+  // Ref to the active debounce timer
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const checkUser = () => {
@@ -767,10 +792,14 @@ export default function HackathonDetailApi() {
   const [sseEnabled, setSseEnabled] = useState(true);
 
   const hackathonQuery = useQuery<HackathonQueryResult, Error>({
-    queryKey: ["hackathon", id],
+    queryKey: ["hackathon", id, user?.idToken ?? null],
     enabled: Boolean(id),
     queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/hackathons/${id}`);
+      const headers: Record<string, string> = {};
+      if (user?.idToken) {
+        headers["Authorization"] = `Bearer ${user.idToken}`;
+      }
+      const response = await fetch(`${API_BASE_URL}/hackathons/${id}`, { headers });
 
       if (response.status === 404) {
         throw new Error("Hackathon not found.");
@@ -834,13 +863,6 @@ export default function HackathonDetailApi() {
       return result;
     },
   });
-
-  // Use SSE for real-time updates when analysis is running.
-  // IMPORTANT: analysisStatus is intentionally NOT in the enabled condition.
-  // Putting it there creates a feedback loop: SSE update → analysisStatus changes
-  // → enabled recalculates → hook reconnects → repeat forever.
-  // The hook itself closes the connection when it receives "completed"/"failed".
-  const analysisStatus = analysisQuery.data?.data?.status;
 
   // Hydrate jobId from the GET /analysis response after a page reload.
   // The backend includes job_id when the analysis is still running (PENDING/RUNNING).
@@ -1273,6 +1295,25 @@ export default function HackathonDetailApi() {
     [viewModel?.deadline],
   );
 
+  // When hackathon data loads (or user logs in), sync local preference from backend
+  useEffect(() => {
+    if (viewModel?.myReaction !== undefined) {
+      setHackathonPreference(viewModel.myReaction);
+    }
+  }, [viewModel?.myReaction]);
+
+  // Optimistic counts: the server already includes myReaction in its count.
+  // If the user's local selection differs from what the server knows, apply the delta.
+  const serverMyReaction = viewModel?.myReaction ?? null;
+  const displayedLikeCount =
+    (viewModel?.likeCount ?? 0)
+    + (hackathonPreference === "like" ? 1 : 0)
+    - (serverMyReaction === "like" ? 1 : 0);
+  const displayedDislikeCount =
+    (viewModel?.dislikeCount ?? 0)
+    + (hackathonPreference === "dislike" ? 1 : 0)
+    - (serverMyReaction === "dislike" ? 1 : 0);
+
   const analysisData = analysisQuery.data?.data ?? null;
   const analysisResult = analysisData?.result ?? null;
   const hasAnalysis = Boolean(analysisData?.analysis_id);
@@ -1418,7 +1459,7 @@ export default function HackathonDetailApi() {
 
       // Extract job_id from response
       if (result?.data?.job_id) {
-        setJobId(result.data.job_id);
+        setJobId(String(result.data.job_id));
       }
 
       // Update react-query cache for analysis so the UI reflects the new data
@@ -1439,6 +1480,82 @@ export default function HackathonDetailApi() {
       setExpandedCard({ roundIndex, agent });
     }
   };
+
+  // Flush pending reaction to the server immediately
+  const flushReaction = useCallback(async (reactionToFlush: HackathonPreference) => {
+    if (!user?.idToken || !id) return;
+    try {
+      await fetch(`${API_BASE_URL}/hackathons/${id}/reaction`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${user.idToken}`,
+        },
+        body: JSON.stringify({ reaction: reactionToFlush }),
+        keepalive: true,
+      });
+    } catch {
+      // silently ignore — the worker queue ensures durability anyway
+    }
+  }, [user?.idToken, id]);
+
+  const handlePreferenceClick = (preference: Exclude<HackathonPreference, null>) => {
+    if (!user) {
+      setIsAuthPopupOpen(true);
+      return;
+    }
+
+    // Optimistic local update
+    const nextPreference: HackathonPreference = hackathonPreference === preference ? null : preference;
+    setHackathonPreference(nextPreference);
+    pendingPreferenceRef.current = nextPreference;
+
+    // Clear existing debounce timer and restart
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      if (pendingPreferenceRef.current !== undefined) {
+        flushReaction(pendingPreferenceRef.current);
+        pendingPreferenceRef.current = undefined;
+      }
+    }, 5000);
+  };
+
+  // Flush on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (pendingPreferenceRef.current !== undefined) {
+        flushReaction(pendingPreferenceRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Flush on page leave / tab close
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (pendingPreferenceRef.current !== undefined) {
+        if (user?.idToken && id) {
+          fetch(`${API_BASE_URL}/hackathons/${id}/reaction`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${user.idToken}`,
+            },
+            body: JSON.stringify({ reaction: pendingPreferenceRef.current }),
+            keepalive: true,
+          });
+        }
+        pendingPreferenceRef.current = undefined;
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [user?.idToken, id]);
 
   const lastSaved = new Date();
   const sectionHeadingClass =
@@ -1500,6 +1617,7 @@ export default function HackathonDetailApi() {
                       : "DEADLINE PASSED"}
                 </span>
               </div>
+
             </div>
 
             <div className="lg:w-100">
@@ -1539,6 +1657,53 @@ export default function HackathonDetailApi() {
                     Re-run
                   </button>
                 </div>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+                <div className="group relative inline-flex">
+                  <button
+                    type="button"
+                    aria-label="Preference info"
+                    title="Interacting with these buttons helps us recommend more hackathons like this to you in future."
+                    className="inline-flex h-8 w-8 items-center justify-center bg-white text-forest transition-all hover:bg-[var(--forest)] hover:text-white"
+                  >
+                    <Icon icon="lucide:circle-help" className="text-sm" />
+                  </button>
+                  <div className="pointer-events-none absolute left-0 top-10 z-20 hidden w-64 border border-grid/20 bg-white p-3 font-mono text-[10px] leading-relaxed tracking-wider text-grid/70 shadow-sm group-hover:block">
+                    Interacting with these buttons helps us recommend more hackathons like this to you in future.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handlePreferenceClick("like")}
+                  aria-pressed={hackathonPreference === "like"}
+                  className={`inline-flex h-8 items-center justify-center gap-1.5 border px-2.5 font-mono text-[10px] tracking-widest uppercase transition-all ${
+                    hackathonPreference === "like"
+                      ? "border-forest bg-forest text-white"
+                      : "border-forest bg-white text-forest hover:bg-[var(--forest)] hover:text-white"
+                  }`}
+                >
+                  <Icon icon="lucide:thumbs-up" className="text-sm" />
+                  <span>Like</span>
+                  <span className="font-mono text-[9px] opacity-70">
+                    {displayedLikeCount}
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePreferenceClick("dislike")}
+                  aria-pressed={hackathonPreference === "dislike"}
+                  className={`inline-flex h-8 items-center justify-center gap-1.5 border px-2.5 font-mono text-[10px] tracking-widest uppercase transition-all ${
+                    hackathonPreference === "dislike"
+                      ? "border-coral bg-coral text-white"
+                      : "border-forest bg-white text-forest hover:border-coral hover:bg-[var(--coral)] hover:text-white"
+                  }`}
+                >
+                  <Icon icon="lucide:thumbs-down" className="text-sm" />
+                  <span>Dislike</span>
+                  <span className="font-mono text-[9px] opacity-70">
+                    {displayedDislikeCount}
+                  </span>
+                </button>
               </div>
             </div>
           </div>

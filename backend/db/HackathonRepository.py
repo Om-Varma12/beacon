@@ -110,6 +110,8 @@ class HackathonRepository:
                 "mode": h.mode,
                 "is_paid": h.is_paid,
                 "deadline": h.deadline,
+                "like_count": h.like_count,
+                "dislike_count": h.dislike_count,
             }
             for h in hackathons
         ]
@@ -132,7 +134,7 @@ class HackathonRepository:
         return result.scalar_one()
 
 
-    async def get_by_id(self, hackathon_id: int):
+    async def get_by_id(self, hackathon_id: int, user_id: int = None):
         stmt = (
             select(Hackathon)
             .where(Hackathon.external_id == hackathon_id)
@@ -145,6 +147,19 @@ class HackathonRepository:
 
         if hackathon is None:
             return None
+
+        my_reaction = None
+        if user_id is not None:
+            from models.HackathonReaction import HackathonReaction
+            react_stmt = (
+                select(HackathonReaction.reaction)
+                .where(
+                    HackathonReaction.user_id == user_id,
+                    HackathonReaction.hackathon_id == hackathon.id
+                )
+            )
+            react_result = await self.session.execute(react_stmt)
+            my_reaction = react_result.scalar_one_or_none()
 
         return {
             "id": hackathon.id,
@@ -160,4 +175,7 @@ class HackathonRepository:
             "deadline": hackathon.deadline,
             "prizes": hackathon.prizes,
             "created_at": hackathon.created_at,
-        }
+            "like_count": hackathon.like_count,
+            "dislike_count": hackathon.dislike_count,
+            "my_reaction": my_reaction,
+        }

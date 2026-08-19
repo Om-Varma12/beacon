@@ -42,8 +42,9 @@ class Worker:
         while True:
             try:
                 # Block indefinitely until a job arrives
-                job_id = await asyncio.to_thread(self.redis.pop_job)
-                if job_id:
+                job_id_str = await asyncio.to_thread(self.redis.pop_job)
+                if job_id_str:
+                    job_id = int(job_id_str)
                     print(f"Queuing job {job_id} ({self.max_concurrent - self.semaphore._value}/{self.max_concurrent} slots in use)")
                     # Acquire a slot before spawning — blocks here if all slots are full
                     await self.semaphore.acquire()

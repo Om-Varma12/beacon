@@ -47,22 +47,24 @@ class RedisManager:
             health_check_interval=30
         )
 
-    def push_job(self, job_id: int) -> bool:
+    def push_job(self, job_id: int | str, queue_name: Optional[str] = None) -> bool:
         """Push job_id to Redis queue."""
         try:
-            self.queue_client.lpush(self.queue_name, str(job_id))
+            q = queue_name or self.queue_name
+            self.queue_client.lpush(q, str(job_id))
             return True
         except Exception as e:
             print(f"Redis error (push_job): {e}")
             return False
 
-    def pop_job(self, timeout: int = 0) -> Optional[int]:
-        """Pop job_id from Redis queue (blocking with timeout)."""
+    def pop_job(self, timeout: int = 0, queue_name: Optional[str] = None) -> Optional[str]:
+        """Pop job_id/payload from Redis queue (blocking with timeout)."""
         try:
-            result = self.queue_client.brpop(self.queue_name, timeout=timeout)
+            q = queue_name or self.queue_name
+            result = self.queue_client.brpop(q, timeout=timeout)
             if result:
                 _, job_id_str = result
-                return int(job_id_str)
+                return job_id_str
             return None
         except redis.exceptions.TimeoutError:
             # Timeout is expected when using timeout > 0

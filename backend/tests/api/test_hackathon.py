@@ -15,6 +15,7 @@ from models.AgentRound import AgentRound
 from models.Resource import Resource
 from models.ProblemStatement import ProblemStatement
 from models.Job import Job
+from models.HackathonReaction import HackathonReaction
 
 
 # ---------------------------------------------------------------------------
@@ -33,11 +34,13 @@ async def clean_database(db_session: AsyncSession):
     await db_session.execute(delete(AgentAnalysis))
     await db_session.execute(delete(Resource))
     await db_session.execute(delete(ProblemStatement))
+    await db_session.execute(delete(HackathonReaction))
     await db_session.execute(delete(Job))
     await db_session.execute(delete(User))
     await db_session.execute(delete(Hackathon))
     await db_session.flush()
     yield
+
 
 
 @pytest_asyncio.fixture
@@ -391,3 +394,198 @@ async def test_download_assets_pptx_success(
     assert "presentationml" in response.headers["content-type"]
     assert "super_ppt_project_pitch_deck.pptx" in response.headers["content-disposition"]
     assert response.content == b"fake pptx content"
+
+
+# ---------------------------------------------------------------------------
+# PUT /hackathons/{id}/reaction
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_reaction_requires_auth(client: AsyncClient, sample_hackathon):
+    """Unauthenticated request should return 403."""
+    response = await client.put(
+        f"/hackathons/{sample_hackathon.external_id}/reaction",
+        json={"reaction": "like"},
+    )
+    assert response.status_code in (401, 403)
+
+
+@pytest.mark.asyncio
+async def test_reaction_hackathon_not_found(
+    client: AsyncClient, sample_user, mock_cognito_claims, mocker
+):
+    """Should return 404 for non-existent hackathon."""
+    mock_cognito_claims({
+        "token_use": "id",
+        "sub": sample_user.cognito_sub,
+        "email": sample_user.email,
+    })
+    mocker.patch("utils.redis_manager.RedisManager.push_job", return_value=True)
+
+    response = await client.put(
+        "/hackathons/999999/reaction",
+        json={"reaction": "like"},
+    )
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_reaction_like_queued(
+    client: AsyncClient, sample_hackathon, sample_user, mock_cognito_claims, mocker
+):
+    """Valid like reaction should push to Redis queue and return 200."""
+    mock_cognito_claims({
+        "token_use": "id",
+        "sub": sample_user.cognito_sub,
+        "email": sample_user.email,
+    })
+    push_mock = mocker.patch("utils.redis_manager.RedisManager.push_job", return_value=True)
+
+    response = await client.put(
+        f"/hackathons/{sample_hackathon.external_id}/reaction",
+        json={"reaction": "like"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    push_mock.assert_called_once()
+    # Verify event structure
+    call_args = push_mock.call_args
+    import json as json_mod
+    event = json_mod.loads(call_args[0][0])
+    assert event["reaction"] == "like"
+    assert event["userId"] == sample_user.id
+    assert event["hackathonId"] == sample_hackathon.id
+    assert "eventId" in event
+    assert "createdAt" in event
+
+
+@pytest.mark.asyncio
+async def test_reaction_dislike_queued(
+    client: AsyncClient, sample_hackathon, sample_user, mock_cognito_claims, mocker
+):
+    """Valid dislike reaction should push to Redis queue and return 200."""
+    mock_cognito_claims({
+        "token_use": "id",
+        "sub": sample_user.cognito_sub,
+        "email": sample_user.email,
+    })
+    push_mock = mocker.patch("utils.redis_manager.RedisManager.push_job", return_value=True)
+
+    response = await client.put(
+        f"/hackathons/{sample_hackathon.external_id}/reaction",
+        json={"reaction": "dislike"},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    push_mock.assert_called_once()
+    call_args = push_mock.call_args
+    import json as json_mod
+    event = json_mod.loads(call_args[0][0])
+    assert event["reaction"] == "dislike"
+
+
+@pytest.mark.asyncio
+async def test_reaction_remove_queued(
+    client: AsyncClient, sample_hackathon, sample_user, mock_cognito_claims, mocker
+):
+    """Null reaction (remove) should push None to Redis queue."""
+    mock_cognito_claims({
+        "token_use": "id",
+        "sub": sample_user.cognito_sub,
+        "email": sample_user.email,
+    })
+    push_mock = mocker.patch("utils.redis_manager.RedisManager.push_job", return_value=True)
+
+    response = await client.put(
+        f"/hackathons/{sample_hackathon.external_id}/reaction",
+        json={"reaction": None},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["success"] is True
+    call_args = push_mock.call_args
+    import json as json_mod
+    event = json_mod.loads(call_args[0][0])
+    assert event["reaction"] is None
+
+
+@pytest.mark.asyncio
+async def test_reaction_invalid_value(
+    client: AsyncClient, sample_hackathon, sample_user, mock_cognito_claims, mocker
+):
+    """Invalid reaction value should return 400."""
+    mock_cognito_claims({
+        "token_use": "id",
+        "sub": sample_user.cognito_sub,
+        "email": sample_user.email,
+    })
+    mocker.patch("utils.redis_manager.RedisManager.push_job", return_value=True)
+
+    response = await client.put(
+        f"/hackathons/{sample_hackathon.external_id}/reaction",
+        json={"reaction": "love"},
+    )
+    assert response.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_get_hackathon_detail_returns_like_dislike_count(
+    client: AsyncClient, sample_hackathon
+):
+    """GET /hackathons/{id} should include like_count and dislike_count."""
+    response = await client.get(f"/hackathons/{sample_hackathon.external_id}")
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert "like_count" in data
+    assert "dislike_count" in data
+    assert data["like_count"] == 0
+    assert data["dislike_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_get_hackathon_detail_my_reaction_when_authenticated(
+    client: AsyncClient, sample_hackathon, sample_user, mock_cognito_claims, db_session
+):
+    """GET /hackathons/{id} with auth should return myReaction = None when no reaction exists."""
+    mock_cognito_claims({
+        "token_use": "id",
+        "sub": sample_user.cognito_sub,
+        "email": sample_user.email,
+    })
+
+    response = await client.get(f"/hackathons/{sample_hackathon.external_id}")
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert "my_reaction" in data
+    assert data["my_reaction"] is None
+
+
+@pytest.mark.asyncio
+async def test_get_hackathon_detail_my_reaction_reflects_existing_row(
+    client: AsyncClient, sample_hackathon, sample_user, mock_cognito_claims, db_session
+):
+    """GET /hackathons/{id} with auth should return myReaction = 'like' when a reaction row exists."""
+    from datetime import datetime
+    reaction = HackathonReaction(
+        user_id=sample_user.id,
+        hackathon_id=sample_hackathon.id,
+        reaction="like",
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+    )
+    db_session.add(reaction)
+    await db_session.flush()
+
+    mock_cognito_claims({
+        "token_use": "id",
+        "sub": sample_user.cognito_sub,
+        "email": sample_user.email,
+    })
+
+    response = await client.get(f"/hackathons/{sample_hackathon.external_id}")
+    assert response.status_code == 200
+    data = response.json()["data"]
+    assert data["my_reaction"] == "like"
+

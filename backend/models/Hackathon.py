@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import JSON, func
+from sqlalchemy import JSON, Integer, func
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
 
@@ -24,3 +24,5 @@ class Hackathon(Base):
     deadline:           Mapped[Optional[date]]
     created_at:         Mapped[Optional[datetime]] = mapped_column(server_default=func.now())
     prizes:             Mapped[Optional[dict]]     = mapped_column(JSON)
+    like_count:         Mapped[int]                = mapped_column(Integer, default=0, server_default="0")
+    dislike_count:      Mapped[int]                = mapped_column(Integer, default=0, server_default="0")

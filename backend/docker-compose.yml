@@ -41,6 +41,27 @@ services:
       - beacon-network
 
 
+  reaction-worker:
+    image: omvarma12/beacon-backend:v1
+    container_name: beacon-reaction-worker
+    restart: unless-stopped
+
+    command: python reaction_worker.py
+
+    env_file:
+      - .env
+
+    environment:
+      REDIS_URL: redis://redis:6379/0
+
+    depends_on:
+      - redis
+
+    networks:
+      - beacon-network
+
+
+
   redis:
     image: redis:7-alpine
     container_name: beacon-redis

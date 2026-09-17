@@ -51,6 +51,7 @@ class EmbeddingService:
             "model": self.model,
             "task": "text-matching",
             "normalized": True,
+            "dimensions": 1536,
             "input": formatted_inputs
         }
 

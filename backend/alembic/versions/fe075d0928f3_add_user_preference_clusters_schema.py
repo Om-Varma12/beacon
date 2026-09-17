@@ -1,15 +1,10 @@
-"""add_user_preference_clusters_schema
-
-Revision ID: fe075d0928f3
-Revises: 9898867784f0
-Create Date: 2026-09-17 21:49:48.449516
-
-"""
 from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from pgvector.sqlalchemy import Vector
 
 # revision identifiers, used by Alembic.
 revision: str = 'fe075d0928f3'
@@ -27,7 +22,7 @@ def upgrade() -> None:
         'hackathon_embeddings',
         sa.Column('hackathon_id', sa.BigInteger(), nullable=False),
         sa.Column('structured_summary', sa.Text(), nullable=True),
-        sa.Column('embedding', postgresql.VECTOR(2048), nullable=False),
+        sa.Column('embedding', Vector(1536), nullable=False),
         sa.Column('embedding_model', sa.String(length=100), nullable=False, server_default=''),
         sa.Column('created_at', sa.DateTime(), nullable=True, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(), nullable=True, server_default=sa.func.now()),
@@ -40,12 +35,13 @@ def upgrade() -> None:
         'user_preference_clusters',
         sa.Column('id', sa.Integer(), primary_key=True, autoincrement=True),
         sa.Column('user_id', sa.Integer(), nullable=False),
-        sa.Column('embedding', postgresql.VECTOR(2048), nullable=False),
+        sa.Column('embedding', Vector(1536), nullable=False),
         sa.Column('weight_sum', sa.Float(), nullable=False, server_default='0'),
         sa.Column('created_at', sa.DateTime(), nullable=True, server_default=sa.func.now()),
         sa.Column('updated_at', sa.DateTime(), nullable=True, server_default=sa.func.now()),
         sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
     )
+    
     op.create_index('idx_clusters_user_id', 'user_preference_clusters', ['user_id'], unique=False)
     op.execute('CREATE INDEX idx_clusters_embedding_hnsw ON user_preference_clusters USING hnsw (embedding vector_cosine_ops);')
 

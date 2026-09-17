@@ -39,6 +39,10 @@ class ChatModel(BaseModel):
 class ReactionRequest(BaseModel):
     reaction: str
 
+class ActionRequest(BaseModel):
+    action: str
+
+
         
 # Dependency
 def get_repo(
@@ -480,5 +484,48 @@ async def reaction(
     if not user_id:
         raise HTTPException(status_code=401, detail="User not found")
     result = await put_reaction(hackathon_id, user_id, data.reaction, session)
-    
-    return result
+
+    return result
+
+@router.post("/{hackathon_id}/track-action")
+async def track_action(
+    hackathon_id: int,
+    data: ActionRequest,
+    claims: dict = Depends(get_current_user_claims),
+    user_repo: UserRepository = Depends(get_user_repo)
+):
+    user_id = await resolve_user_id(claims, user_repo)
+    if not user_id:
+        raise HTTPException(status_code=401, detail="User not found")
+
+    # Action weights as per design doc
+    weights = {
+        "dwell_45s": 0.3,
+        "doc_download": 0.2
+    }
+
+    action = data.action
+    if action not in weights:
+        raise HTTPException(status_code=400, detail=f"Unsupported action: {action}")
+
+    weight = weights[action]
+    redis = get_redis_manager()
+
+    event = {
+        "eventId": str(uuid.uuid4()),
+        "userId": user_id,
+        "hackathonId": hackathon_id,
+        "action": action,
+        "weight": weight,
+        "createdAt": datetime.utcnow().isoformat()
+    }
+
+    success = redis.push_job(json.dumps(event), queue_name="beacon:jobs:actions")
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to queue action event")
+
+    return {
+        "success": True,
+        "message": "Action tracked successfully"
+    }
+

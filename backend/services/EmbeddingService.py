@@ -11,7 +11,7 @@ class EmbeddingService:
     def __init__(self):
         self.api_key = os.getenv("JINA_API_KEY")
         self.url = "https://api.jina.ai/v1/embeddings"
-        self.model = "jina-embeddings-v5-omni-small"
+        self.model = "jina-embeddings-v4"
 
         if not self.api_key:
             # In production, this should probably raise a configuration error.
@@ -49,7 +49,7 @@ class EmbeddingService:
 
         data = {
             "model": self.model,
-            "task": "retrieval.query",
+            "task": "text-matching",
             "normalized": True,
             "input": formatted_inputs
         }

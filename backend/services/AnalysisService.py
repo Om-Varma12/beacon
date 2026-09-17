@@ -1,5 +1,9 @@
 from agents.hybrid_llm import HybridLLM
 from orchestrator.pipeline import DebatePipeline
+import uuid
+import json
+from datetime import datetime
+from utils.redis_manager import get_redis_manager
 
 
 class AnalysisService:
@@ -45,6 +49,19 @@ class AnalysisService:
         )
 
         result = await pipeline.run(theme=themes)
+
+        # Hook: Track Idea Generation action
+        if user_id:
+            redis = get_redis_manager()
+            event = {
+                "eventId": str(uuid.uuid4()),
+                "userId": user_id,
+                "hackathonId": internal_hackathon_id,
+                "action": "idea_generation",
+                "weight": 0.5,
+                "createdAt": datetime.utcnow().isoformat()
+            }
+            redis.push_job(json.dumps(event), queue_name="beacon:jobs:actions")
 
 
         # Save Main Analysis

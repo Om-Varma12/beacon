@@ -1,10 +1,13 @@
 import json
+import uuid
+from datetime import datetime
 from langsmith import traceable
 from agents.llm import LLM
 from agents.assets_agent import AssetsAgent
 from db.HackathonRepository import HackathonRepository
 from db.AgentAnalysisRepository import AgentAnalysisRepository
 from db.AssetsRepository import AssetsRepository
+from utils.redis_manager import get_redis_manager
 
 class AssetsService:
     def __init__(
@@ -131,6 +134,19 @@ class AssetsService:
             ppt_content=ppt_content,
             user_id=user_id
         )
+
+        # Hook: Track Doc Generation action
+        if user_id:
+            redis = get_redis_manager()
+            event = {
+                "eventId": str(uuid.uuid4()),
+                "userId": user_id,
+                "hackathonId": hackathon["id"],
+                "action": "doc_generation",
+                "weight": 0.2,
+                "createdAt": datetime.utcnow().isoformat()
+            }
+            redis.push_job(json.dumps(event), queue_name="beacon:jobs:actions")
 
         return {
             "id": asset_id,

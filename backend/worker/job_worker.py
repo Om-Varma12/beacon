@@ -7,25 +7,25 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 # Load .env from backend directory
-backend_dir = Path(__file__).parent.parent / 'backend'
+backend_dir = Path(__file__).parent.parent
 load_dotenv(backend_dir / '.env')
 
-from backend.db.database import SessionLocal
-from backend.db.JobRepository import JobRepository
-from backend.db.HackathonRepository import HackathonRepository
-from backend.db.ProblemRepository import ProblemRepository
-from backend.db.AgentAnalysisRepository import AgentAnalysisRepository
-from backend.db.AgentRoundsRepository import AgentRoundsRepository
-from backend.db.AssetsRepository import AssetsRepository
-from backend.db.HackathonEmbeddingRepository import HackathonEmbeddingRepository
-from backend.db.UserPreferenceClusterRepository import UserPreferenceClusterRepository
+from db.database import SessionLocal
+from db.JobRepository import JobRepository
+from db.HackathonRepository import HackathonRepository
+from db.ProblemRepository import ProblemRepository
+from db.AgentAnalysisRepository import AgentAnalysisRepository
+from db.AgentRoundsRepository import AgentRoundsRepository
+from db.AssetsRepository import AssetsRepository
+from db.HackathonEmbeddingRepository import HackathonEmbeddingRepository
+from db.UserPreferenceClusterRepository import UserPreferenceClusterRepository
 
-from backend.scraper.main_scraper import scraperHackathons
-from backend.services.AssetsService import AssetsService
+from scraper.main_scraper import scraperHackathons
+from services.AssetsService import AssetsService
 
-from backend.utils.redis_manager import get_redis_manager
-from backend.agents.hybrid_llm import HybridLLM
-from backend.orchestrator.pipeline import DebatePipeline
+from utils.redis_manager import get_redis_manager
+from agents.hybrid_llm import HybridLLM
+from orchestrator.pipeline import DebatePipeline
 
 
 class Worker:

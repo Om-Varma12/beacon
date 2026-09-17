@@ -10,12 +10,12 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 # Load .env from backend directory
-backend_dir = Path(__file__).parent.parent / 'backend'
+backend_dir = Path(__file__).parent.parent
 load_dotenv(backend_dir / '.env')
 
-from backend.db.database import SessionLocal
-from backend.db.JobRepository import JobRepository
-from backend.utils.redis_manager import get_redis_manager
+from db.database import SessionLocal
+from db.JobRepository import JobRepository
+from utils.redis_manager import get_redis_manager
 
 class ActionAggregator:
     def __init__(self):

@@ -17,6 +17,8 @@ from db.ProblemRepository import ProblemRepository
 from db.AgentAnalysisRepository import AgentAnalysisRepository
 from db.AgentRoundsRepository import AgentRoundsRepository
 from db.AssetsRepository import AssetsRepository
+from db.HackathonEmbeddingRepository import HackathonEmbeddingRepository
+from db.UserPreferenceClusterRepository import UserPreferenceClusterRepository
 
 from scraper.main_scraper import scraperHackathons
 from services.AssetsService import AssetsService
@@ -100,6 +102,8 @@ class Worker:
                     result_id = await self.run_assets_job(job_id, payload, session)
                 elif job_type == "scrape":
                     result_id = await self.run_scrape_job(job_id, payload, session)
+                elif job_type == "update_user_cluster":
+                    result_id = await self.run_update_user_cluster_job(job_id, payload, session)
                 else:
                     raise ValueError(f"Unknown job type: {job_type}")
 
@@ -288,9 +292,106 @@ class Worker:
 
         await scraperHackathons()
         await on_progress("Scraping completed")
-        
+
         # Return None as scraping doesn't create a specific result record
         return None
+
+    async def run_update_user_cluster_job(self, job_id: int, payload: dict, session: AsyncSession) -> Optional[int]:
+        """
+        Update user's preference clusters based on hackathon interaction.
+        Implements the merge/spawn logic from user-cluster.md.
+        """
+        user_id = payload.get("user_id")
+        hackathon_id = payload.get("hackathon_id")
+        weight = payload.get("weight")
+
+        if not user_id or not hackathon_id or weight is None:
+            raise ValueError("Missing user_id, hackathon_id or weight in payload")
+
+        # Repositories
+        embedding_repo = HackathonEmbeddingRepository(session)
+        cluster_repo = UserPreferenceClusterRepository(session)
+
+        # 1. Fetch hackathon's embedding
+        hackathon_data = await embedding_repo.get_by_hackathon_id(hackathon_id)
+        if not hackathon_data:
+            # In a real scenario, we might trigger an 'embed_hackathon' job here
+            print(f"No embedding found for hackathon {hackathon_id}. Skipping cluster update.")
+            return None
+
+        hackathon_embedding = hackathon_data["embedding"]
+
+        # 2. Fetch user's existing clusters
+        clusters = await cluster_repo.get_by_user_id(user_id)
+
+        if not clusters:
+            # Case: No clusters exist -> create one as is
+            print(f"No existing clusters for user {user_id}. Creating first cluster.")
+            cluster_id = await cluster_repo.create(
+                user_id=user_id,
+                embedding=hackathon_embedding,
+                weight_sum=weight
+            )
+            return cluster_id
+
+        # 3. Compute similarity against each cluster
+        # Formula: cosine_sim = dot(A, B) / (||A|| * ||B||)
+        # Since Jina embeddings are normalized, dot product is cosine similarity.
+        def cosine_similarity(v1, v2):
+            return sum(a * b for a, b in zip(v1, v2))
+
+        best_similarity = -1.0
+        best_cluster = None
+
+        for cluster in clusters:
+            sim = cosine_similarity(hackathon_embedding, cluster["embedding"])
+            if sim > best_similarity:
+                best_similarity = sim
+                best_cluster = cluster
+
+        # 4. Merge/Spawn Logic
+        # similarity >= 0.5 -> merge (weighted running average)
+        if best_similarity >= 0.5:
+            print(f"Merging into existing cluster {best_cluster['id']} (sim={best_similarity:.2f})")
+
+            # Weighted running average:
+            # NewVec = ((OldVec * OldWeight) + (HackVec * NewWeight)) / (OldWeight + NewWeight)
+            old_vec = best_cluster["embedding"]
+            old_weight = best_cluster["weight_sum"]
+
+            new_weight_sum = old_weight + weight
+            new_embedding = [
+                ((v * old_weight) + (h * weight)) / new_weight_sum
+                for v, h in zip(old_vec, hackathon_embedding)
+            ]
+
+            await cluster_repo.update(best_cluster["id"], new_embedding, new_weight_sum)
+            return best_cluster["id"]
+
+        # similarity < 0.5 and < 3 rows -> spawn new cluster
+        elif len(clusters) < 3:
+            print(f"Spawning new cluster for user {user_id} (sim={best_similarity:.2f} < 0.5)")
+            cluster_id = await cluster_repo.create(
+                user_id=user_id,
+                embedding=hackathon_embedding,
+                weight_sum=weight
+            )
+            return cluster_id
+
+        # similarity < 0.5 and at cap -> force-merge into closest anyway
+        else:
+            print(f"Force-merging into closest cluster {best_cluster['id']} (at cap of 3 clusters)")
+            old_vec = best_cluster["embedding"]
+            old_weight = best_cluster["weight_sum"]
+
+            new_weight_sum = old_weight + weight
+            new_embedding = [
+                ((v * old_weight) + (h * weight)) / new_weight_sum
+                for v, h in zip(old_vec, hackathon_embedding)
+            ]
+
+            await cluster_repo.update(best_cluster["id"], new_embedding, new_weight_sum)
+            return best_cluster["id"]
 
 
 async def main():

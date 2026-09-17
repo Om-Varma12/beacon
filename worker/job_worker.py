@@ -7,31 +7,31 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 # Load .env from backend directory
-backend_dir = Path(__file__).parent
+backend_dir = Path(__file__).parent.parent / 'backend'
 load_dotenv(backend_dir / '.env')
 
-from db.database import SessionLocal
-from db.JobRepository import JobRepository
-from db.HackathonRepository import HackathonRepository
-from db.ProblemRepository import ProblemRepository
-from db.AgentAnalysisRepository import AgentAnalysisRepository
-from db.AgentRoundsRepository import AgentRoundsRepository
-from db.AssetsRepository import AssetsRepository
-from db.HackathonEmbeddingRepository import HackathonEmbeddingRepository
-from db.UserPreferenceClusterRepository import UserPreferenceClusterRepository
+from backend.db.database import SessionLocal
+from backend.db.JobRepository import JobRepository
+from backend.db.HackathonRepository import HackathonRepository
+from backend.db.ProblemRepository import ProblemRepository
+from backend.db.AgentAnalysisRepository import AgentAnalysisRepository
+from backend.db.AgentRoundsRepository import AgentRoundsRepository
+from backend.db.AssetsRepository import AssetsRepository
+from backend.db.HackathonEmbeddingRepository import HackathonEmbeddingRepository
+from backend.db.UserPreferenceClusterRepository import UserPreferenceClusterRepository
 
-from scraper.main_scraper import scraperHackathons
-from services.AssetsService import AssetsService
+from backend.scraper.main_scraper import scraperHackathons
+from backend.services.AssetsService import AssetsService
 
-from utils.redis_manager import get_redis_manager
-from agents.hybrid_llm import HybridLLM
-from orchestrator.pipeline import DebatePipeline
+from backend.utils.redis_manager import get_redis_manager
+from backend.agents.hybrid_llm import HybridLLM
+from backend.orchestrator.pipeline import DebatePipeline
 
 
 class Worker:
     def __init__(self):
         self.redis = get_redis_manager()
-        
+
         # Configuration
         self.max_retries = int(os.getenv("WORKER_MAX_RETRIES", "3"))
         self.retry_backoff_base = int(os.getenv("WORKER_RETRY_BACKOFF_BASE", "2"))
@@ -70,12 +70,12 @@ class Worker:
     async def process_job(self, job_id: int, session: AsyncSession | None = None):
         """Process a single job with retry logic."""
         close_session = False
-        
+
         # Use provided session or create new one
         if session is None:
             session = SessionLocal()
             close_session = True
-        
+
         try:
             job_repo = JobRepository(session)
             job = await job_repo.get_by_id(job_id)
@@ -118,36 +118,36 @@ class Worker:
                 await session.rollback()
                 error_msg = str(e)
                 traceback.print_exc()
-                
+
                 # Check if we should retry
                 retry_count = await job_repo.increment_retry(job_id)
-                
+
                 if retry_count < self.max_retries:
                     # Calculate backoff delay
                     backoff_delay = self.retry_backoff_base ** retry_count
                     print(f"Job {job_id} failed (attempt {retry_count}/{self.max_retries}), retrying in {backoff_delay}s...")
-                    
+
                     await self.redis.publish_progress(
-                        job_id, 
-                        "retrying", 
+                        job_id,
+                        "retrying",
                         f"Job failed (attempt {retry_count}/{self.max_retries}), retrying in {backoff_delay}s..."
                     )
-                    
+
                     # Sleep for backoff
                     await asyncio.sleep(backoff_delay)
-                    
+
                     # Re-queue the job
                     self.redis.push_job(job_id)
                     await job_repo.update_status(job_id, "queued")
                     await session.commit()
-                    
+
                 else:
                     # Max retries exceeded, mark as failed
                     print(f"Job {job_id} failed after {retry_count} attempts")
                     await job_repo.update_status(job_id, "failed", error_message=error_msg)
                     await self.redis.publish_progress(job_id, "failed", f"Job failed after {retry_count} attempts: {error_msg}")
                     await session.commit()
-        
+
         finally:
             if close_session:
                 await session.close()
@@ -226,7 +226,7 @@ class Worker:
         result = await pipeline.run(theme=themes, on_progress=on_progress)
 
         await on_progress("Saving analysis results...")
-        
+
         # Save main analysis results by updating the existing pending row
         await analysis_repo.update_results(
             analysis_id,
@@ -273,7 +273,7 @@ class Worker:
             raise ValueError("Analysis not found")
 
         await on_progress("Generating technical proposal and pitch deck...")
-        
+
         # Use AssetsService to generate
         assets_service = AssetsService(hackathon_repo, analysis_repo, assets_repo)
         await assets_service.generate_assets(hackathon_id, user_id=user_id)
@@ -282,7 +282,7 @@ class Worker:
         assets = await assets_repo.get_by_hackathon_id(internal_hackathon_id, user_id=user_id)
         if assets:
             return assets["id"]
-        
+
         return None
 
     async def run_scrape_job(self, job_id: int, payload: dict, session: AsyncSession) -> Optional[int]:
@@ -392,7 +392,6 @@ class Worker:
 
             await cluster_repo.update(best_cluster["id"], new_embedding, new_weight_sum)
             return best_cluster["id"]
-
 
 async def main():
     worker = Worker()

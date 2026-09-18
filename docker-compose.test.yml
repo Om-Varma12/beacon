@@ -1,0 +1,97 @@
+services:
+  backend:
+    build:
+      context: ./backend
+
+    container_name: beacon-backend
+
+    working_dir: /app
+
+    volumes:
+      - ./backend:/app
+
+    env_file:
+      - ./backend/.env
+
+    ports:
+      - "8000:8000"
+
+    environment:
+      REDIS_URL: redis://host.docker.internal:6379/0
+
+    command: python uvicorn main:app --reload
+
+
+  job-worker:
+    build:
+      context: ./backend
+
+    working_dir: /app
+
+    volumes:
+      - ./backend:/app
+
+    env_file:
+      - ./backend/.env
+
+    environment:
+      REDIS_URL: redis://host.docker.internal:6379/0
+
+    command: python -m worker.job_worker
+
+
+  action-aggregator:
+    build:
+      context: ./backend
+
+    working_dir: /app
+
+    volumes:
+      - ./backend:/app
+
+    env_file:
+      - ./backend/.env
+
+    environment:
+      REDIS_URL: redis://host.docker.internal:6379/0
+
+    command: python -m worker.action_aggregator
+
+
+  reaction-worker:
+    build:
+      context: ./backend
+
+    working_dir: /app
+
+    volumes:
+      - ./backend:/app
+
+    env_file:
+      - ./backend/.env
+
+    environment:
+      REDIS_URL: redis://host.docker.internal:6379/0
+
+    command: python -m worker.reaction_worker
+
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+
+  #   container_name: beacon-frontend
+
+  #   working_dir: /app
+
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+
+  #   ports:
+  #     - "5173:5173"
+
+  #   environment:
+  #     CHOKIDAR_USEPOLLING: "true"
+
+  #   command: npm run dev

@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from dotenv import load_dotenv
 from pathlib import Path
 
-# Load .env
+# Load .env from backend directory
 backend_dir = Path(__file__).parent.parent
 load_dotenv(backend_dir / '.env')
 

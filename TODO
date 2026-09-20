@@ -5,6 +5,7 @@ and showing a 'hackathons for you' tab using our recommendation engine
 
 
 
+test clusters feature
 3. hackathon likes and dislikes buttons -> w.r.t. =>
 notification system design for sending emails to user according to their hackathon preferences
 https://claude.ai/chat/73cd84a8-1d2b-49b0-bfe3-fd1d32ba3105  => last blocks
@@ -15,3 +16,5 @@ https://claude.ai/chat/73cd84a8-1d2b-49b0-bfe3-fd1d32ba3105  => last blocks
 error handling and resumable workflow
 
 6. for like and dislikes, if redis crashes, all records are lost that are not proccessed
+
+7. api taking time to return response

@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 
 # Load .env
-backend_dir = Path(__file__).parent
+backend_dir = Path(__file__).parent.parent
 load_dotenv(backend_dir / '.env')
 
 from db.database import SessionLocal
